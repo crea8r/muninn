@@ -20,7 +20,7 @@ DROP TABLE IF EXISTS org CASCADE;
 -- Create org table
 CREATE TABLE org (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL UNIQUE,
     profile JSON NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -33,7 +33,9 @@ CREATE TABLE creator (
     profile JSON NOT NULL,
     role VARCHAR(50) CHECK (role IN ('admin', 'member')),
     org_id INT REFERENCES org(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(username, org_id)
 );
 
 -- Create creator_session table
@@ -52,7 +54,8 @@ CREATE TABLE tag (
     description TEXT,
     color_schema JSON NOT NULL,
     org_id INT REFERENCES org(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(name, org_id)
 );
 
 -- Create obj_type table
@@ -115,10 +118,12 @@ CREATE TABLE task (
 -- Create obj table
 CREATE TABLE obj (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT,
     description TEXT,
+    id_string TEXT NOT NULL,
     creator_id INT REFERENCES creator(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(id_string, creator_id)
 );
 
 -- Create list table
