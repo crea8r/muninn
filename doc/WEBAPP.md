@@ -18,8 +18,6 @@ For landing page, login and register page use a web single column layout.
 
 For the app, use the app layout.
 
-## Look and feel
-
 ## Routes
 
 ### Authentication
