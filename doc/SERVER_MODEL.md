@@ -10,6 +10,7 @@ The `creator` model has access to following data (that relate to it)
 - `creator_list` and the `list` that creator_list refer to.
 - `task` that the creator owned or assigned
 - `fact` that the creator created
+- `feed` unseen feed that creator has
 
 ## Object
 

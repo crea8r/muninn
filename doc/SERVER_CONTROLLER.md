@@ -4,7 +4,7 @@ There are 4 major controllers of this project: Authentication, Setting, Data and
 
 There are conventions for GET request that filter and list data:
 
-- All listing query with come with a `q` parameter to filter the `name` field.
+- All listing query with come with a `q` parameter to filter the `name` and `description` field.
 - Support pagination in the request and response.
 
 ## Authentication
@@ -66,7 +66,7 @@ For example: given object type developer, the fields is `{email:"string", github
 
 #### Route: GET `/setting/type`
 
-Server will list all object type, filtering with `q` parameter to match text in the `name` field.
+Server will list all object type, filtering with `q` parameter to match text in the `name`, `description` and `fields` column.
 
 #### Route: POST `/setting/type`
 
@@ -82,7 +82,7 @@ A funnel consists of multiple steps. Each step has a (nullable) parent. The firs
 
 #### Route: GET `/setting/funnel`
 
-Serve all funnels with `q` as name filtering.
+Serve all funnels with `q` as `name` and `description` filtering.
 
 #### Route: GET `/setting/funnel/:funnel_id`
 
@@ -114,11 +114,23 @@ Edit a list.
 
 #### Route: GET `/setting/list/:list_id`
 
-Serve the detail of a list and all object belong to this list. There is `q` to filter object by name.
+Serve the detail of a list and all object belong to this list. There is `q` to filter object by `name` and `description`.
 
 ## Data
 
 This controller hold access to all tasks, objects and creator lists which is saved filter setting of generic lists.
+
+### Feed
+
+User can see query their feed.
+
+#### Route: GET `/data/feed/`
+
+Return only the unseen data, except there is a params `seen` is true.
+
+#### Route: POST `/data/feed`
+
+User submit the list of feed that they saw and server mark them as seen.
 
 ### Object
 
@@ -146,7 +158,7 @@ Serve all object attached to a step of a funnel. Order by `last_updated` desc.
 
 #### Route: GET `/data/obj/type/:obj_type_id/`
 
-Server will list all objects having this type, coming with a `q` paramenter to filter the `name` of the object. Order by `last_updated` desc.
+Server will list all objects having this type, coming with a `q` paramenter to filter the `obj`.`name`, `obj`.`description`, `obj_type_value`.`values` of the object. Order by `obj`.`last_updated` desc.
 
 #### Route: POST `/data/object/type/:obj_type_id`
 
