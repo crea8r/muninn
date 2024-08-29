@@ -8,8 +8,7 @@ This is the CRM project that employ two important concepts that most CRM is miss
 
 ## Structure
 
-There are 3 folders:
+This project use mono-repo approach. There are 2 project
 
-- sql: contains sql files
-- server: go lang server
-- webapp: reactjs webapp
+- server, using go lang
+- webapp, using reactjs

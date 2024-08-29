@@ -4,11 +4,15 @@
 
 ### Library
 
-The project use ReactJS, chakra-ui, tailwindcss.
+The project use ReactJS, chakra-ui, tailwindcss. For testing, please use mocha/chai. It is preferable for light weight like Context API. React Router is the prefer routing library. This project will be deployed on Netlify.
 
 ### Branding
 
 Project use clear and modern styling, learn from famous productivity app like Notion, Asana and ClickUp. The color palette use these colors: #8ecae6, #219ebc, #023047, #ffb703, #fb8500. Use the text "Muninn" as the logo for the app.
+
+### Accessibility
+
+This site use only English, no internationalization needed. This webapp is designed to run mainly on Desktop, however it should be able to show important information on Mobile.
 
 ## Layout
 

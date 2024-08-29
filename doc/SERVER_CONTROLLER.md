@@ -126,7 +126,7 @@ User can see query their feed.
 
 #### Route: GET `/data/feed/`
 
-Return only the unseen data, except there is a params `seen` is true.
+Return only the unseen data, except there is a params `seen` is TRUE.
 
 #### Route: POST `/data/feed`
 

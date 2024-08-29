@@ -2,7 +2,8 @@
 
 ## Feed
 
-This middleware will record in `feed` table any `fact` or `task` is created relate to the creator. The content will be a text explain what happened and a link to the fact and task. Format should be a json look like `{text:"...", url: "..."}`.
+This middleware will record in `feed` table any `fact` or `task` is created or edit relate to the creator. The content will be a text explain what happened and a link to the fact and task. Format should be a json look like `{text:"...", url: "..."}`.
+If the creator actively create or edit the data then it is seen by default but otherwise it is not seen.
 
 ## Permission
 
