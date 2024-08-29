@@ -4,7 +4,7 @@
 
 ### Library
 
-The project use ReactJS, chakra-ui, tailwindcss. For testing, please use mocha/chai. It is preferable for light weight like Context API. React Router is the prefer routing library. This project will be deployed on Netlify.
+The project use typescript, sass, ReactJS, chakra-ui, tailwindcss. For testing, please use mocha and chai for integration test. It is preferable for light weight like Context API, if possible then avoid state managemnt library. React Router is the prefer routing library. This project will be deployed on Netlify. Use Google Analytics to track user behavior.
 
 ### Branding
 

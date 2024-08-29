@@ -7,7 +7,22 @@ There are two middleware: Permission, Cache.
 
 ## Technology
 
-The prefer framework is something straight forward and precise like standard net/http, Chi or Echo over Gin. For database access, use sqlc or sqlx, do not use ORM. If possible, create additional view to make sql simple and take advantage of postgresql opimization. For jwt, use `golang-jwt/jwt`. This project will be deployed on Digital Ocean. I prefer Swagger for API documentation.
+Some of the framework and library:
+
+- Go lang server: Chi.
+- Go lang database access: sqlc
+- JWT: use `golang-jwt/jwt`
+- API documentation: Swagger, can be implemented later.
+- Logging: logrus
+- Testing: only write integration test.
+
+If possible, create additional view to make sql simple and take advantage of postgresql opimization. Most table with a `creator_id` should have a view that include `org_id` for the easy of data filtering. Some of view should be handy:
+
+- A view extend `step` with its `funnel`.
+- A view extend `creator_list` with its `list`.
+- A view extend `task` with all of its related `creator`.
+
+This project will be deployed on Digital Ocean. These are environment variable for database access: PG_USER, PG_PASSWORD, PG_PORT, PG_SERVER, PG_DB.
 
 ## Controller
 

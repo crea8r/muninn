@@ -12,3 +12,7 @@ This project use mono-repo approach. There are 2 project
 
 - server, using go lang
 - webapp, using reactjs
+
+## Technology
+
+For git, use gitflow strategy. The scale of the project expect to be medium, do not over optimise the code. Clean code and readable is the top priority. Each code file should be less than 300 line.
