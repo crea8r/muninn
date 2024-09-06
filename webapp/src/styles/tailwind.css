@@ -1,0 +1,11 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+:root {
+  --color-primary: #219ebc;
+  --color-secondary: #8ecae6;
+  --color-tertiary: #023047;
+  --color-accent-1: #ffb703;
+  --color-accent-2: #fb8500;
+}
