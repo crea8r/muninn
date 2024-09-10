@@ -18,7 +18,7 @@ import {
   Select,
   useToast,
 } from '@chakra-ui/react';
-import { ObjectType, ObjectTypeValue } from '../../types/ObjectType';
+import { ObjectType, ObjectTypeValue } from '../../types/';
 import {
   fetchObjectTypes,
   addObjectType,

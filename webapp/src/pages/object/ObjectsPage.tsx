@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Heading, Button, HStack, Tag, VStack } from '@chakra-ui/react';
 import { useHistory } from 'react-router-dom';
-import ComplexFilterTable, { Column } from '../components/ComplexFilterTable';
-import ImporterDialog from '../components/ImporterDialog';
+import ComplexFilterTable, {
+  Column,
+} from '../../components/ComplexFilterTable';
+import ImporterDialog from '../../components/ImporterDialog';
 
 interface Object {
   id: number;

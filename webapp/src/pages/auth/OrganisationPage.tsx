@@ -14,7 +14,7 @@ import {
   Th,
   Td,
 } from '@chakra-ui/react';
-import BreadcrumbComponent from '../components/Breadcrumb';
+import BreadcrumbComponent from '../../components/Breadcrumb';
 
 const OrganisationPage: React.FC = () => {
   const members = [

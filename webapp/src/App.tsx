@@ -1,25 +1,25 @@
 import React from 'react';
 import { ChakraProvider, Flex, CSSReset, extendTheme } from '@chakra-ui/react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
-import Header from './components/Layout/Header';
-import Sidebar from './components/Layout/Sidebar';
-import MainContent from './components/Layout/MainContent';
+import { Header, Sidebar, MainContent } from './components/layout/';
 import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import FeedPage from './pages/FeedPage';
-import TasksPage from './pages/TasksPage';
-import ViewsPage from './pages/ViewsPage';
-import ViewDetailPage from './pages/ViewDetailPage';
-import ObjectsPage from './pages/ObjectsPage';
-import SettingsPage from './pages/SettingsPage';
-import ObjectTypesPage from './pages/settings/ObjectTypesPage';
-import FunnelsPage from './pages/settings/FunnelsPage';
-import ListsPage from './pages/settings/ListsPage';
-import TagsPage from './pages/settings/TagsPage';
-import ObjectDetailPage from './pages/ObjectDetailPage';
-import AccountPage from './pages/AccountPage';
-import OrganisationPage from './pages/OrganisationPage';
+import {
+  AccountPage,
+  LoginPage,
+  OrganisationPage,
+  RegisterPage,
+} from './pages/auth/';
+import { FeedPage } from './pages/feed/';
+import { TasksPage } from './pages/tasks/';
+import { ViewsPage, ViewDetailPage } from './pages/views/';
+import { ObjectsPage, ObjectDetailPage } from './pages/object/';
+import {
+  SettingsPage,
+  ObjectTypesPage,
+  FunnelsPage,
+  ListsPage,
+  TagsPage,
+} from './pages/settings/';
 import './styles/tailwind.css';
 
 const theme = extendTheme({

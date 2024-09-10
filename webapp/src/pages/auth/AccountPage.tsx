@@ -8,7 +8,7 @@ import {
   Input,
   Button,
 } from '@chakra-ui/react';
-import BreadcrumbComponent from '../components/Breadcrumb';
+import BreadcrumbComponent from '../../components/Breadcrumb';
 
 const AccountPage: React.FC = () => {
   return (

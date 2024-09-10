@@ -9,8 +9,10 @@ import {
   Button,
   Tag,
 } from '@chakra-ui/react';
-import ComplexFilterTable, { Column } from '../components/ComplexFilterTable';
-import BreadcrumbComponent from '../components/Breadcrumb';
+import ComplexFilterTable, {
+  Column,
+} from '../../components/ComplexFilterTable';
+import BreadcrumbComponent from '../../components/Breadcrumb';
 
 interface View {
   id: number;

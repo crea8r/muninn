@@ -181,6 +181,7 @@ export const fetchAllFunnels = async () => {
     {
       id: '1',
       name: 'Developer',
+      description: 'Hiring process for developers',
       steps: [
         {
           id: '1',
@@ -212,6 +213,7 @@ export const fetchAllFunnels = async () => {
     {
       id: '2',
       name: 'Startup',
+      description: 'Investment process for startups',
       steps: [
         {
           id: '1',
@@ -242,6 +244,7 @@ export const fetchAllFunnels = async () => {
     {
       id: '3',
       name: 'Artist',
+      description: 'Artwork process for artists',
       steps: [
         {
           id: '1',

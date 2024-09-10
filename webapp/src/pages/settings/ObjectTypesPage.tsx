@@ -5,78 +5,14 @@ import {
   Button,
   HStack,
   Badge,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
   useDisclosure,
-  VStack,
-  FormControl,
-  FormLabel,
-  Input,
-  Textarea,
 } from '@chakra-ui/react';
 import ComplexFilterTable, {
   Column,
 } from '../../components/ComplexFilterTable';
 import BreadcrumbComponent from '../../components/Breadcrumb';
-
-interface ObjectType {
-  id: number;
-  name: string;
-  description: string;
-  fields: { name: string; type: string }[];
-}
-
-const ObjectTypeForm: React.FC<{
-  objectType?: ObjectType;
-  onSave: (objectType: ObjectType) => void;
-  onClose: () => void;
-}> = ({ objectType, onSave, onClose }) => {
-  const [name, setName] = useState(objectType?.name || '');
-  const [description, setDescription] = useState(objectType?.description || '');
-  const [fields, setFields] = useState<string>(
-    objectType?.fields.map((f) => `${f.name}:${f.type}`).join('\n') || ''
-  );
-
-  const handleSave = () => {
-    onSave({
-      id: objectType?.id || Date.now(),
-      name,
-      description,
-      fields: fields.split('\n').map((field) => {
-        const [name, type] = field.split(':');
-        return { name: name.trim(), type: type.trim() };
-      }),
-    });
-    onClose();
-  };
-
-  return (
-    <VStack spacing={4}>
-      <FormControl>
-        <FormLabel>Name</FormLabel>
-        <Input value={name} onChange={(e) => setName(e.target.value)} />
-      </FormControl>
-      <FormControl>
-        <FormLabel>Description</FormLabel>
-        <Textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </FormControl>
-      <FormControl>
-        <FormLabel>Fields (one per line, format: name:type)</FormLabel>
-        <Textarea value={fields} onChange={(e) => setFields(e.target.value)} />
-      </FormControl>
-      <Button colorScheme='blue' onClick={handleSave}>
-        Save
-      </Button>
-    </VStack>
-  );
-};
+import ObjectTypeForm from '../../components/forms/ObjectTypeForm';
+import { ObjectType } from '../../types/Object';
 
 const ObjectTypesPage: React.FC = () => {
   const [objectTypes, setObjectTypes] = useState<ObjectType[]>([]);
@@ -92,22 +28,21 @@ const ObjectTypesPage: React.FC = () => {
         id: 1,
         name: 'Contact',
         description: 'Represents a person or company',
-        fields: [
-          { name: 'Name', type: 'string' },
-          { name: 'Email', type: 'string' },
-          { name: 'Phone', type: 'string' },
-        ],
+        fields: {
+          name: 'string',
+          email: 'string',
+        },
       },
       {
         id: 2,
         name: 'Project',
         description: 'Represents a project or initiative',
-        fields: [
-          { name: 'Title', type: 'string' },
-          { name: 'Start Date', type: 'date' },
-          { name: 'End Date', type: 'date' },
-          { name: 'Budget', type: 'number' },
-        ],
+        fields: {
+          title: 'string',
+          startDate: 'datetime',
+          endDate: 'datetime',
+          budget: 'number',
+        },
       },
     ];
     setObjectTypes(dummyObjectTypes);
@@ -146,11 +81,11 @@ const ObjectTypesPage: React.FC = () => {
     {
       key: 'fields',
       header: 'Fields',
-      render: (value: { name: string; type: string }[], item: ObjectType) => (
+      render: (value: { [key: string]: any }, item: ObjectType) => (
         <>
-          {value.map((field, index) => (
+          {Object.keys(value).map((k, index) => (
             <Badge key={index} mr={2} mb={1}>
-              {field.name}: {field.type}
+              {k}: {value[k]}
             </Badge>
           ))}
         </>
@@ -187,22 +122,12 @@ const ObjectTypesPage: React.FC = () => {
         columns={columns}
         itemsPerPage={5}
       />
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            {editingObjectType ? 'Edit Object Type' : 'New Object Type'}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <ObjectTypeForm
-              objectType={editingObjectType}
-              onSave={handleSave}
-              onClose={onClose}
-            />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      <ObjectTypeForm
+        isOpen={isOpen}
+        onClose={onClose}
+        onSave={() => {}}
+        initialData={editingObjectType}
+      />
     </Box>
   );
 };

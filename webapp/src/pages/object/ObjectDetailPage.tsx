@@ -16,17 +16,17 @@ import {
   BreadcrumbLink,
 } from '@chakra-ui/react';
 import { ChevronRightIcon } from '@chakra-ui/icons';
-import RichTextEditor from '../components/RichTextEditor';
-import RichTextViewer from '../components/RichTextViewer';
-import TagInput from '../components/TagInput';
-import ObjectTypePanel from '../components/ObjectDetail/ObjectTypePanel';
-import TaskPanel from '../components/ObjectDetail/TaskPanel';
-import FunnelPanel from '../components/ObjectDetail/FunnelPanel';
-import FactForm from '../components/FactForm';
-import ActivityFeed from '../components/ObjectDetail/ActivityFeed';
-import { Object } from '../types/Object';
-import { Fact, NewFact } from '../types/Fact';
-import { fetchObjectDetails, updateObject, addFact } from '../api';
+import RichTextEditor from '../../components/rich-text/RichTextEditor';
+import RichTextViewer from '../../components/rich-text/RichTextViewer';
+import TagInput from '../../components/object-page/TagInput';
+import ObjectTypePanel from '../../components/object-page/ObjectTypePanel';
+import TaskPanel from '../../components/object-page/TaskPanel';
+import FunnelPanel from '../../components/object-page/FunnelPanel';
+import FactForm from '../../components/forms/FactForm';
+import ActivityFeed from '../../components/object-page/ActivityFeed';
+import { Object } from '../../types/Object';
+import { Fact, NewFact } from '../../types/Fact';
+import { fetchObjectDetails, updateObject, addFact } from '../../api';
 
 interface ObjectDetailPageProps {
   objectId: string;
@@ -34,7 +34,7 @@ interface ObjectDetailPageProps {
 
 const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({ objectId }) => {
   const [object, setObject] = useState<Object | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
   const [facts, setFacts] = useState<Fact[]>([]);
   const toast = useToast();
 

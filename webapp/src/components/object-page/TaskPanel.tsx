@@ -18,9 +18,9 @@ import {
   Select,
   useToast,
 } from '@chakra-ui/react';
-import { Task } from '../../types/Task';
+import { Task } from '../../types/';
 import { fetchTasks, addTask, updateTaskStatus, reassignTask } from '../../api';
-import TaskForm from '../../components/TaskForm';
+import { TaskForm } from '../forms/';
 
 interface TaskPanelProps {
   objectId: string;

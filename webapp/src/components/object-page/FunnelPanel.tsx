@@ -18,7 +18,7 @@ import {
   FormLabel,
   useDisclosure,
 } from '@chakra-ui/react';
-import { Funnel, FunnelStep, ObjectFunnel } from '../../types/Funnel';
+import { Funnel, FunnelStep, ObjectFunnel } from '../../types/';
 import {
   fetchObjectFunnels,
   fetchAllFunnels,

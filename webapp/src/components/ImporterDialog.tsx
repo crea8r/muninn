@@ -24,7 +24,7 @@ import {
   Select,
 } from '@chakra-ui/react';
 import { ChevronUpIcon, ChevronDownIcon, SearchIcon } from '@chakra-ui/icons';
-import { ObjectType } from '../types/ObjectType';
+import { ObjectType } from '../types/Object';
 
 // Mock data for ObjectTypes
 const mockObjectTypes: ObjectType[] = [

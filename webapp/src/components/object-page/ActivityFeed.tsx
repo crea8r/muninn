@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, VStack, Text, Heading } from '@chakra-ui/react';
-import { Fact } from '../../types/Fact';
-import RichTextViewer from '../../components/RichTextViewer';
+import { Fact } from '../../types/';
+import { RichTextViewer } from '../rich-text/';
 
 interface ActivityFeedProps {
   facts: Fact[];

@@ -7,8 +7,8 @@ import {
   Select,
   Button,
 } from '@chakra-ui/react';
-import { NewTask, TaskStatus } from '../types/Task';
-import RichTextEditor from './RichTextEditor';
+import { NewTask, TaskStatus } from '../../types/';
+import { RichTextEditor } from '../rich-text/';
 
 interface TaskFormProps {
   onSave: (task: NewTask) => void;

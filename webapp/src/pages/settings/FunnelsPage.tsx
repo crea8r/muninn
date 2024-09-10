@@ -14,73 +14,22 @@ import {
   Td,
   UnorderedList,
   ListItem,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  FormControl,
-  FormLabel,
-  Input,
-  Textarea,
   useDisclosure,
 } from '@chakra-ui/react';
 import BreadcrumbComponent from '../../components/Breadcrumb';
-
-interface Funnel {
-  id: number;
-  name: string;
-  description: string;
-  steps: string[];
-}
-
-const FunnelForm: React.FC<{
-  funnel?: Funnel;
-  onSave: (funnel: Funnel) => void;
-  onClose: () => void;
-}> = ({ funnel, onSave, onClose }) => {
-  const [name, setName] = useState(funnel?.name || '');
-  const [description, setDescription] = useState(funnel?.description || '');
-  const [steps, setSteps] = useState<string>(funnel?.steps.join('\n') || '');
-
-  const handleSave = () => {
-    onSave({
-      id: funnel?.id || Date.now(),
-      name,
-      description,
-      steps: steps.split('\n').filter((step) => step.trim() !== ''),
-    });
-    onClose();
-  };
-
-  return (
-    <VStack spacing={4}>
-      <FormControl>
-        <FormLabel>Name</FormLabel>
-        <Input value={name} onChange={(e) => setName(e.target.value)} />
-      </FormControl>
-      <FormControl>
-        <FormLabel>Description</FormLabel>
-        <Textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </FormControl>
-      <FormControl>
-        <FormLabel>Steps (one per line)</FormLabel>
-        <Textarea value={steps} onChange={(e) => setSteps(e.target.value)} />
-      </FormControl>
-      <Button colorScheme='blue' onClick={handleSave}>
-        Save
-      </Button>
-    </VStack>
-  );
-};
+import { CreateFunnelForm } from '../../components/forms/';
+import {
+  Funnel,
+  FunnelStep,
+  NewFunnel,
+  NewFunnelStep,
+} from '../../types/Funnel';
+import { fetchAllFunnels } from '../../api';
+import EditFunnelForm from '../../components/forms/EditFunnelForm';
 
 const FunnelsPage: React.FC = () => {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
+  const [isCreateFunnelModalOpen, setIsCreateFunnelModalOpen] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [editingFunnel, setEditingFunnel] = useState<Funnel | undefined>(
     undefined
@@ -88,27 +37,7 @@ const FunnelsPage: React.FC = () => {
 
   useEffect(() => {
     // TODO: Fetch funnels from API
-    const dummyFunnels: Funnel[] = [
-      {
-        id: 1,
-        name: 'Sales Pipeline',
-        description: 'Standard sales process',
-        steps: ['Lead', 'Prospect', 'Negotiation', 'Closed Won', 'Closed Lost'],
-      },
-      {
-        id: 2,
-        name: 'Recruitment Process',
-        description: 'Hiring workflow',
-        steps: [
-          'Application Received',
-          'Screening',
-          'Interview',
-          'Offer',
-          'Hired',
-        ],
-      },
-    ];
-    setFunnels(dummyFunnels);
+    fetchAllFunnels().then((funnels) => setFunnels(funnels));
   }, []);
 
   const handleSave = (funnel: Funnel) => {
@@ -133,7 +62,11 @@ const FunnelsPage: React.FC = () => {
         <Heading as='h1' size='xl' color='var(--color-primary)'>
           Funnels
         </Heading>
-        <Button colorScheme='blue' bg='var(--color-primary)' onClick={onOpen}>
+        <Button
+          colorScheme='blue'
+          bg='var(--color-primary)'
+          onClick={() => setIsCreateFunnelModalOpen(true)}
+        >
           New Funnel
         </Button>
       </HStack>
@@ -154,7 +87,7 @@ const FunnelsPage: React.FC = () => {
               <Td>
                 <UnorderedList>
                   {funnel.steps.map((step, index) => (
-                    <ListItem key={index}>{step}</ListItem>
+                    <ListItem key={index}>{step.name}</ListItem>
                   ))}
                 </UnorderedList>
               </Td>
@@ -167,22 +100,17 @@ const FunnelsPage: React.FC = () => {
           ))}
         </Tbody>
       </Table>
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            {editingFunnel ? 'Edit Funnel' : 'New Funnel'}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <FunnelForm
-              funnel={editingFunnel}
-              onSave={handleSave}
-              onClose={onClose}
-            />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      <CreateFunnelForm
+        isOpen={isCreateFunnelModalOpen}
+        onClose={() => setIsCreateFunnelModalOpen(false)}
+        onSave={(funnel: NewFunnel) => {}}
+      />
+      <EditFunnelForm
+        isOpen={isOpen}
+        onClose={onClose}
+        funnel={editingFunnel}
+        onSave={(e: any) => {}}
+      />
     </Box>
   );
 };

@@ -15,10 +15,10 @@ import {
   ModalCloseButton,
   useDisclosure,
 } from '@chakra-ui/react';
-import BreadcrumbComponent from '../components/Breadcrumb';
-import TaskForm from '../components/TaskForm';
-import { Task, NewTask, TaskStatus } from '../types/Task';
-import RichTextViewer from '../components/RichTextViewer';
+import BreadcrumbComponent from '../../components/Breadcrumb';
+import TaskForm from '../../components/forms/TaskForm';
+import { Task, NewTask, TaskStatus } from '../../types/Task';
+import RichTextViewer from '../../components/rich-text/RichTextViewer';
 
 const TasksPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);

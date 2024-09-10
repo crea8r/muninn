@@ -16,8 +16,8 @@ import {
   useDisclosure,
 } from '@chakra-ui/react';
 import { CalendarIcon, EditIcon } from '@chakra-ui/icons';
-import RichTextEditor from './RichTextEditor';
-import { NewFact } from '../types/Fact';
+import { RichTextEditor } from '../rich-text/';
+import { NewFact } from '../../types/';
 
 interface FactFormProps {
   onSave: (fact: NewFact) => void;
