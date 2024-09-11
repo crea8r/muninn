@@ -149,16 +149,11 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ objectId }) => {
         <Button onClick={onOpen}>Add New Task</Button>
       </VStack>
 
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Add New Task</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <TaskForm onSave={() => handleAddTask} onClose={onClose} />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      <TaskForm
+        onSave={() => handleAddTask}
+        onClose={onClose}
+        isOpen={isOpen}
+      />
     </Box>
   );
 };

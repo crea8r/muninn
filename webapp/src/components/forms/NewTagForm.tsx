@@ -16,7 +16,7 @@ import {
   useToast,
 } from '@chakra-ui/react';
 
-import { Tag } from '../../types';
+import { Tag } from 'src/types';
 
 interface NewTagFormProps {
   isOpen: boolean;

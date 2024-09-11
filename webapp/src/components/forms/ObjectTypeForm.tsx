@@ -22,7 +22,7 @@ import {
   IconButton,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
-import { ObjectType } from '../../types/';
+import { ObjectType } from 'src/types';
 
 // Define the props for the ObjectTypeForm component
 interface ObjectTypeFormProps {

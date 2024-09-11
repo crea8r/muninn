@@ -1,91 +1,60 @@
 import React from 'react';
-import {
-  Editor,
-  EditorState,
-  CompositeDecorator,
-  ContentState,
-  convertFromRaw,
-  ContentBlock,
-} from 'draft-js';
-import 'draft-js/dist/Draft.css';
 
-interface RichTextViewerProps {
-  content: string;
+interface RelatedObject {
+  object_id: string;
+  name: string;
+  object_url: string;
 }
 
-const MentionSpan: React.FC<{ children: React.ReactNode; url: string }> = (
-  props
-) => (
-  <a
-    href={props.url}
-    target='_blank'
-    rel='noopener noreferrer'
-    style={{
-      color: '#4a90e2',
-      backgroundColor: '#f0f8ff',
-      padding: '2px 4px',
-      borderRadius: '3px',
-      textDecoration: 'none',
-    }}
-  >
-    {props.children}
-  </a>
-);
+interface RichTextViewerProps {
+  content: string | { content: string; related: RelatedObject[] };
+}
 
 const RichTextViewer: React.FC<RichTextViewerProps> = ({ content }) => {
-  const compositeDecorator = new CompositeDecorator([
-    {
-      strategy: findMentionEntities,
-      component: (props) => {
-        const { url } = props.contentState.getEntity(props.entityKey).getData();
-        return <MentionSpan {...props} url={url} />;
-      },
-    },
-  ]);
-
-  const createEditorState = (content: string) => {
-    console.log('Creating editor state with content:', content);
-    try {
-      // Try to parse the content as JSON (for Draft.js raw content)
-      console.log('Parsing content as JSON ', JSON.parse(content));
-      const contentState = convertFromRaw(JSON.parse(content));
-      return EditorState.createWithContent(contentState, compositeDecorator);
-    } catch (e) {
-      // If parsing fails, treat the content as plain text
-      console.log('Treating content as plain text');
-      return EditorState.createWithContent(
-        ContentState.createFromText(content),
-        compositeDecorator
-      );
-    }
+  const renderContent = (text: string) => {
+    const parts = text.split(/(\[@[^\]]+\]\([^)]+\))/g);
+    return parts.map((part, index) => {
+      const match = part.match(/\[@([^\]]+)\]\(([^)]+)\)/);
+      if (match) {
+        const [, name, url] = match;
+        return (
+          <a
+            key={index}
+            href={url}
+            target='_blank'
+            rel='noopener noreferrer'
+            style={{
+              color: '#219ebc',
+              backgroundColor: '#8ecae6',
+              padding: '2px 4px',
+              borderRadius: '3px',
+              textDecoration: 'none',
+            }}
+          >
+            @{name}
+          </a>
+        );
+      }
+      return <React.Fragment key={index}>{part}</React.Fragment>;
+    });
   };
 
-  const editorState = createEditorState(content);
+  const contentToRender =
+    typeof content === 'string' ? content : content.content;
 
   return (
-    <div>
-      <Editor
-        editorState={editorState}
-        readOnly={true}
-        onChange={() => {}} // No-op function as onChange is required but we don't need it
-      />
+    <div
+      style={{
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+        padding: '10px',
+        border: '1px solid #023047',
+        borderRadius: '4px',
+      }}
+    >
+      {renderContent(contentToRender)}
     </div>
   );
 };
-
-function findMentionEntities(
-  contentBlock: ContentBlock,
-  callback: (start: number, end: number) => void,
-  contentState: ContentState
-) {
-  contentBlock.findEntityRanges((character) => {
-    const entityKey = character.getEntity();
-    if (entityKey === null) {
-      return false;
-    }
-    const entity = contentState.getEntity(entityKey);
-    return entity.getType() === 'MENTION';
-  }, callback);
-}
 
 export default RichTextViewer;

@@ -16,16 +16,16 @@ import {
   BreadcrumbLink,
 } from '@chakra-ui/react';
 import { ChevronRightIcon } from '@chakra-ui/icons';
-import RichTextEditor from '../../components/rich-text/RichTextEditor';
-import RichTextViewer from '../../components/rich-text/RichTextViewer';
-import TagInput from '../../components/object-page/TagInput';
-import ObjectTypePanel from '../../components/object-page/ObjectTypePanel';
-import TaskPanel from '../../components/object-page/TaskPanel';
-import FunnelPanel from '../../components/object-page/FunnelPanel';
-import FactForm from '../../components/forms/FactForm';
-import ActivityFeed from '../../components/object-page/ActivityFeed';
-import { Object } from '../../types/Object';
-import { Fact, NewFact } from '../../types/Fact';
+import { RichTextEditor, RichTextViewer } from '../../components/rich-text';
+import {
+  TagInput,
+  ObjectTypePanel,
+  TaskPanel,
+  FunnelPanel,
+  ActivityFeed,
+} from '../../components/object-page';
+import { FactForm } from '../../components/forms';
+import { Object, Fact, NewFact } from '../../types/';
 import { fetchObjectDetails, updateObject, addFact } from '../../api';
 
 interface ObjectDetailPageProps {
@@ -64,10 +64,10 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({ objectId }) => {
     }
   };
 
-  const handleDescriptionChange = (content: string) => {
-    if (object) {
-      setObject({ ...object, description: content });
-    }
+  const handleDescriptionChange = (content: any) => {
+    // if (object) {
+    //   setObject({ ...object, description: content });
+    // }
   };
 
   const handleTagsChange = (newTags: { id: string; text: string }[]) => {

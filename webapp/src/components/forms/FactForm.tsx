@@ -39,7 +39,7 @@ const FactForm: React.FC<FactFormProps> = ({ onSave, objectId }) => {
     setFact((prevFact) => ({ ...prevFact, [name]: value }));
   };
 
-  const handleSave = (content: string) => {
+  const handleSave = (content: any) => {
     onSave({ ...fact, text: content });
   };
 
