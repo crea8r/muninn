@@ -1,8 +1,8 @@
 package models
 
 import (
+	"github.com/crea8r/muninn/server/internal/db"
 	"github.com/google/uuid"
-	"github.com/yourusername/crm-backend/internal/db"
 )
 
 type Object struct {
