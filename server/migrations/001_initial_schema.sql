@@ -57,7 +57,7 @@ CREATE TABLE creator_session (
 CREATE TABLE tag (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
-    description TEXT,
+    description TEXT NOT NULL,
     color_schema JSONB NOT NULL,
     org_id UUID NOT NULL REFERENCES org(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -80,7 +80,7 @@ CREATE TABLE obj_type (
 CREATE TABLE funnel (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
-    description TEXT,
+    description TEXT NOT NULL,
     creator_id UUID REFERENCES creator(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
@@ -91,9 +91,9 @@ CREATE TABLE step (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     funnel_id UUID REFERENCES funnel(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    definition TEXT,
-    example TEXT,
-    action TEXT,
+    definition TEXT NOT NULL,
+    example TEXT NOT NULL,
+    action TEXT NOT NULL,
     parent_step UUID REFERENCES step(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -105,7 +105,7 @@ CREATE TABLE fact (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     text TEXT NOT NULL,
     happened_at TIMESTAMP WITH TIME ZONE,
-    location TEXT,
+    location TEXT NOT NULL,
     creator_id UUID REFERENCES creator(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -130,8 +130,8 @@ CREATE TABLE task (
 -- Create the obj table
 CREATE TABLE obj (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name TEXT,
-    description TEXT,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
     id_string TEXT NOT NULL,
     creator_id UUID REFERENCES creator(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -143,7 +143,7 @@ CREATE TABLE obj (
 CREATE TABLE list (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
-    description TEXT,
+    description TEXT NOT NULL,
     filter_setting JSONB NOT NULL,
     creator_id UUID REFERENCES creator(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -9,19 +9,44 @@ import {
   Button,
   Text,
   Link as ChakraLink,
+  useToast,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useHistory } from 'react-router-dom';
+import authService from 'src/services/authService';
+import { login } from 'src/api/auth';
 
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const history = useHistory();
+  const toast = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual login logic
-    console.log('Login attempt with:', { username, password });
-    history.push('/feed');
+    setIsLoading(true);
+
+    try {
+      const response = await login(username, password);
+      authService.login(response.token);
+      toast({
+        title: 'Login successful',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      history.push('/feed');
+    } catch (error: any) {
+      toast({
+        title: 'Login failed',
+        description: error.message || 'An error occurred during login',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -62,6 +87,7 @@ const LoginPage: React.FC = () => {
                 colorScheme='blue'
                 width='full'
                 bg='var(--color-primary)'
+                isLoading={isLoading}
               >
                 Login
               </Button>

@@ -13,9 +13,14 @@ import {
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { useHistory } from 'react-router-dom';
+import authService from 'src/services/authService';
 
 const Header: React.FC = () => {
   const history = useHistory();
+  const handleLogout = () => {
+    authService.logout();
+    history.push('/');
+  };
   return (
     <Box as='header' bg='white' boxShadow='sm' py={4}>
       <Flex
@@ -49,7 +54,7 @@ const Header: React.FC = () => {
             <MenuItem onClick={() => history.push('/organisation')}>
               Organisation
             </MenuItem>
-            <MenuItem>Log out</MenuItem>
+            <MenuItem onClick={handleLogout}>Log out</MenuItem>
           </MenuList>
         </Menu>
       </Flex>

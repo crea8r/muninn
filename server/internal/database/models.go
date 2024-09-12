@@ -41,14 +41,14 @@ type CreatorSession struct {
 }
 
 type Fact struct {
-	ID          uuid.UUID      `json:"id"`
-	Text        string         `json:"text"`
-	HappenedAt  sql.NullTime   `json:"happened_at"`
-	Location    sql.NullString `json:"location"`
-	CreatorID   uuid.NullUUID  `json:"creator_id"`
-	CreatedAt   time.Time      `json:"created_at"`
-	LastUpdated time.Time      `json:"last_updated"`
-	DeletedAt   sql.NullTime   `json:"deleted_at"`
+	ID          uuid.UUID     `json:"id"`
+	Text        string        `json:"text"`
+	HappenedAt  sql.NullTime  `json:"happened_at"`
+	Location    string        `json:"location"`
+	CreatorID   uuid.NullUUID `json:"creator_id"`
+	CreatedAt   time.Time     `json:"created_at"`
+	LastUpdated time.Time     `json:"last_updated"`
+	DeletedAt   sql.NullTime  `json:"deleted_at"`
 }
 
 type Feed struct {
@@ -61,18 +61,18 @@ type Feed struct {
 }
 
 type Funnel struct {
-	ID          uuid.UUID      `json:"id"`
-	Name        string         `json:"name"`
-	Description sql.NullString `json:"description"`
-	CreatorID   uuid.NullUUID  `json:"creator_id"`
-	CreatedAt   time.Time      `json:"created_at"`
-	DeletedAt   sql.NullTime   `json:"deleted_at"`
+	ID          uuid.UUID     `json:"id"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	CreatorID   uuid.NullUUID `json:"creator_id"`
+	CreatedAt   time.Time     `json:"created_at"`
+	DeletedAt   sql.NullTime  `json:"deleted_at"`
 }
 
 type List struct {
 	ID            uuid.UUID       `json:"id"`
 	Name          string          `json:"name"`
-	Description   sql.NullString  `json:"description"`
+	Description   string          `json:"description"`
 	FilterSetting json.RawMessage `json:"filter_setting"`
 	CreatorID     uuid.NullUUID   `json:"creator_id"`
 	CreatedAt     time.Time       `json:"created_at"`
@@ -81,13 +81,13 @@ type List struct {
 }
 
 type Obj struct {
-	ID          uuid.UUID      `json:"id"`
-	Name        sql.NullString `json:"name"`
-	Description sql.NullString `json:"description"`
-	IDString    string         `json:"id_string"`
-	CreatorID   uuid.NullUUID  `json:"creator_id"`
-	CreatedAt   time.Time      `json:"created_at"`
-	DeletedAt   sql.NullTime   `json:"deleted_at"`
+	ID          uuid.UUID     `json:"id"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	IDString    string        `json:"id_string"`
+	CreatorID   uuid.NullUUID `json:"creator_id"`
+	CreatedAt   time.Time     `json:"created_at"`
+	DeletedAt   sql.NullTime  `json:"deleted_at"`
 }
 
 type ObjFact struct {
@@ -144,22 +144,22 @@ type Org struct {
 }
 
 type Step struct {
-	ID          uuid.UUID      `json:"id"`
-	FunnelID    uuid.NullUUID  `json:"funnel_id"`
-	Name        string         `json:"name"`
-	Definition  sql.NullString `json:"definition"`
-	Example     sql.NullString `json:"example"`
-	Action      sql.NullString `json:"action"`
-	ParentStep  uuid.NullUUID  `json:"parent_step"`
-	CreatedAt   time.Time      `json:"created_at"`
-	LastUpdated time.Time      `json:"last_updated"`
-	DeletedAt   sql.NullTime   `json:"deleted_at"`
+	ID          uuid.UUID     `json:"id"`
+	FunnelID    uuid.NullUUID `json:"funnel_id"`
+	Name        string        `json:"name"`
+	Definition  string        `json:"definition"`
+	Example     string        `json:"example"`
+	Action      string        `json:"action"`
+	ParentStep  uuid.NullUUID `json:"parent_step"`
+	CreatedAt   time.Time     `json:"created_at"`
+	LastUpdated time.Time     `json:"last_updated"`
+	DeletedAt   sql.NullTime  `json:"deleted_at"`
 }
 
 type Tag struct {
 	ID          uuid.UUID       `json:"id"`
 	Name        string          `json:"name"`
-	Description sql.NullString  `json:"description"`
+	Description string          `json:"description"`
 	ColorSchema json.RawMessage `json:"color_schema"`
 	OrgID       uuid.UUID       `json:"org_id"`
 	CreatedAt   time.Time       `json:"created_at"`

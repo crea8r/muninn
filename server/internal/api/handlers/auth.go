@@ -96,8 +96,10 @@ func Login(db *database.Queries) http.HandlerFunc {
 
 		// Create JWT token
 		claims := &middleware.Claims{
-			OrgID: creator.OrgID.String(),
-			Role:  creator.Role,
+			CreatorID: creator.ID.String(),
+			Name:      creator.Username, // Assuming the username is used as the name. Adjust if there's a separate name field.
+			OrgID:     creator.OrgID.String(),
+			Role:      creator.Role,
 			RegisteredClaims: jwt.RegisteredClaims{
 				ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * 24 * time.Hour)),
 			},

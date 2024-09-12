@@ -3,11 +3,12 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 
+	"github.com/crea8r/muninn/server/internal/api/middleware"
 	"github.com/crea8r/muninn/server/internal/database"
-	"github.com/crea8r/muninn/server/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -20,20 +21,37 @@ func NewTagHandler(db *database.Queries) *TagHandler {
 	return &TagHandler{DB: db}
 }
 
+type ColorSchema struct {
+	Background string `json:"background"`
+	Text       string `json:"text"`
+}
+
 func (h *TagHandler) CreateTag(w http.ResponseWriter, r *http.Request) {
+	d,_ := io.ReadAll(r.Body)
 	var req struct {
 		Name        string          `json:"name"`
-		Description sql.NullString  `json:"description"`
+		Description string  `json:"description"`
 		ColorSchema json.RawMessage `json:"color_schema"`
 	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	
+	err := json.Unmarshal(d, &req)
+	if err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-
-	creator := r.Context().Value(middleware.CreatorContextKey).(database.Creator)
-
+	defer r.Body.Close()
+	
+	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
+	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
+	if err != nil {
+		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
+		return
+	}
+	err = json.Unmarshal(req.ColorSchema, &ColorSchema{})
+	if err != nil {
+		http.Error(w, "Invalid color schema", http.StatusBadRequest)
+		return
+	}
 	tag, err := h.DB.CreateTag(r.Context(), database.CreateTagParams{
 		Name:        req.Name,
 		Description: req.Description,
@@ -45,7 +63,6 @@ func (h *TagHandler) CreateTag(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to create tag", http.StatusInternalServerError)
 		return
 	}
-
 	json.NewEncoder(w).Encode(tag)
 }
 
@@ -57,7 +74,7 @@ func (h *TagHandler) UpdateTag(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Description sql.NullString  `json:"description"`
+		Description string  `json:"description"`
 		ColorSchema json.RawMessage `json:"color_schema"`
 	}
 
@@ -106,7 +123,12 @@ func (h *TagHandler) DeleteTag(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TagHandler) ListTags(w http.ResponseWriter, r *http.Request) {
-	creator := r.Context().Value(middleware.CreatorContextKey).(database.Creator)
+	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
+	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
+	if err != nil {
+		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
+		return
+	}
 
 	query := r.URL.Query().Get("q")
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -145,9 +167,9 @@ func (h *TagHandler) ListTags(w http.ResponseWriter, r *http.Request) {
 
 	response := struct {
 		Tags       []database.ListTagsRow `json:"tags"`
-		TotalCount int64          `json:"total_count"`
+		TotalCount int64          `json:"totalCount"`
 		Page       int            `json:"page"`
-		PageSize   int            `json:"page_size"`
+		PageSize   int            `json:"pageSize"`
 	}{
 		Tags:       tags,
 		TotalCount: totalCount,

@@ -14,8 +14,10 @@ var UserClaimsKey = "user_claims"
 
 // Claims holds the JWT claims
 type Claims struct {
-	OrgID string `json:"org_id"`
-	Role  string `json:"role"`
+	CreatorID string `json:"creator_id"`
+	Name      string `json:"name"`
+	OrgID     string `json:"org_id"`
+	Role      string `json:"role"`
 	jwt.RegisteredClaims
 }
 

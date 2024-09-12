@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -107,9 +106,9 @@ RETURNING id, name, description, creator_id, created_at, deleted_at
 `
 
 type CreateFunnelParams struct {
-	Name        string         `json:"name"`
-	Description sql.NullString `json:"description"`
-	CreatorID   uuid.NullUUID  `json:"creator_id"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	CreatorID   uuid.NullUUID `json:"creator_id"`
 }
 
 func (q *Queries) CreateFunnel(ctx context.Context, arg CreateFunnelParams) (Funnel, error) {
@@ -133,10 +132,10 @@ RETURNING id, name, description, id_string, creator_id, created_at, deleted_at
 `
 
 type CreateObjectParams struct {
-	Name        sql.NullString `json:"name"`
-	Description sql.NullString `json:"description"`
-	IDString    string         `json:"id_string"`
-	CreatorID   uuid.NullUUID  `json:"creator_id"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	IDString    string        `json:"id_string"`
+	CreatorID   uuid.NullUUID `json:"creator_id"`
 }
 
 func (q *Queries) CreateObject(ctx context.Context, arg CreateObjectParams) (Obj, error) {
@@ -192,7 +191,7 @@ RETURNING id, name, description, color_schema, org_id, created_at, deleted_at
 
 type CreateTagParams struct {
 	Name        string          `json:"name"`
-	Description sql.NullString  `json:"description"`
+	Description string          `json:"description"`
 	ColorSchema json.RawMessage `json:"color_schema"`
 	OrgID       uuid.UUID       `json:"org_id"`
 }
@@ -246,8 +245,7 @@ func (q *Queries) DeleteObject(ctx context.Context, id uuid.UUID) error {
 }
 
 const deleteTag = `-- name: DeleteTag :execrows
-UPDATE tag
-SET deleted_at = CURRENT_TIMESTAMP
+DELETE FROM tag 
 WHERE id = $1 AND deleted_at IS NULL
   AND NOT EXISTS (
     SELECT 1 FROM obj_tag WHERE tag_id = $1
@@ -595,7 +593,7 @@ type ListTagsParams struct {
 type ListTagsRow struct {
 	ID          uuid.UUID       `json:"id"`
 	Name        string          `json:"name"`
-	Description sql.NullString  `json:"description"`
+	Description string          `json:"description"`
 	ColorSchema json.RawMessage `json:"color_schema"`
 	CreatedAt   time.Time       `json:"created_at"`
 }
@@ -689,9 +687,9 @@ RETURNING id, name, description, creator_id, created_at, deleted_at
 `
 
 type UpdateFunnelParams struct {
-	ID          uuid.UUID      `json:"id"`
-	Name        string         `json:"name"`
-	Description sql.NullString `json:"description"`
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
 }
 
 func (q *Queries) UpdateFunnel(ctx context.Context, arg UpdateFunnelParams) (Funnel, error) {
@@ -716,10 +714,10 @@ RETURNING id, name, description, id_string, creator_id, created_at, deleted_at
 `
 
 type UpdateObjectParams struct {
-	ID          uuid.UUID      `json:"id"`
-	Name        sql.NullString `json:"name"`
-	Description sql.NullString `json:"description"`
-	IDString    string         `json:"id_string"`
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	IDString    string    `json:"id_string"`
 }
 
 func (q *Queries) UpdateObject(ctx context.Context, arg UpdateObjectParams) (Obj, error) {
@@ -751,7 +749,7 @@ RETURNING id, name, description, color_schema, org_id, created_at, deleted_at
 
 type UpdateTagParams struct {
 	ID          uuid.UUID       `json:"id"`
-	Description sql.NullString  `json:"description"`
+	Description string          `json:"description"`
 	ColorSchema json.RawMessage `json:"color_schema"`
 }
 

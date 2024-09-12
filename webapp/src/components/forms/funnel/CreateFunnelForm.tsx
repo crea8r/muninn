@@ -30,7 +30,7 @@ import {
   StarIcon,
   ArrowForwardIcon,
 } from '@chakra-ui/icons';
-import { NewFunnel, NewFunnelStep } from '../../types/';
+import { NewFunnel, NewFunnelStep } from 'src/types';
 
 interface CreateFunnelFormProps {
   isOpen: boolean;

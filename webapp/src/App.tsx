@@ -20,6 +20,8 @@ import {
   ListsPage,
   TagsPage,
 } from './pages/settings/';
+import NoPermissionPage from './pages/NoPermissionPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import './styles/tailwind.css';
 
 const theme = extendTheme({
@@ -51,6 +53,7 @@ const App: React.FC = () => {
           <Route exact path='/' component={LandingPage} />
           <Route exact path='/login' component={LoginPage} />
           <Route exact path='/register' component={RegisterPage} />
+          <Route exact path='/no-permission' component={NoPermissionPage} />
           <Route>
             <Flex direction='column' minH='100vh'>
               <Header />
@@ -58,34 +61,59 @@ const App: React.FC = () => {
                 <Sidebar />
                 <MainContent>
                   <Switch>
-                    <Route exact path='/feed' component={FeedPage} />
-                    <Route exact path='/tasks' component={TasksPage} />
-                    <Route exact path='/views' component={ViewsPage} />
-                    <Route exact path='/views/:id' component={ViewDetailPage} />
-                    <Route exact path='/objects' component={ObjectsPage} />
-                    <Route
+                    <ProtectedRoute exact path='/feed' component={FeedPage} />
+                    <ProtectedRoute exact path='/tasks' component={TasksPage} />
+                    <ProtectedRoute exact path='/views' component={ViewsPage} />
+                    <ProtectedRoute
+                      exact
+                      path='/views/:id'
+                      component={ViewDetailPage}
+                    />
+                    <ProtectedRoute
+                      exact
+                      path='/objects'
+                      component={ObjectsPage}
+                    />
+                    <ProtectedRoute
                       exact
                       path='/objects/:id'
                       component={ObjectDetailPage}
                     />
-                    <Route exact path='/settings' component={SettingsPage} />
-                    <Route
+                    <ProtectedRoute
+                      exact
+                      path='/settings'
+                      component={SettingsPage}
+                    />
+                    <ProtectedRoute
                       exact
                       path='/settings/object-types'
                       component={ObjectTypesPage}
                     />
-                    <Route
+                    <ProtectedRoute
                       exact
                       path='/settings/funnels'
                       component={FunnelsPage}
                     />
-                    <Route exact path='/settings/lists' component={ListsPage} />
-                    <Route exact path='/settings/tags' component={TagsPage} />
-                    <Route exact path='/account' component={AccountPage} />
-                    <Route
+                    <ProtectedRoute
+                      exact
+                      path='/settings/lists'
+                      component={ListsPage}
+                    />
+                    <ProtectedRoute
+                      exact
+                      path='/settings/tags'
+                      component={TagsPage}
+                    />
+                    <ProtectedRoute
+                      exact
+                      path='/account'
+                      component={AccountPage}
+                    />
+                    <ProtectedRoute
                       exact
                       path='/organisation'
                       component={OrganisationPage}
+                      requiredRole='admin'
                     />
                   </Switch>
                 </MainContent>

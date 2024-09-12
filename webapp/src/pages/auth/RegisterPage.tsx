@@ -9,20 +9,43 @@ import {
   Button,
   Text,
   Link as ChakraLink,
+  useToast,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useHistory } from 'react-router-dom';
+import { signup } from 'src/api/auth';
 
 const RegisterPage: React.FC = () => {
   const [orgName, setOrgName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const history = useHistory();
+  const toast = useToast();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual registration logic
-    console.log('Registration attempt with:', { orgName, username, password });
-    history.push('/on-boarding');
+    setIsLoading(true);
+
+    try {
+      await signup(orgName, username, password);
+      toast({
+        title: 'Register successful',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      history.push('/login');
+    } catch (error: any) {
+      toast({
+        title: 'Regisger failed',
+        description: error.message || 'An error occurred during login',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -72,6 +95,7 @@ const RegisterPage: React.FC = () => {
                 colorScheme='blue'
                 width='full'
                 bg='var(--color-primary)'
+                isLoading={isLoading}
               >
                 Register
               </Button>

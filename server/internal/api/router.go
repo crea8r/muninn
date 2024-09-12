@@ -22,6 +22,8 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 	})
 	r.Use(corsMiddleware.Handler)
 
+	tagHandler := handlers.NewTagHandler(db)
+
 	// Public routes
 	r.Post("/auth/signup", handlers.SignUp(db))
 	r.Post("/auth/login", handlers.Login(db))
@@ -30,9 +32,13 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.Permission)
 
-		// Add your protected routes here
-		// For example:
-		// r.Get("/objects", handlers.ListObjects(db))
+		r.Route("/setting/tags", func(r chi.Router) {
+			r.Use(middleware.Permission)
+			r.Post("/", tagHandler.CreateTag)
+			r.Get("/", tagHandler.ListTags)
+			r.Put("/{id}", tagHandler.UpdateTag)
+			r.Delete("/{id}", tagHandler.DeleteTag)
+		})
 	})
 
 	return r

@@ -111,8 +111,7 @@ WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
 -- name: DeleteTag :execrows
-UPDATE tag
-SET deleted_at = CURRENT_TIMESTAMP
+DELETE FROM tag 
 WHERE id = $1 AND deleted_at IS NULL
   AND NOT EXISTS (
     SELECT 1 FROM obj_tag WHERE tag_id = $1

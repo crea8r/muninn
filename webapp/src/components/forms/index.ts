@@ -1,10 +1,11 @@
-import CreateFunnelForm from './CreateFunnelForm';
-import EditFunnelForm from './EditFunnelForm';
+import CreateFunnelForm from './funnel/CreateFunnelForm';
+import EditFunnelForm from './funnel/EditFunnelForm';
 import FactForm from './FactForm';
 import ListForm from './ListForm';
-import NewTagForm from './NewTagForm';
+import NewTagForm from './tag/NewTagForm';
 import ObjectTypeForm from './ObjectTypeForm';
 import TaskForm from './TaskForm';
+import EditTagForm from './tag/EditTagForm';
 
 export {
   CreateFunnelForm,
@@ -14,4 +15,5 @@ export {
   NewTagForm,
   ObjectTypeForm,
   TaskForm,
+  EditTagForm,
 };

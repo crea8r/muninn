@@ -44,7 +44,7 @@ import {
   ArrowForwardIcon,
   WarningIcon,
 } from '@chakra-ui/icons';
-import { Funnel, FunnelStep } from '../../types/';
+import { Funnel, FunnelStep } from '../../../types';
 
 interface EditFunnelFormProps {
   isOpen: boolean;

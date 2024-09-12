@@ -25,7 +25,7 @@ import {
   NewFunnelStep,
 } from '../../types/Funnel';
 import { fetchAllFunnels } from '../../api';
-import EditFunnelForm from '../../components/forms/EditFunnelForm';
+import EditFunnelForm from '../../components/forms/funnel/EditFunnelForm';
 
 const FunnelsPage: React.FC = () => {
   const [funnels, setFunnels] = useState<Funnel[]>([]);

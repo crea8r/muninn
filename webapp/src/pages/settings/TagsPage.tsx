@@ -18,177 +18,263 @@ import {
   InputLeftElement,
   Flex,
   Select,
+  useToast,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
-import BreadcrumbComponent from '../../components/Breadcrumb';
-import NewTagForm from '../../components/forms/NewTagForm';
+import BreadcrumbComponent from 'src/components/Breadcrumb';
+import { NewTagForm, EditTagForm } from 'src/components/forms';
+import {
+  listTags,
+  createTag,
+  updateTag,
+  deleteTag,
+  ListTagsParams,
+  UpdateTagParams,
+} from 'src/api/tag';
+import { Tag } from 'src/types';
 
-interface Tag {
-  id: number;
-  name: string;
-  description: string;
-  color_schema: {
-    background: string;
-    text: string;
-  };
-}
-
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 6;
 
 const TagsPage: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
-  const [filteredTags, setFilteredTags] = useState<Tag[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
+  const {
+    isOpen: isNewTagOpen,
+    onOpen: onNewTagOpen,
+    onClose: onNewTagClose,
+  } = useDisclosure();
+  const {
+    isOpen: isEditTagOpen,
+    onOpen: onEditTagOpen,
+    onClose: onEditTagClose,
+  } = useDisclosure();
+  const toast = useToast();
 
   useEffect(() => {
     fetchTags();
-  }, []);
-
-  useEffect(() => {
-    const filtered = tags.filter(
-      (tag) =>
-        tag.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tag.description.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setFilteredTags(filtered);
-    setCurrentPage(1);
-  }, [tags, searchQuery]);
+  }, [currentPage, searchQuery]);
 
   const fetchTags = async () => {
-    // TODO: Replace with actual API call
-    const dummyTags: Tag[] = [
-      // ... (previous dummy data)
-    ];
-    // Generate more dummy data for pagination demo
-    for (let i = 4; i <= 50; i++) {
-      dummyTags.push({
-        id: i,
-        name: `Tag ${i}`,
-        description: `Description for Tag ${i}`,
-        color_schema: {
-          background: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
-          text: '#000000',
-        },
+    setIsLoading(true);
+    try {
+      const params: ListTagsParams = {
+        page: currentPage,
+        pageSize: ITEMS_PER_PAGE,
+        query: searchQuery,
+      };
+      const response = await listTags(params);
+      setTags(response.tags || []);
+      setTotalCount(response.totalCount);
+    } catch (error) {
+      toast({
+        title: 'Error fetching tags',
+        description: 'Please try again later.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
       });
     }
-    setTags(dummyTags);
+    setIsLoading(false);
   };
 
   const handleAddTag = async (newTag: Omit<Tag, 'id'>) => {
-    // TODO: Replace with actual API call
-    const tagWithId = { ...newTag, id: Date.now() };
-    setTags([...tags, tagWithId]);
-    onClose();
+    try {
+      await createTag(newTag);
+      fetchTags();
+      onNewTagClose();
+      toast({
+        title: 'Tag created',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error creating tag',
+        description: 'Please try again later.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleUpdateTag = async (id: string, updatedTag: UpdateTagParams) => {
+    try {
+      await updateTag(id, updatedTag);
+      fetchTags();
+      onEditTagClose();
+      toast({
+        title: 'Tag updated',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error updating tag',
+        description: 'Please try again later.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleDeleteTag = async (id: string) => {
+    try {
+      await deleteTag(id);
+      fetchTags();
+      toast({
+        title: 'Tag deleted',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error deleting tag',
+        description:
+          'The tag might be in use or you may not have permission to delete it.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
+    setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(filteredTags.length / ITEMS_PER_PAGE);
-  const paginatedTags = filteredTags.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const handleEditClick = (tag: Tag) => {
+    setSelectedTag(tag);
+    onEditTagOpen();
+  };
+
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   return (
-    <Flex direction='column' height='100%'>
-      <Box mb={6}>
-        <BreadcrumbComponent />
-        <HStack justify='space-between' mb={6}>
-          <Heading as='h1' size='xl' color='var(--color-primary)'>
-            Tags
-          </Heading>
-          <Button colorScheme='blue' bg='var(--color-primary)' onClick={onOpen}>
-            New Tag
+    <Box>
+      <BreadcrumbComponent />
+      <HStack justify='space-between' mb={6}>
+        <Heading as='h1' size='xl' color='var(--color-primary)'>
+          Tags
+        </Heading>
+        <Button
+          colorScheme='blue'
+          bg='var(--color-primary)'
+          onClick={onNewTagOpen}
+        >
+          New Tag
+        </Button>
+      </HStack>
+
+      <InputGroup mb={4}>
+        <InputLeftElement pointerEvents='none'>
+          <SearchIcon color='gray.300' />
+        </InputLeftElement>
+        <Input
+          placeholder='Search tags...'
+          value={searchQuery}
+          onChange={handleSearchChange}
+        />
+      </InputGroup>
+
+      <Table variant='simple'>
+        <Thead>
+          <Tr>
+            <Th>Name</Th>
+            <Th>Description</Th>
+            <Th>Actions</Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {tags.map((tag) => (
+            <Tr key={tag.id}>
+              <Td>
+                <ChakraTag
+                  backgroundColor={tag.color_schema.background}
+                  color={tag.color_schema.text}
+                >
+                  {tag.name}
+                </ChakraTag>
+              </Td>
+              <Td>{tag.description}</Td>
+              <Td>
+                <Button size='sm' mr={2} onClick={() => handleEditClick(tag)}>
+                  Edit
+                </Button>
+                <Button
+                  size='sm'
+                  colorScheme='red'
+                  onClick={() => handleDeleteTag(tag.id.toString())}
+                >
+                  Delete
+                </Button>
+              </Td>
+            </Tr>
+          ))}
+        </Tbody>
+      </Table>
+
+      <Flex justifyContent='space-between' alignItems='center' mt={4}>
+        <Box>
+          Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
+          {Math.min(currentPage * ITEMS_PER_PAGE, totalCount || 0)} of{' '}
+          {totalCount || 0} tags
+        </Box>
+        <HStack>
+          <Button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            isLoading={isLoading}
+          >
+            Previous
+          </Button>
+          <Select
+            value={currentPage}
+            onChange={(e) => setCurrentPage(Number(e.target.value))}
+          >
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <option key={page} value={page}>
+                Page {page}
+              </option>
+            ))}
+          </Select>
+          <Button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            isLoading={isLoading}
+          >
+            Next
           </Button>
         </HStack>
-
-        <InputGroup mb={4}>
-          <InputLeftElement pointerEvents='none'>
-            <SearchIcon color='gray.300' />
-          </InputLeftElement>
-          <Input
-            placeholder='Search tags...'
-            value={searchQuery}
-            onChange={handleSearchChange}
-          />
-        </InputGroup>
-      </Box>
-
-      <Box flex='1' overflow='auto'>
-        <Table variant='simple'>
-          <Thead position='sticky' top={0} bg='white' zIndex={1}>
-            <Tr>
-              <Th>Name</Th>
-              <Th>Description</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {paginatedTags.map((tag) => (
-              <Tr key={tag.id}>
-                <Td>
-                  <ChakraTag
-                    backgroundColor={tag.color_schema.background}
-                    color={tag.color_schema.text}
-                  >
-                    {tag.name}
-                  </ChakraTag>
-                </Td>
-                <Td>{tag.description}</Td>
-              </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </Box>
-
-      <Box mt={4}>
-        <Flex justifyContent='space-between' alignItems='center'>
-          <Box>
-            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
-            {Math.min(currentPage * ITEMS_PER_PAGE, filteredTags.length)} of{' '}
-            {filteredTags.length} tags
-          </Box>
-          <HStack>
-            <Button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            <Select
-              value={currentPage}
-              onChange={(e) => setCurrentPage(Number(e.target.value))}
-            >
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
-                  <option key={page} value={page}>
-                    Page {page}
-                  </option>
-                )
-              )}
-            </Select>
-            <Button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </Button>
-          </HStack>
-        </Flex>
-      </Box>
+      </Flex>
 
       <NewTagForm
-        isOpen={isOpen}
-        onClose={onClose}
+        isOpen={isNewTagOpen}
+        onClose={onNewTagClose}
         onAddTag={handleAddTag}
         existingTags={tags}
       />
-    </Flex>
+
+      {selectedTag && (
+        <EditTagForm
+          isOpen={isEditTagOpen}
+          onClose={onEditTagClose}
+          onEditTag={handleUpdateTag}
+          tag={selectedTag}
+        />
+      )}
+    </Box>
   );
 };
 

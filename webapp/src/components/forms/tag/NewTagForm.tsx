@@ -12,16 +12,20 @@ import {
   FormLabel,
   Input,
   VStack,
-  HStack,
   useToast,
 } from '@chakra-ui/react';
-
-import { Tag } from 'src/types';
+import { CreateTagParams } from 'src/api/tag';
+import { Tag } from 'src/types/Tag';
+import {
+  getRandomDarkColor,
+  getRandomBrightColor,
+  normalizeToTagStyle,
+} from 'src/utils';
 
 interface NewTagFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddTag: (newTag: Omit<Tag, 'id'>) => void;
+  onAddTag: (newTag: CreateTagParams) => Promise<void>;
   existingTags: Tag[];
 }
 
@@ -33,19 +37,19 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [backgroundColor, setBackgroundColor] = useState('#000000');
-  const [textColor, setTextColor] = useState('#FFFFFF');
+  const [backgroundColor, setBackgroundColor] = useState(getRandomDarkColor());
+  const [textColor, setTextColor] = useState(getRandomBrightColor());
   const toast = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (
       existingTags.some((tag) => tag.name.toLowerCase() === name.toLowerCase())
     ) {
       toast({
-        title: 'Error',
-        description: 'Tag name must be unique',
+        title: 'Tag already exists',
+        description: 'Please choose a different name.',
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -53,8 +57,8 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
       return;
     }
 
-    const newTag: Omit<Tag, 'id'> = {
-      name,
+    const newTag: CreateTagParams = {
+      name: normalizeToTagStyle(name),
       description,
       color_schema: {
         background: backgroundColor,
@@ -62,22 +66,29 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
       },
     };
 
-    onAddTag(newTag);
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setName('');
-    setDescription('');
-    setBackgroundColor('#000000');
-    setTextColor('#FFFFFF');
+    try {
+      await onAddTag(newTag);
+      setName('');
+      setDescription('');
+      setBackgroundColor(getRandomDarkColor());
+      setTextColor(getRandomBrightColor());
+      onClose();
+    } catch (error) {
+      toast({
+        title: 'Error creating tag',
+        description: 'Please try again later.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Add New Tag</ModalHeader>
+        <ModalHeader>Create New Tag</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <form onSubmit={handleSubmit}>
@@ -90,33 +101,31 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
                 <FormLabel>Description</FormLabel>
                 <Input
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) => setDescription(e.target.value || '')}
                 />
               </FormControl>
-              <HStack width='100%'>
-                <FormControl>
-                  <FormLabel>Background Color</FormLabel>
-                  <Input
-                    type='color'
-                    value={backgroundColor}
-                    onChange={(e) => setBackgroundColor(e.target.value)}
-                  />
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Text Color</FormLabel>
-                  <Input
-                    type='color'
-                    value={textColor}
-                    onChange={(e) => setTextColor(e.target.value)}
-                  />
-                </FormControl>
-              </HStack>
+              <FormControl>
+                <FormLabel>Background Color</FormLabel>
+                <Input
+                  type='color'
+                  value={backgroundColor}
+                  onChange={(e) => setBackgroundColor(e.target.value)}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel>Text Color</FormLabel>
+                <Input
+                  type='color'
+                  value={textColor}
+                  onChange={(e) => setTextColor(e.target.value)}
+                />
+              </FormControl>
             </VStack>
           </form>
         </ModalBody>
         <ModalFooter>
           <Button colorScheme='blue' mr={3} onClick={handleSubmit}>
-            Add Tag
+            Create
           </Button>
           <Button variant='ghost' onClick={onClose}>
             Cancel
