@@ -7,25 +7,39 @@ package database
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 )
 
 type Querier interface {
+	CountTags(ctx context.Context, arg CountTagsParams) (int64, error)
 	CreateCreator(ctx context.Context, arg CreateCreatorParams) (Creator, error)
+	CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error)
 	CreateFunnel(ctx context.Context, arg CreateFunnelParams) (Funnel, error)
 	CreateObject(ctx context.Context, arg CreateObjectParams) (Obj, error)
-	DeleteCreator(ctx context.Context, id pgtype.UUID) error
-	DeleteFunnel(ctx context.Context, id pgtype.UUID) error
-	DeleteObject(ctx context.Context, id pgtype.UUID) error
-	GetCreator(ctx context.Context, id pgtype.UUID) (Creator, error)
-	GetFunnel(ctx context.Context, id pgtype.UUID) (Funnel, error)
-	GetObject(ctx context.Context, id pgtype.UUID) (Obj, error)
+	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Org, error)
+	// Setting/Tag section
+	CreateTag(ctx context.Context, arg CreateTagParams) (Tag, error)
+	DeleteCreator(ctx context.Context, id uuid.UUID) error
+	DeleteFunnel(ctx context.Context, id uuid.UUID) error
+	DeleteObject(ctx context.Context, id uuid.UUID) error
+	DeleteTag(ctx context.Context, id uuid.UUID) (int64, error)
+	GetCreator(ctx context.Context, id uuid.UUID) (Creator, error)
+	GetCreatorByID(ctx context.Context, id uuid.UUID) (Creator, error)
+	GetCreatorByUsername(ctx context.Context, arg GetCreatorByUsernameParams) (Creator, error)
+	GetFeed(ctx context.Context, creatorID uuid.UUID) ([]Feed, error)
+	GetFunnel(ctx context.Context, id uuid.UUID) (Funnel, error)
+	GetObject(ctx context.Context, id uuid.UUID) (Obj, error)
+	GetSessionByToken(ctx context.Context, jwt string) (CreatorSession, error)
+	GetTagByID(ctx context.Context, id uuid.UUID) (Tag, error)
 	ListCreators(ctx context.Context, arg ListCreatorsParams) ([]Creator, error)
 	ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]Funnel, error)
 	ListObjects(ctx context.Context, arg ListObjectsParams) ([]Obj, error)
+	ListTags(ctx context.Context, arg ListTagsParams) ([]ListTagsRow, error)
+	MarkFeedAsSeen(ctx context.Context, dollar_1 []uuid.UUID) error
 	UpdateCreator(ctx context.Context, arg UpdateCreatorParams) (Creator, error)
 	UpdateFunnel(ctx context.Context, arg UpdateFunnelParams) (Funnel, error)
 	UpdateObject(ctx context.Context, arg UpdateObjectParams) (Obj, error)
+	UpdateTag(ctx context.Context, arg UpdateTagParams) (Tag, error)
 }
 
 var _ Querier = (*Queries)(nil)

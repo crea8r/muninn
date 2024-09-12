@@ -5,173 +5,177 @@
 package database
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
+	"database/sql"
+	"encoding/json"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type Creator struct {
-	ID        pgtype.UUID        `json:"id"`
-	Username  string             `json:"username"`
-	Pwd       string             `json:"pwd"`
-	Profile   []byte             `json:"profile"`
-	Role      string             `json:"role"`
-	OrgID     pgtype.UUID        `json:"orgId"`
-	Active    pgtype.Bool        `json:"active"`
-	CreatedAt pgtype.Timestamptz `json:"createdAt"`
-	DeletedAt pgtype.Timestamptz `json:"deletedAt"`
+	ID        uuid.UUID       `json:"id"`
+	Username  string          `json:"username"`
+	Pwd       string          `json:"pwd"`
+	Profile   json.RawMessage `json:"profile"`
+	Role      string          `json:"role"`
+	OrgID     uuid.UUID       `json:"org_id"`
+	Active    bool            `json:"active"`
+	CreatedAt time.Time       `json:"created_at"`
+	DeletedAt sql.NullTime    `json:"deleted_at"`
 }
 
 type CreatorList struct {
-	CreatorID   pgtype.UUID        `json:"creatorId"`
-	ListID      pgtype.UUID        `json:"listId"`
-	Params      []byte             `json:"params"`
-	CreatedAt   pgtype.Timestamptz `json:"createdAt"`
-	LastUpdated pgtype.Timestamptz `json:"lastUpdated"`
+	CreatorID   uuid.UUID       `json:"creator_id"`
+	ListID      uuid.UUID       `json:"list_id"`
+	Params      json.RawMessage `json:"params"`
+	CreatedAt   time.Time       `json:"created_at"`
+	LastUpdated time.Time       `json:"last_updated"`
 }
 
 type CreatorSession struct {
-	ID        pgtype.UUID        `json:"id"`
-	CreatorID pgtype.UUID        `json:"creatorId"`
-	Jwt       string             `json:"jwt"`
-	ExpiredAt pgtype.Timestamptz `json:"expiredAt"`
-	CreatedAt pgtype.Timestamptz `json:"createdAt"`
+	ID        uuid.UUID `json:"id"`
+	CreatorID uuid.UUID `json:"creator_id"`
+	Jwt       string    `json:"jwt"`
+	ExpiredAt time.Time `json:"expired_at"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type Fact struct {
-	ID          pgtype.UUID        `json:"id"`
-	Text        string             `json:"text"`
-	HappenedAt  pgtype.Timestamptz `json:"happenedAt"`
-	Location    pgtype.Text        `json:"location"`
-	CreatorID   pgtype.UUID        `json:"creatorId"`
-	CreatedAt   pgtype.Timestamptz `json:"createdAt"`
-	LastUpdated pgtype.Timestamptz `json:"lastUpdated"`
-	DeletedAt   pgtype.Timestamptz `json:"deletedAt"`
+	ID          uuid.UUID      `json:"id"`
+	Text        string         `json:"text"`
+	HappenedAt  sql.NullTime   `json:"happened_at"`
+	Location    sql.NullString `json:"location"`
+	CreatorID   uuid.NullUUID  `json:"creator_id"`
+	CreatedAt   time.Time      `json:"created_at"`
+	LastUpdated time.Time      `json:"last_updated"`
+	DeletedAt   sql.NullTime   `json:"deleted_at"`
 }
 
 type Feed struct {
-	ID        pgtype.UUID        `json:"id"`
-	CreatorID pgtype.UUID        `json:"creatorId"`
-	Content   []byte             `json:"content"`
-	Seen      pgtype.Bool        `json:"seen"`
-	CreatedAt pgtype.Timestamptz `json:"createdAt"`
-	DeletedAt pgtype.Timestamptz `json:"deletedAt"`
+	ID        uuid.UUID       `json:"id"`
+	CreatorID uuid.UUID       `json:"creator_id"`
+	Content   json.RawMessage `json:"content"`
+	Seen      bool            `json:"seen"`
+	CreatedAt time.Time       `json:"created_at"`
+	DeletedAt sql.NullTime    `json:"deleted_at"`
 }
 
 type Funnel struct {
-	ID          pgtype.UUID        `json:"id"`
-	Name        string             `json:"name"`
-	Description pgtype.Text        `json:"description"`
-	CreatorID   pgtype.UUID        `json:"creatorId"`
-	CreatedAt   pgtype.Timestamptz `json:"createdAt"`
-	DeletedAt   pgtype.Timestamptz `json:"deletedAt"`
+	ID          uuid.UUID      `json:"id"`
+	Name        string         `json:"name"`
+	Description sql.NullString `json:"description"`
+	CreatorID   uuid.NullUUID  `json:"creator_id"`
+	CreatedAt   time.Time      `json:"created_at"`
+	DeletedAt   sql.NullTime   `json:"deleted_at"`
 }
 
 type List struct {
-	ID            pgtype.UUID        `json:"id"`
-	Name          string             `json:"name"`
-	Description   pgtype.Text        `json:"description"`
-	FilterSetting []byte             `json:"filterSetting"`
-	CreatorID     pgtype.UUID        `json:"creatorId"`
-	CreatedAt     pgtype.Timestamptz `json:"createdAt"`
-	LastUpdated   pgtype.Timestamptz `json:"lastUpdated"`
-	DeletedAt     pgtype.Timestamptz `json:"deletedAt"`
+	ID            uuid.UUID       `json:"id"`
+	Name          string          `json:"name"`
+	Description   sql.NullString  `json:"description"`
+	FilterSetting json.RawMessage `json:"filter_setting"`
+	CreatorID     uuid.NullUUID   `json:"creator_id"`
+	CreatedAt     time.Time       `json:"created_at"`
+	LastUpdated   time.Time       `json:"last_updated"`
+	DeletedAt     sql.NullTime    `json:"deleted_at"`
 }
 
 type Obj struct {
-	ID          pgtype.UUID        `json:"id"`
-	Name        pgtype.Text        `json:"name"`
-	Description pgtype.Text        `json:"description"`
-	IDString    string             `json:"idString"`
-	CreatorID   pgtype.UUID        `json:"creatorId"`
-	CreatedAt   pgtype.Timestamptz `json:"createdAt"`
-	DeletedAt   pgtype.Timestamptz `json:"deletedAt"`
+	ID          uuid.UUID      `json:"id"`
+	Name        sql.NullString `json:"name"`
+	Description sql.NullString `json:"description"`
+	IDString    string         `json:"id_string"`
+	CreatorID   uuid.NullUUID  `json:"creator_id"`
+	CreatedAt   time.Time      `json:"created_at"`
+	DeletedAt   sql.NullTime   `json:"deleted_at"`
 }
 
 type ObjFact struct {
-	ObjID  pgtype.UUID `json:"objId"`
-	FactID pgtype.UUID `json:"factId"`
+	ObjID  uuid.UUID `json:"obj_id"`
+	FactID uuid.UUID `json:"fact_id"`
 }
 
 type ObjStep struct {
-	ObjID       pgtype.UUID        `json:"objId"`
-	StepID      pgtype.UUID        `json:"stepId"`
-	CreatedAt   pgtype.Timestamptz `json:"createdAt"`
-	LastUpdated pgtype.Timestamptz `json:"lastUpdated"`
+	ObjID       uuid.UUID `json:"obj_id"`
+	StepID      uuid.UUID `json:"step_id"`
+	CreatedAt   time.Time `json:"created_at"`
+	LastUpdated time.Time `json:"last_updated"`
 }
 
 type ObjTag struct {
-	ObjID pgtype.UUID `json:"objId"`
-	TagID pgtype.UUID `json:"tagId"`
+	ObjID uuid.UUID `json:"obj_id"`
+	TagID uuid.UUID `json:"tag_id"`
 }
 
 type ObjTask struct {
-	ObjID  pgtype.UUID `json:"objId"`
-	TaskID pgtype.UUID `json:"taskId"`
+	ObjID  uuid.UUID `json:"obj_id"`
+	TaskID uuid.UUID `json:"task_id"`
 }
 
 type ObjType struct {
-	ID          pgtype.UUID        `json:"id"`
-	Name        string             `json:"name"`
-	Description string             `json:"description"`
-	Fields      []byte             `json:"fields"`
-	CreatorID   pgtype.UUID        `json:"creatorId"`
-	CreatedAt   pgtype.Timestamptz `json:"createdAt"`
-	DeletedAt   pgtype.Timestamptz `json:"deletedAt"`
+	ID          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Fields      json.RawMessage `json:"fields"`
+	CreatorID   uuid.NullUUID   `json:"creator_id"`
+	CreatedAt   time.Time       `json:"created_at"`
+	DeletedAt   sql.NullTime    `json:"deleted_at"`
 }
 
 // This table has full-text search capabilities on its JSON data
 type ObjTypeValue struct {
-	ID          pgtype.UUID        `json:"id"`
-	ObjID       pgtype.UUID        `json:"objId"`
-	TypeID      pgtype.UUID        `json:"typeId"`
-	Values      []byte             `json:"values"`
-	CreatedAt   pgtype.Timestamptz `json:"createdAt"`
-	LastUpdated pgtype.Timestamptz `json:"lastUpdated"`
-	DeletedAt   pgtype.Timestamptz `json:"deletedAt"`
+	ID          uuid.UUID       `json:"id"`
+	ObjID       uuid.NullUUID   `json:"obj_id"`
+	TypeID      uuid.NullUUID   `json:"type_id"`
+	Values      json.RawMessage `json:"values"`
+	CreatedAt   time.Time       `json:"created_at"`
+	LastUpdated time.Time       `json:"last_updated"`
+	DeletedAt   sql.NullTime    `json:"deleted_at"`
 	// This column contains the tsvector for full-text search
-	SearchVector interface{} `json:"searchVector"`
+	SearchVector interface{} `json:"search_vector"`
 }
 
 type Org struct {
-	ID        pgtype.UUID        `json:"id"`
-	Name      string             `json:"name"`
-	Profile   []byte             `json:"profile"`
-	CreatedAt pgtype.Timestamptz `json:"createdAt"`
-	DeletedAt pgtype.Timestamptz `json:"deletedAt"`
+	ID        uuid.UUID       `json:"id"`
+	Name      string          `json:"name"`
+	Profile   json.RawMessage `json:"profile"`
+	CreatedAt time.Time       `json:"created_at"`
+	DeletedAt sql.NullTime    `json:"deleted_at"`
 }
 
 type Step struct {
-	ID          pgtype.UUID        `json:"id"`
-	FunnelID    pgtype.UUID        `json:"funnelId"`
-	Name        string             `json:"name"`
-	Definition  pgtype.Text        `json:"definition"`
-	Example     pgtype.Text        `json:"example"`
-	Action      pgtype.Text        `json:"action"`
-	ParentStep  pgtype.UUID        `json:"parentStep"`
-	CreatedAt   pgtype.Timestamptz `json:"createdAt"`
-	LastUpdated pgtype.Timestamptz `json:"lastUpdated"`
-	DeletedAt   pgtype.Timestamptz `json:"deletedAt"`
+	ID          uuid.UUID      `json:"id"`
+	FunnelID    uuid.NullUUID  `json:"funnel_id"`
+	Name        string         `json:"name"`
+	Definition  sql.NullString `json:"definition"`
+	Example     sql.NullString `json:"example"`
+	Action      sql.NullString `json:"action"`
+	ParentStep  uuid.NullUUID  `json:"parent_step"`
+	CreatedAt   time.Time      `json:"created_at"`
+	LastUpdated time.Time      `json:"last_updated"`
+	DeletedAt   sql.NullTime   `json:"deleted_at"`
 }
 
 type Tag struct {
-	ID          pgtype.UUID        `json:"id"`
-	Name        string             `json:"name"`
-	Description pgtype.Text        `json:"description"`
-	ColorSchema []byte             `json:"colorSchema"`
-	OrgID       pgtype.UUID        `json:"orgId"`
-	CreatedAt   pgtype.Timestamptz `json:"createdAt"`
-	DeletedAt   pgtype.Timestamptz `json:"deletedAt"`
+	ID          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description sql.NullString  `json:"description"`
+	ColorSchema json.RawMessage `json:"color_schema"`
+	OrgID       uuid.UUID       `json:"org_id"`
+	CreatedAt   time.Time       `json:"created_at"`
+	DeletedAt   sql.NullTime    `json:"deleted_at"`
 }
 
 type Task struct {
-	ID          pgtype.UUID        `json:"id"`
-	Content     string             `json:"content"`
-	Deadline    pgtype.Timestamptz `json:"deadline"`
-	RemindAt    pgtype.Timestamptz `json:"remindAt"`
-	Status      string             `json:"status"`
-	CreatorID   pgtype.UUID        `json:"creatorId"`
-	AssignedID  pgtype.UUID        `json:"assignedId"`
-	ParentID    pgtype.UUID        `json:"parentId"`
-	CreatedAt   pgtype.Timestamptz `json:"createdAt"`
-	LastUpdated pgtype.Timestamptz `json:"lastUpdated"`
-	DeletedAt   pgtype.Timestamptz `json:"deletedAt"`
+	ID          uuid.UUID     `json:"id"`
+	Content     string        `json:"content"`
+	Deadline    sql.NullTime  `json:"deadline"`
+	RemindAt    sql.NullTime  `json:"remind_at"`
+	Status      string        `json:"status"`
+	CreatorID   uuid.NullUUID `json:"creator_id"`
+	AssignedID  uuid.NullUUID `json:"assigned_id"`
+	ParentID    uuid.NullUUID `json:"parent_id"`
+	CreatedAt   time.Time     `json:"created_at"`
+	LastUpdated time.Time     `json:"last_updated"`
+	DeletedAt   sql.NullTime  `json:"deleted_at"`
 }

@@ -37,8 +37,8 @@ CREATE TABLE creator (
     pwd VARCHAR(255) NOT NULL,
     profile JSONB NOT NULL,
     role VARCHAR(50) CHECK (role IN ('admin', 'member')) NOT NULL,
-    org_id UUID REFERENCES org(id) ON DELETE CASCADE,
-    active BOOLEAN DEFAULT TRUE,
+    org_id UUID NOT NULL REFERENCES org(id) ON DELETE CASCADE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE,
     UNIQUE (username, org_id)
@@ -47,7 +47,7 @@ CREATE TABLE creator (
 -- Create the creator_session table
 CREATE TABLE creator_session (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    creator_id UUID REFERENCES creator(id) ON DELETE CASCADE,
+    creator_id UUID NOT NULL REFERENCES creator(id) ON DELETE CASCADE,
     jwt TEXT NOT NULL,
     expired_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -59,7 +59,7 @@ CREATE TABLE tag (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     color_schema JSONB NOT NULL,
-    org_id UUID REFERENCES org(id) ON DELETE CASCADE,
+    org_id UUID NOT NULL REFERENCES org(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE,
     UNIQUE (name, org_id)
@@ -154,9 +154,9 @@ CREATE TABLE list (
 -- Create the feed table
 CREATE TABLE feed (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    creator_id UUID REFERENCES creator(id) ON DELETE CASCADE,
+    creator_id UUID NOT NULL REFERENCES creator(id) ON DELETE CASCADE,
     content JSONB NOT NULL,
-    seen BOOLEAN DEFAULT FALSE,
+    seen BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
 );

@@ -6,27 +6,353 @@ package database
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
+	"database/sql"
+	"fmt"
 )
 
 type DBTX interface {
-	Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error)
-	Query(context.Context, string, ...interface{}) (pgx.Rows, error)
-	QueryRow(context.Context, string, ...interface{}) pgx.Row
+	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
+	PrepareContext(context.Context, string) (*sql.Stmt, error)
+	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
+	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
 }
 
 func New(db DBTX) *Queries {
 	return &Queries{db: db}
 }
 
-type Queries struct {
-	db DBTX
+func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
+	q := Queries{db: db}
+	var err error
+	if q.countTagsStmt, err = db.PrepareContext(ctx, countTags); err != nil {
+		return nil, fmt.Errorf("error preparing query CountTags: %w", err)
+	}
+	if q.createCreatorStmt, err = db.PrepareContext(ctx, createCreator); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateCreator: %w", err)
+	}
+	if q.createFeedStmt, err = db.PrepareContext(ctx, createFeed); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateFeed: %w", err)
+	}
+	if q.createFunnelStmt, err = db.PrepareContext(ctx, createFunnel); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateFunnel: %w", err)
+	}
+	if q.createObjectStmt, err = db.PrepareContext(ctx, createObject); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateObject: %w", err)
+	}
+	if q.createOrganizationStmt, err = db.PrepareContext(ctx, createOrganization); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateOrganization: %w", err)
+	}
+	if q.createTagStmt, err = db.PrepareContext(ctx, createTag); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateTag: %w", err)
+	}
+	if q.deleteCreatorStmt, err = db.PrepareContext(ctx, deleteCreator); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteCreator: %w", err)
+	}
+	if q.deleteFunnelStmt, err = db.PrepareContext(ctx, deleteFunnel); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteFunnel: %w", err)
+	}
+	if q.deleteObjectStmt, err = db.PrepareContext(ctx, deleteObject); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteObject: %w", err)
+	}
+	if q.deleteTagStmt, err = db.PrepareContext(ctx, deleteTag); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteTag: %w", err)
+	}
+	if q.getCreatorStmt, err = db.PrepareContext(ctx, getCreator); err != nil {
+		return nil, fmt.Errorf("error preparing query GetCreator: %w", err)
+	}
+	if q.getCreatorByIDStmt, err = db.PrepareContext(ctx, getCreatorByID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetCreatorByID: %w", err)
+	}
+	if q.getCreatorByUsernameStmt, err = db.PrepareContext(ctx, getCreatorByUsername); err != nil {
+		return nil, fmt.Errorf("error preparing query GetCreatorByUsername: %w", err)
+	}
+	if q.getFeedStmt, err = db.PrepareContext(ctx, getFeed); err != nil {
+		return nil, fmt.Errorf("error preparing query GetFeed: %w", err)
+	}
+	if q.getFunnelStmt, err = db.PrepareContext(ctx, getFunnel); err != nil {
+		return nil, fmt.Errorf("error preparing query GetFunnel: %w", err)
+	}
+	if q.getObjectStmt, err = db.PrepareContext(ctx, getObject); err != nil {
+		return nil, fmt.Errorf("error preparing query GetObject: %w", err)
+	}
+	if q.getSessionByTokenStmt, err = db.PrepareContext(ctx, getSessionByToken); err != nil {
+		return nil, fmt.Errorf("error preparing query GetSessionByToken: %w", err)
+	}
+	if q.getTagByIDStmt, err = db.PrepareContext(ctx, getTagByID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetTagByID: %w", err)
+	}
+	if q.listCreatorsStmt, err = db.PrepareContext(ctx, listCreators); err != nil {
+		return nil, fmt.Errorf("error preparing query ListCreators: %w", err)
+	}
+	if q.listFunnelsStmt, err = db.PrepareContext(ctx, listFunnels); err != nil {
+		return nil, fmt.Errorf("error preparing query ListFunnels: %w", err)
+	}
+	if q.listObjectsStmt, err = db.PrepareContext(ctx, listObjects); err != nil {
+		return nil, fmt.Errorf("error preparing query ListObjects: %w", err)
+	}
+	if q.listTagsStmt, err = db.PrepareContext(ctx, listTags); err != nil {
+		return nil, fmt.Errorf("error preparing query ListTags: %w", err)
+	}
+	if q.markFeedAsSeenStmt, err = db.PrepareContext(ctx, markFeedAsSeen); err != nil {
+		return nil, fmt.Errorf("error preparing query MarkFeedAsSeen: %w", err)
+	}
+	if q.updateCreatorStmt, err = db.PrepareContext(ctx, updateCreator); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateCreator: %w", err)
+	}
+	if q.updateFunnelStmt, err = db.PrepareContext(ctx, updateFunnel); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateFunnel: %w", err)
+	}
+	if q.updateObjectStmt, err = db.PrepareContext(ctx, updateObject); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateObject: %w", err)
+	}
+	if q.updateTagStmt, err = db.PrepareContext(ctx, updateTag); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateTag: %w", err)
+	}
+	return &q, nil
 }
 
-func (q *Queries) WithTx(tx pgx.Tx) *Queries {
+func (q *Queries) Close() error {
+	var err error
+	if q.countTagsStmt != nil {
+		if cerr := q.countTagsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countTagsStmt: %w", cerr)
+		}
+	}
+	if q.createCreatorStmt != nil {
+		if cerr := q.createCreatorStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createCreatorStmt: %w", cerr)
+		}
+	}
+	if q.createFeedStmt != nil {
+		if cerr := q.createFeedStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createFeedStmt: %w", cerr)
+		}
+	}
+	if q.createFunnelStmt != nil {
+		if cerr := q.createFunnelStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createFunnelStmt: %w", cerr)
+		}
+	}
+	if q.createObjectStmt != nil {
+		if cerr := q.createObjectStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createObjectStmt: %w", cerr)
+		}
+	}
+	if q.createOrganizationStmt != nil {
+		if cerr := q.createOrganizationStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createOrganizationStmt: %w", cerr)
+		}
+	}
+	if q.createTagStmt != nil {
+		if cerr := q.createTagStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createTagStmt: %w", cerr)
+		}
+	}
+	if q.deleteCreatorStmt != nil {
+		if cerr := q.deleteCreatorStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteCreatorStmt: %w", cerr)
+		}
+	}
+	if q.deleteFunnelStmt != nil {
+		if cerr := q.deleteFunnelStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteFunnelStmt: %w", cerr)
+		}
+	}
+	if q.deleteObjectStmt != nil {
+		if cerr := q.deleteObjectStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteObjectStmt: %w", cerr)
+		}
+	}
+	if q.deleteTagStmt != nil {
+		if cerr := q.deleteTagStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteTagStmt: %w", cerr)
+		}
+	}
+	if q.getCreatorStmt != nil {
+		if cerr := q.getCreatorStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getCreatorStmt: %w", cerr)
+		}
+	}
+	if q.getCreatorByIDStmt != nil {
+		if cerr := q.getCreatorByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getCreatorByIDStmt: %w", cerr)
+		}
+	}
+	if q.getCreatorByUsernameStmt != nil {
+		if cerr := q.getCreatorByUsernameStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getCreatorByUsernameStmt: %w", cerr)
+		}
+	}
+	if q.getFeedStmt != nil {
+		if cerr := q.getFeedStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getFeedStmt: %w", cerr)
+		}
+	}
+	if q.getFunnelStmt != nil {
+		if cerr := q.getFunnelStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getFunnelStmt: %w", cerr)
+		}
+	}
+	if q.getObjectStmt != nil {
+		if cerr := q.getObjectStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getObjectStmt: %w", cerr)
+		}
+	}
+	if q.getSessionByTokenStmt != nil {
+		if cerr := q.getSessionByTokenStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getSessionByTokenStmt: %w", cerr)
+		}
+	}
+	if q.getTagByIDStmt != nil {
+		if cerr := q.getTagByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getTagByIDStmt: %w", cerr)
+		}
+	}
+	if q.listCreatorsStmt != nil {
+		if cerr := q.listCreatorsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listCreatorsStmt: %w", cerr)
+		}
+	}
+	if q.listFunnelsStmt != nil {
+		if cerr := q.listFunnelsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listFunnelsStmt: %w", cerr)
+		}
+	}
+	if q.listObjectsStmt != nil {
+		if cerr := q.listObjectsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listObjectsStmt: %w", cerr)
+		}
+	}
+	if q.listTagsStmt != nil {
+		if cerr := q.listTagsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listTagsStmt: %w", cerr)
+		}
+	}
+	if q.markFeedAsSeenStmt != nil {
+		if cerr := q.markFeedAsSeenStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing markFeedAsSeenStmt: %w", cerr)
+		}
+	}
+	if q.updateCreatorStmt != nil {
+		if cerr := q.updateCreatorStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateCreatorStmt: %w", cerr)
+		}
+	}
+	if q.updateFunnelStmt != nil {
+		if cerr := q.updateFunnelStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateFunnelStmt: %w", cerr)
+		}
+	}
+	if q.updateObjectStmt != nil {
+		if cerr := q.updateObjectStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateObjectStmt: %w", cerr)
+		}
+	}
+	if q.updateTagStmt != nil {
+		if cerr := q.updateTagStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateTagStmt: %w", cerr)
+		}
+	}
+	return err
+}
+
+func (q *Queries) exec(ctx context.Context, stmt *sql.Stmt, query string, args ...interface{}) (sql.Result, error) {
+	switch {
+	case stmt != nil && q.tx != nil:
+		return q.tx.StmtContext(ctx, stmt).ExecContext(ctx, args...)
+	case stmt != nil:
+		return stmt.ExecContext(ctx, args...)
+	default:
+		return q.db.ExecContext(ctx, query, args...)
+	}
+}
+
+func (q *Queries) query(ctx context.Context, stmt *sql.Stmt, query string, args ...interface{}) (*sql.Rows, error) {
+	switch {
+	case stmt != nil && q.tx != nil:
+		return q.tx.StmtContext(ctx, stmt).QueryContext(ctx, args...)
+	case stmt != nil:
+		return stmt.QueryContext(ctx, args...)
+	default:
+		return q.db.QueryContext(ctx, query, args...)
+	}
+}
+
+func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, args ...interface{}) *sql.Row {
+	switch {
+	case stmt != nil && q.tx != nil:
+		return q.tx.StmtContext(ctx, stmt).QueryRowContext(ctx, args...)
+	case stmt != nil:
+		return stmt.QueryRowContext(ctx, args...)
+	default:
+		return q.db.QueryRowContext(ctx, query, args...)
+	}
+}
+
+type Queries struct {
+	db                       DBTX
+	tx                       *sql.Tx
+	countTagsStmt            *sql.Stmt
+	createCreatorStmt        *sql.Stmt
+	createFeedStmt           *sql.Stmt
+	createFunnelStmt         *sql.Stmt
+	createObjectStmt         *sql.Stmt
+	createOrganizationStmt   *sql.Stmt
+	createTagStmt            *sql.Stmt
+	deleteCreatorStmt        *sql.Stmt
+	deleteFunnelStmt         *sql.Stmt
+	deleteObjectStmt         *sql.Stmt
+	deleteTagStmt            *sql.Stmt
+	getCreatorStmt           *sql.Stmt
+	getCreatorByIDStmt       *sql.Stmt
+	getCreatorByUsernameStmt *sql.Stmt
+	getFeedStmt              *sql.Stmt
+	getFunnelStmt            *sql.Stmt
+	getObjectStmt            *sql.Stmt
+	getSessionByTokenStmt    *sql.Stmt
+	getTagByIDStmt           *sql.Stmt
+	listCreatorsStmt         *sql.Stmt
+	listFunnelsStmt          *sql.Stmt
+	listObjectsStmt          *sql.Stmt
+	listTagsStmt             *sql.Stmt
+	markFeedAsSeenStmt       *sql.Stmt
+	updateCreatorStmt        *sql.Stmt
+	updateFunnelStmt         *sql.Stmt
+	updateObjectStmt         *sql.Stmt
+	updateTagStmt            *sql.Stmt
+}
+
+func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db: tx,
+		db:                       tx,
+		tx:                       tx,
+		countTagsStmt:            q.countTagsStmt,
+		createCreatorStmt:        q.createCreatorStmt,
+		createFeedStmt:           q.createFeedStmt,
+		createFunnelStmt:         q.createFunnelStmt,
+		createObjectStmt:         q.createObjectStmt,
+		createOrganizationStmt:   q.createOrganizationStmt,
+		createTagStmt:            q.createTagStmt,
+		deleteCreatorStmt:        q.deleteCreatorStmt,
+		deleteFunnelStmt:         q.deleteFunnelStmt,
+		deleteObjectStmt:         q.deleteObjectStmt,
+		deleteTagStmt:            q.deleteTagStmt,
+		getCreatorStmt:           q.getCreatorStmt,
+		getCreatorByIDStmt:       q.getCreatorByIDStmt,
+		getCreatorByUsernameStmt: q.getCreatorByUsernameStmt,
+		getFeedStmt:              q.getFeedStmt,
+		getFunnelStmt:            q.getFunnelStmt,
+		getObjectStmt:            q.getObjectStmt,
+		getSessionByTokenStmt:    q.getSessionByTokenStmt,
+		getTagByIDStmt:           q.getTagByIDStmt,
+		listCreatorsStmt:         q.listCreatorsStmt,
+		listFunnelsStmt:          q.listFunnelsStmt,
+		listObjectsStmt:          q.listObjectsStmt,
+		listTagsStmt:             q.listTagsStmt,
+		markFeedAsSeenStmt:       q.markFeedAsSeenStmt,
+		updateCreatorStmt:        q.updateCreatorStmt,
+		updateFunnelStmt:         q.updateFunnelStmt,
+		updateObjectStmt:         q.updateObjectStmt,
+		updateTagStmt:            q.updateTagStmt,
 	}
 }

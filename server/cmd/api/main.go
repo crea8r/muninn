@@ -1,42 +1,43 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/crea8r/muninn/server/internal/api"
+	"github.com/crea8r/muninn/server/internal/config"
 	"github.com/crea8r/muninn/server/internal/database"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 func main() {
-	// Load environment variables
-	err := godotenv.Load()
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
-	// Initialize database connection
-	db, err := database.NewDB()
+	db, err := sql.Open("postgres", cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer db.Close()
 
-	// Initialize router
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+	err = db.Ping()
+	if err != nil {
+		log.Fatalf("Failed to ping database: %v", err)
+	}
 
-	// Add routes here
+	queries := database.New(db)
+	router := api.SetupRouter(queries)
 
-	// Start server
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("Server starting on port %s", port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+
+	fmt.Printf("Server is running on port %s\n", port)
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }

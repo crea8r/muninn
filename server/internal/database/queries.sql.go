@@ -7,31 +7,57 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
+	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
+const countTags = `-- name: CountTags :one
+SELECT COUNT(*) 
+FROM tag
+WHERE org_id = $1
+  AND deleted_at IS NULL
+  AND ($2::text = '' OR (name ILIKE '%' || $2 || '%' OR description ILIKE '%' || $2 || '%'))
+`
+
+type CountTagsParams struct {
+	OrgID   uuid.UUID `json:"org_id"`
+	Column2 string    `json:"column_2"`
+}
+
+func (q *Queries) CountTags(ctx context.Context, arg CountTagsParams) (int64, error) {
+	row := q.queryRow(ctx, q.countTagsStmt, countTags, arg.OrgID, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createCreator = `-- name: CreateCreator :one
-INSERT INTO creator (username, pwd, profile, role, org_id)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO creator (username, pwd, profile, role, org_id, active, created_at)
+VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
 RETURNING id, username, pwd, profile, role, org_id, active, created_at, deleted_at
 `
 
 type CreateCreatorParams struct {
-	Username string      `json:"username"`
-	Pwd      string      `json:"pwd"`
-	Profile  []byte      `json:"profile"`
-	Role     string      `json:"role"`
-	OrgID    pgtype.UUID `json:"orgId"`
+	Username string          `json:"username"`
+	Pwd      string          `json:"pwd"`
+	Profile  json.RawMessage `json:"profile"`
+	Role     string          `json:"role"`
+	OrgID    uuid.UUID       `json:"org_id"`
+	Active   bool            `json:"active"`
 }
 
 func (q *Queries) CreateCreator(ctx context.Context, arg CreateCreatorParams) (Creator, error) {
-	row := q.db.QueryRow(ctx, createCreator,
+	row := q.queryRow(ctx, q.createCreatorStmt, createCreator,
 		arg.Username,
 		arg.Pwd,
 		arg.Profile,
 		arg.Role,
 		arg.OrgID,
+		arg.Active,
 	)
 	var i Creator
 	err := row.Scan(
@@ -48,6 +74,32 @@ func (q *Queries) CreateCreator(ctx context.Context, arg CreateCreatorParams) (C
 	return i, err
 }
 
+const createFeed = `-- name: CreateFeed :one
+INSERT INTO feed (creator_id, content, seen)
+VALUES ($1, $2, $3)
+RETURNING id, creator_id, content, seen, created_at, deleted_at
+`
+
+type CreateFeedParams struct {
+	CreatorID uuid.UUID       `json:"creator_id"`
+	Content   json.RawMessage `json:"content"`
+	Seen      bool            `json:"seen"`
+}
+
+func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error) {
+	row := q.queryRow(ctx, q.createFeedStmt, createFeed, arg.CreatorID, arg.Content, arg.Seen)
+	var i Feed
+	err := row.Scan(
+		&i.ID,
+		&i.CreatorID,
+		&i.Content,
+		&i.Seen,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const createFunnel = `-- name: CreateFunnel :one
 INSERT INTO funnel (name, description, creator_id)
 VALUES ($1, $2, $3)
@@ -55,13 +107,13 @@ RETURNING id, name, description, creator_id, created_at, deleted_at
 `
 
 type CreateFunnelParams struct {
-	Name        string      `json:"name"`
-	Description pgtype.Text `json:"description"`
-	CreatorID   pgtype.UUID `json:"creatorId"`
+	Name        string         `json:"name"`
+	Description sql.NullString `json:"description"`
+	CreatorID   uuid.NullUUID  `json:"creator_id"`
 }
 
 func (q *Queries) CreateFunnel(ctx context.Context, arg CreateFunnelParams) (Funnel, error) {
-	row := q.db.QueryRow(ctx, createFunnel, arg.Name, arg.Description, arg.CreatorID)
+	row := q.queryRow(ctx, q.createFunnelStmt, createFunnel, arg.Name, arg.Description, arg.CreatorID)
 	var i Funnel
 	err := row.Scan(
 		&i.ID,
@@ -81,14 +133,14 @@ RETURNING id, name, description, id_string, creator_id, created_at, deleted_at
 `
 
 type CreateObjectParams struct {
-	Name        pgtype.Text `json:"name"`
-	Description pgtype.Text `json:"description"`
-	IDString    string      `json:"idString"`
-	CreatorID   pgtype.UUID `json:"creatorId"`
+	Name        sql.NullString `json:"name"`
+	Description sql.NullString `json:"description"`
+	IDString    string         `json:"id_string"`
+	CreatorID   uuid.NullUUID  `json:"creator_id"`
 }
 
 func (q *Queries) CreateObject(ctx context.Context, arg CreateObjectParams) (Obj, error) {
-	row := q.db.QueryRow(ctx, createObject,
+	row := q.queryRow(ctx, q.createObjectStmt, createObject,
 		arg.Name,
 		arg.Description,
 		arg.IDString,
@@ -107,39 +159,115 @@ func (q *Queries) CreateObject(ctx context.Context, arg CreateObjectParams) (Obj
 	return i, err
 }
 
-const deleteCreator = `-- name: DeleteCreator :exec
-UPDATE creator SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL
+const createOrganization = `-- name: CreateOrganization :one
+INSERT INTO org (name, profile, created_at)
+VALUES ($1, $2, CURRENT_TIMESTAMP)
+RETURNING id, name, profile, created_at, deleted_at
 `
 
-func (q *Queries) DeleteCreator(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteCreator, id)
+type CreateOrganizationParams struct {
+	Name    string          `json:"name"`
+	Profile json.RawMessage `json:"profile"`
+}
+
+func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Org, error) {
+	row := q.queryRow(ctx, q.createOrganizationStmt, createOrganization, arg.Name, arg.Profile)
+	var i Org
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Profile,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const createTag = `-- name: CreateTag :one
+
+INSERT INTO tag (name, description, color_schema, org_id)
+VALUES ($1, $2, $3, $4)
+RETURNING id, name, description, color_schema, org_id, created_at, deleted_at
+`
+
+type CreateTagParams struct {
+	Name        string          `json:"name"`
+	Description sql.NullString  `json:"description"`
+	ColorSchema json.RawMessage `json:"color_schema"`
+	OrgID       uuid.UUID       `json:"org_id"`
+}
+
+// Setting/Tag section
+func (q *Queries) CreateTag(ctx context.Context, arg CreateTagParams) (Tag, error) {
+	row := q.queryRow(ctx, q.createTagStmt, createTag,
+		arg.Name,
+		arg.Description,
+		arg.ColorSchema,
+		arg.OrgID,
+	)
+	var i Tag
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.ColorSchema,
+		&i.OrgID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const deleteCreator = `-- name: DeleteCreator :exec
+UPDATE creator SET deleted_at = NOW() WHERE id = $1
+`
+
+func (q *Queries) DeleteCreator(ctx context.Context, id uuid.UUID) error {
+	_, err := q.exec(ctx, q.deleteCreatorStmt, deleteCreator, id)
 	return err
 }
 
 const deleteFunnel = `-- name: DeleteFunnel :exec
-UPDATE funnel SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL
+UPDATE funnel SET deleted_at = NOW() WHERE id = $1
 `
 
-func (q *Queries) DeleteFunnel(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteFunnel, id)
+func (q *Queries) DeleteFunnel(ctx context.Context, id uuid.UUID) error {
+	_, err := q.exec(ctx, q.deleteFunnelStmt, deleteFunnel, id)
 	return err
 }
 
 const deleteObject = `-- name: DeleteObject :exec
-UPDATE obj SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL
+UPDATE obj SET deleted_at = NOW() WHERE id = $1
 `
 
-func (q *Queries) DeleteObject(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteObject, id)
+func (q *Queries) DeleteObject(ctx context.Context, id uuid.UUID) error {
+	_, err := q.exec(ctx, q.deleteObjectStmt, deleteObject, id)
 	return err
 }
 
-const getCreator = `-- name: GetCreator :one
-SELECT id, username, pwd, profile, role, org_id, active, created_at, deleted_at FROM creator WHERE id = $1 AND deleted_at IS NULL
+const deleteTag = `-- name: DeleteTag :execrows
+UPDATE tag
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND deleted_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM obj_tag WHERE tag_id = $1
+  )
 `
 
-func (q *Queries) GetCreator(ctx context.Context, id pgtype.UUID) (Creator, error) {
-	row := q.db.QueryRow(ctx, getCreator, id)
+func (q *Queries) DeleteTag(ctx context.Context, id uuid.UUID) (int64, error) {
+	result, err := q.exec(ctx, q.deleteTagStmt, deleteTag, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const getCreator = `-- name: GetCreator :one
+SELECT id, username, pwd, profile, role, org_id, active, created_at, deleted_at FROM creator WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetCreator(ctx context.Context, id uuid.UUID) (Creator, error) {
+	row := q.queryRow(ctx, q.getCreatorStmt, getCreator, id)
 	var i Creator
 	err := row.Scan(
 		&i.ID,
@@ -155,12 +283,96 @@ func (q *Queries) GetCreator(ctx context.Context, id pgtype.UUID) (Creator, erro
 	return i, err
 }
 
-const getFunnel = `-- name: GetFunnel :one
-SELECT id, name, description, creator_id, created_at, deleted_at FROM funnel WHERE id = $1 AND deleted_at IS NULL
+const getCreatorByID = `-- name: GetCreatorByID :one
+SELECT id, username, pwd, profile, role, org_id, active, created_at, deleted_at FROM creator WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetFunnel(ctx context.Context, id pgtype.UUID) (Funnel, error) {
-	row := q.db.QueryRow(ctx, getFunnel, id)
+func (q *Queries) GetCreatorByID(ctx context.Context, id uuid.UUID) (Creator, error) {
+	row := q.queryRow(ctx, q.getCreatorByIDStmt, getCreatorByID, id)
+	var i Creator
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Pwd,
+		&i.Profile,
+		&i.Role,
+		&i.OrgID,
+		&i.Active,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getCreatorByUsername = `-- name: GetCreatorByUsername :one
+SELECT id, username, pwd, profile, role, org_id, active, created_at, deleted_at FROM creator
+WHERE username = $1 AND active = $2
+`
+
+type GetCreatorByUsernameParams struct {
+	Username string `json:"username"`
+	Active   bool   `json:"active"`
+}
+
+func (q *Queries) GetCreatorByUsername(ctx context.Context, arg GetCreatorByUsernameParams) (Creator, error) {
+	row := q.queryRow(ctx, q.getCreatorByUsernameStmt, getCreatorByUsername, arg.Username, arg.Active)
+	var i Creator
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Pwd,
+		&i.Profile,
+		&i.Role,
+		&i.OrgID,
+		&i.Active,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getFeed = `-- name: GetFeed :many
+SELECT id, creator_id, content, seen, created_at, deleted_at FROM feed
+WHERE creator_id = $1 AND seen = false
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetFeed(ctx context.Context, creatorID uuid.UUID) ([]Feed, error) {
+	rows, err := q.query(ctx, q.getFeedStmt, getFeed, creatorID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Feed
+	for rows.Next() {
+		var i Feed
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatorID,
+			&i.Content,
+			&i.Seen,
+			&i.CreatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFunnel = `-- name: GetFunnel :one
+SELECT id, name, description, creator_id, created_at, deleted_at FROM funnel WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetFunnel(ctx context.Context, id uuid.UUID) (Funnel, error) {
+	row := q.queryRow(ctx, q.getFunnelStmt, getFunnel, id)
 	var i Funnel
 	err := row.Scan(
 		&i.ID,
@@ -174,11 +386,11 @@ func (q *Queries) GetFunnel(ctx context.Context, id pgtype.UUID) (Funnel, error)
 }
 
 const getObject = `-- name: GetObject :one
-SELECT id, name, description, id_string, creator_id, created_at, deleted_at FROM obj WHERE id = $1 AND deleted_at IS NULL
+SELECT id, name, description, id_string, creator_id, created_at, deleted_at FROM obj WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetObject(ctx context.Context, id pgtype.UUID) (Obj, error) {
-	row := q.db.QueryRow(ctx, getObject, id)
+func (q *Queries) GetObject(ctx context.Context, id uuid.UUID) (Obj, error) {
+	row := q.queryRow(ctx, q.getObjectStmt, getObject, id)
 	var i Obj
 	err := row.Scan(
 		&i.ID,
@@ -192,23 +404,64 @@ func (q *Queries) GetObject(ctx context.Context, id pgtype.UUID) (Obj, error) {
 	return i, err
 }
 
+const getSessionByToken = `-- name: GetSessionByToken :one
+SELECT id, creator_id, jwt, expired_at, created_at FROM creator_session WHERE jwt = $1 LIMIT 1
+`
+
+func (q *Queries) GetSessionByToken(ctx context.Context, jwt string) (CreatorSession, error) {
+	row := q.queryRow(ctx, q.getSessionByTokenStmt, getSessionByToken, jwt)
+	var i CreatorSession
+	err := row.Scan(
+		&i.ID,
+		&i.CreatorID,
+		&i.Jwt,
+		&i.ExpiredAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getTagByID = `-- name: GetTagByID :one
+SELECT id, name, description, color_schema, org_id, created_at, deleted_at FROM tag
+WHERE id = $1 AND deleted_at IS NULL
+LIMIT 1
+`
+
+func (q *Queries) GetTagByID(ctx context.Context, id uuid.UUID) (Tag, error) {
+	row := q.queryRow(ctx, q.getTagByIDStmt, getTagByID, id)
+	var i Tag
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.ColorSchema,
+		&i.OrgID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const listCreators = `-- name: ListCreators :many
-SELECT id, username, pwd, profile, role, org_id, active, created_at, deleted_at FROM creator WHERE org_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT $2 OFFSET $3
+SELECT id, username, pwd, profile, role, org_id, active, created_at, deleted_at FROM creator
+WHERE org_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
 `
 
 type ListCreatorsParams struct {
-	OrgID  pgtype.UUID `json:"orgId"`
-	Limit  int32       `json:"limit"`
-	Offset int32       `json:"offset"`
+	OrgID  uuid.UUID `json:"org_id"`
+	Limit  int32     `json:"limit"`
+	Offset int32     `json:"offset"`
 }
 
 func (q *Queries) ListCreators(ctx context.Context, arg ListCreatorsParams) ([]Creator, error) {
-	rows, err := q.db.Query(ctx, listCreators, arg.OrgID, arg.Limit, arg.Offset)
+	rows, err := q.query(ctx, q.listCreatorsStmt, listCreators, arg.OrgID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Creator{}
+	var items []Creator
 	for rows.Next() {
 		var i Creator
 		if err := rows.Scan(
@@ -226,6 +479,9 @@ func (q *Queries) ListCreators(ctx context.Context, arg ListCreatorsParams) ([]C
 		}
 		items = append(items, i)
 	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -233,21 +489,25 @@ func (q *Queries) ListCreators(ctx context.Context, arg ListCreatorsParams) ([]C
 }
 
 const listFunnels = `-- name: ListFunnels :many
-SELECT id, name, description, creator_id, created_at, deleted_at FROM funnel WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $1 OFFSET $2
+SELECT id, name, description, creator_id, created_at, deleted_at FROM funnel
+WHERE creator_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
 `
 
 type ListFunnelsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	CreatorID uuid.NullUUID `json:"creator_id"`
+	Limit     int32         `json:"limit"`
+	Offset    int32         `json:"offset"`
 }
 
 func (q *Queries) ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]Funnel, error) {
-	rows, err := q.db.Query(ctx, listFunnels, arg.Limit, arg.Offset)
+	rows, err := q.query(ctx, q.listFunnelsStmt, listFunnels, arg.CreatorID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Funnel{}
+	var items []Funnel
 	for rows.Next() {
 		var i Funnel
 		if err := rows.Scan(
@@ -262,6 +522,9 @@ func (q *Queries) ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]Fun
 		}
 		items = append(items, i)
 	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -269,21 +532,25 @@ func (q *Queries) ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]Fun
 }
 
 const listObjects = `-- name: ListObjects :many
-SELECT id, name, description, id_string, creator_id, created_at, deleted_at FROM obj WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $1 OFFSET $2
+SELECT id, name, description, id_string, creator_id, created_at, deleted_at FROM obj
+WHERE creator_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
 `
 
 type ListObjectsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	CreatorID uuid.NullUUID `json:"creator_id"`
+	Limit     int32         `json:"limit"`
+	Offset    int32         `json:"offset"`
 }
 
 func (q *Queries) ListObjects(ctx context.Context, arg ListObjectsParams) ([]Obj, error) {
-	rows, err := q.db.Query(ctx, listObjects, arg.Limit, arg.Offset)
+	rows, err := q.query(ctx, q.listObjectsStmt, listObjects, arg.CreatorID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Obj{}
+	var items []Obj
 	for rows.Next() {
 		var i Obj
 		if err := rows.Scan(
@@ -299,28 +566,101 @@ func (q *Queries) ListObjects(ctx context.Context, arg ListObjectsParams) ([]Obj
 		}
 		items = append(items, i)
 	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return items, nil
 }
 
+const listTags = `-- name: ListTags :many
+SELECT t.id, t.name, t.description, t.color_schema, t.created_at
+FROM tag t
+WHERE t.org_id = $1
+  AND t.deleted_at IS NULL
+  AND ($2::text = '' OR (t.name ILIKE '%' || $2 || '%' OR t.description ILIKE '%' || $2 || '%'))
+ORDER BY t.created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type ListTagsParams struct {
+	OrgID   uuid.UUID `json:"org_id"`
+	Column2 string    `json:"column_2"`
+	Limit   int32     `json:"limit"`
+	Offset  int32     `json:"offset"`
+}
+
+type ListTagsRow struct {
+	ID          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description sql.NullString  `json:"description"`
+	ColorSchema json.RawMessage `json:"color_schema"`
+	CreatedAt   time.Time       `json:"created_at"`
+}
+
+func (q *Queries) ListTags(ctx context.Context, arg ListTagsParams) ([]ListTagsRow, error) {
+	rows, err := q.query(ctx, q.listTagsStmt, listTags,
+		arg.OrgID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTagsRow
+	for rows.Next() {
+		var i ListTagsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.ColorSchema,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const markFeedAsSeen = `-- name: MarkFeedAsSeen :exec
+UPDATE feed
+SET seen = true
+WHERE id = ANY($1::uuid[])
+`
+
+func (q *Queries) MarkFeedAsSeen(ctx context.Context, dollar_1 []uuid.UUID) error {
+	_, err := q.exec(ctx, q.markFeedAsSeenStmt, markFeedAsSeen, pq.Array(dollar_1))
+	return err
+}
+
 const updateCreator = `-- name: UpdateCreator :one
 UPDATE creator
 SET username = $2, profile = $3, role = $4
-WHERE id = $1 AND deleted_at IS NULL
+WHERE id = $1
 RETURNING id, username, pwd, profile, role, org_id, active, created_at, deleted_at
 `
 
 type UpdateCreatorParams struct {
-	ID       pgtype.UUID `json:"id"`
-	Username string      `json:"username"`
-	Profile  []byte      `json:"profile"`
-	Role     string      `json:"role"`
+	ID       uuid.UUID       `json:"id"`
+	Username string          `json:"username"`
+	Profile  json.RawMessage `json:"profile"`
+	Role     string          `json:"role"`
 }
 
 func (q *Queries) UpdateCreator(ctx context.Context, arg UpdateCreatorParams) (Creator, error) {
-	row := q.db.QueryRow(ctx, updateCreator,
+	row := q.queryRow(ctx, q.updateCreatorStmt, updateCreator,
 		arg.ID,
 		arg.Username,
 		arg.Profile,
@@ -344,18 +684,18 @@ func (q *Queries) UpdateCreator(ctx context.Context, arg UpdateCreatorParams) (C
 const updateFunnel = `-- name: UpdateFunnel :one
 UPDATE funnel
 SET name = $2, description = $3
-WHERE id = $1 AND deleted_at IS NULL
+WHERE id = $1
 RETURNING id, name, description, creator_id, created_at, deleted_at
 `
 
 type UpdateFunnelParams struct {
-	ID          pgtype.UUID `json:"id"`
-	Name        string      `json:"name"`
-	Description pgtype.Text `json:"description"`
+	ID          uuid.UUID      `json:"id"`
+	Name        string         `json:"name"`
+	Description sql.NullString `json:"description"`
 }
 
 func (q *Queries) UpdateFunnel(ctx context.Context, arg UpdateFunnelParams) (Funnel, error) {
-	row := q.db.QueryRow(ctx, updateFunnel, arg.ID, arg.Name, arg.Description)
+	row := q.queryRow(ctx, q.updateFunnelStmt, updateFunnel, arg.ID, arg.Name, arg.Description)
 	var i Funnel
 	err := row.Scan(
 		&i.ID,
@@ -371,19 +711,19 @@ func (q *Queries) UpdateFunnel(ctx context.Context, arg UpdateFunnelParams) (Fun
 const updateObject = `-- name: UpdateObject :one
 UPDATE obj
 SET name = $2, description = $3, id_string = $4
-WHERE id = $1 AND deleted_at IS NULL
+WHERE id = $1
 RETURNING id, name, description, id_string, creator_id, created_at, deleted_at
 `
 
 type UpdateObjectParams struct {
-	ID          pgtype.UUID `json:"id"`
-	Name        pgtype.Text `json:"name"`
-	Description pgtype.Text `json:"description"`
-	IDString    string      `json:"idString"`
+	ID          uuid.UUID      `json:"id"`
+	Name        sql.NullString `json:"name"`
+	Description sql.NullString `json:"description"`
+	IDString    string         `json:"id_string"`
 }
 
 func (q *Queries) UpdateObject(ctx context.Context, arg UpdateObjectParams) (Obj, error) {
-	row := q.db.QueryRow(ctx, updateObject,
+	row := q.queryRow(ctx, q.updateObjectStmt, updateObject,
 		arg.ID,
 		arg.Name,
 		arg.Description,
@@ -396,6 +736,34 @@ func (q *Queries) UpdateObject(ctx context.Context, arg UpdateObjectParams) (Obj
 		&i.Description,
 		&i.IDString,
 		&i.CreatorID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateTag = `-- name: UpdateTag :one
+UPDATE tag
+SET description = $2, color_schema = $3
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, name, description, color_schema, org_id, created_at, deleted_at
+`
+
+type UpdateTagParams struct {
+	ID          uuid.UUID       `json:"id"`
+	Description sql.NullString  `json:"description"`
+	ColorSchema json.RawMessage `json:"color_schema"`
+}
+
+func (q *Queries) UpdateTag(ctx context.Context, arg UpdateTagParams) (Tag, error) {
+	row := q.queryRow(ctx, q.updateTagStmt, updateTag, arg.ID, arg.Description, arg.ColorSchema)
+	var i Tag
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.ColorSchema,
+		&i.OrgID,
 		&i.CreatedAt,
 		&i.DeletedAt,
 	)
