@@ -137,3 +137,51 @@ FROM tag
 WHERE org_id = $1
   AND deleted_at IS NULL
   AND ($2::text = '' OR (name ILIKE '%' || $2 || '%' OR description ILIKE '%' || $2 || '%'));
+
+  -- name: CreateObjectType :one
+INSERT INTO obj_type (name, description, fields, creator_id)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
+
+-- name: UpdateObjectType :one
+UPDATE obj_type
+SET name = $2, description = $3, fields = $4
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
+-- name: DeleteObjectType :execrows
+UPDATE obj_type
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE obj_type.id = $1 AND deleted_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM obj_type_value WHERE type_id = $1
+  );
+
+-- name: ListObjectTypes :many
+SELECT o.id, o.name, o.description, o.fields, o.created_at
+FROM obj_type o
+JOIN creator c ON o.creator_id = c.id
+WHERE c.org_id = $1
+  AND o.deleted_at IS NULL
+  AND ($2::text = '' OR 
+       o.name ILIKE '%' || $2 || '%' OR 
+       o.description ILIKE '%' || $2 || '%' OR
+       o.fields_search @@ to_tsquery('english', $2))
+ORDER BY o.created_at DESC
+LIMIT $3 OFFSET $4;
+
+-- name: GetObjectTypeByID :one
+SELECT * FROM obj_type
+WHERE id = $1 AND deleted_at IS NULL
+LIMIT 1;
+
+-- name: CountObjectTypes :one
+SELECT COUNT(*) 
+FROM obj_type o
+JOIN creator c ON o.creator_id = c.id
+WHERE c.org_id = $1
+  AND o.deleted_at IS NULL
+  AND ($2::text = '' OR 
+       o.name ILIKE '%' || $2 || '%' OR 
+       o.description ILIKE '%' || $2 || '%' OR
+       o.fields_search @@ to_tsquery('english', $2));

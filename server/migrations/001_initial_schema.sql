@@ -326,3 +326,43 @@ ALTER TABLE task ADD CONSTRAINT check_deadline_after_created CHECK (deadline > c
 
 COMMENT ON TABLE obj_type_value IS 'This table has full-text search capabilities on its JSON data';
 COMMENT ON COLUMN obj_type_value.search_vector IS 'This column contains the tsvector for full-text search';
+
+-- Add a tsvector column to the obj_type table
+ALTER TABLE obj_type ADD COLUMN fields_search tsvector;
+
+-- Create a function to generate tsvector from JSONB
+CREATE OR REPLACE FUNCTION jsonb_to_tsvector(j jsonb) RETURNS tsvector AS $$
+DECLARE
+  result tsvector := to_tsvector('english', '');
+  key text;
+  value text;
+BEGIN
+  FOR key, value IN SELECT * FROM jsonb_each_text(j)
+  LOOP
+    result := result || to_tsvector('english', coalesce(value, ''));
+  END LOOP;
+  RETURN result;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- Create a function to update the fields_search column
+CREATE OR REPLACE FUNCTION update_obj_type_fields_search() RETURNS trigger AS $$
+BEGIN
+  NEW.fields_search := jsonb_to_tsvector(NEW.fields);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create a trigger to update fields_search when fields is inserted or updated
+CREATE TRIGGER obj_type_fields_search_update
+BEFORE INSERT OR UPDATE OF fields ON obj_type
+FOR EACH ROW EXECUTE FUNCTION update_obj_type_fields_search();
+
+-- Create a GIN index on the fields_search column
+CREATE INDEX obj_type_fields_search_idx ON obj_type USING GIN (fields_search);
+
+-- Update existing data
+UPDATE obj_type SET fields_search = jsonb_to_tsvector(fields);
+
+-- Example query to perform full-text search
+-- SELECT * FROM obj_type WHERE fields_search @@ to_tsquery('english', 'your_search_term');

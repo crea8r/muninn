@@ -24,6 +24,9 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
+	if q.countObjectTypesStmt, err = db.PrepareContext(ctx, countObjectTypes); err != nil {
+		return nil, fmt.Errorf("error preparing query CountObjectTypes: %w", err)
+	}
 	if q.countTagsStmt, err = db.PrepareContext(ctx, countTags); err != nil {
 		return nil, fmt.Errorf("error preparing query CountTags: %w", err)
 	}
@@ -54,6 +57,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.deleteObjectStmt, err = db.PrepareContext(ctx, deleteObject); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteObject: %w", err)
 	}
+	if q.deleteObjectTypeStmt, err = db.PrepareContext(ctx, deleteObjectType); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteObjectType: %w", err)
+	}
 	if q.deleteTagStmt, err = db.PrepareContext(ctx, deleteTag); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteTag: %w", err)
 	}
@@ -75,6 +81,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getObjectStmt, err = db.PrepareContext(ctx, getObject); err != nil {
 		return nil, fmt.Errorf("error preparing query GetObject: %w", err)
 	}
+	if q.getObjectTypeByIDStmt, err = db.PrepareContext(ctx, getObjectTypeByID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetObjectTypeByID: %w", err)
+	}
 	if q.getSessionByTokenStmt, err = db.PrepareContext(ctx, getSessionByToken); err != nil {
 		return nil, fmt.Errorf("error preparing query GetSessionByToken: %w", err)
 	}
@@ -86,6 +95,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.listFunnelsStmt, err = db.PrepareContext(ctx, listFunnels); err != nil {
 		return nil, fmt.Errorf("error preparing query ListFunnels: %w", err)
+	}
+	if q.listObjectTypesStmt, err = db.PrepareContext(ctx, listObjectTypes); err != nil {
+		return nil, fmt.Errorf("error preparing query ListObjectTypes: %w", err)
 	}
 	if q.listObjectsStmt, err = db.PrepareContext(ctx, listObjects); err != nil {
 		return nil, fmt.Errorf("error preparing query ListObjects: %w", err)
@@ -105,6 +117,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.updateObjectStmt, err = db.PrepareContext(ctx, updateObject); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateObject: %w", err)
 	}
+	if q.updateObjectTypeStmt, err = db.PrepareContext(ctx, updateObjectType); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateObjectType: %w", err)
+	}
 	if q.updateTagStmt, err = db.PrepareContext(ctx, updateTag); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateTag: %w", err)
 	}
@@ -113,6 +128,11 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
+	if q.countObjectTypesStmt != nil {
+		if cerr := q.countObjectTypesStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countObjectTypesStmt: %w", cerr)
+		}
+	}
 	if q.countTagsStmt != nil {
 		if cerr := q.countTagsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing countTagsStmt: %w", cerr)
@@ -163,6 +183,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing deleteObjectStmt: %w", cerr)
 		}
 	}
+	if q.deleteObjectTypeStmt != nil {
+		if cerr := q.deleteObjectTypeStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteObjectTypeStmt: %w", cerr)
+		}
+	}
 	if q.deleteTagStmt != nil {
 		if cerr := q.deleteTagStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deleteTagStmt: %w", cerr)
@@ -198,6 +223,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getObjectStmt: %w", cerr)
 		}
 	}
+	if q.getObjectTypeByIDStmt != nil {
+		if cerr := q.getObjectTypeByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getObjectTypeByIDStmt: %w", cerr)
+		}
+	}
 	if q.getSessionByTokenStmt != nil {
 		if cerr := q.getSessionByTokenStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getSessionByTokenStmt: %w", cerr)
@@ -216,6 +246,11 @@ func (q *Queries) Close() error {
 	if q.listFunnelsStmt != nil {
 		if cerr := q.listFunnelsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listFunnelsStmt: %w", cerr)
+		}
+	}
+	if q.listObjectTypesStmt != nil {
+		if cerr := q.listObjectTypesStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listObjectTypesStmt: %w", cerr)
 		}
 	}
 	if q.listObjectsStmt != nil {
@@ -246,6 +281,11 @@ func (q *Queries) Close() error {
 	if q.updateObjectStmt != nil {
 		if cerr := q.updateObjectStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateObjectStmt: %w", cerr)
+		}
+	}
+	if q.updateObjectTypeStmt != nil {
+		if cerr := q.updateObjectTypeStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateObjectTypeStmt: %w", cerr)
 		}
 	}
 	if q.updateTagStmt != nil {
@@ -292,6 +332,7 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 type Queries struct {
 	db                       DBTX
 	tx                       *sql.Tx
+	countObjectTypesStmt     *sql.Stmt
 	countTagsStmt            *sql.Stmt
 	createCreatorStmt        *sql.Stmt
 	createFeedStmt           *sql.Stmt
@@ -302,6 +343,7 @@ type Queries struct {
 	deleteCreatorStmt        *sql.Stmt
 	deleteFunnelStmt         *sql.Stmt
 	deleteObjectStmt         *sql.Stmt
+	deleteObjectTypeStmt     *sql.Stmt
 	deleteTagStmt            *sql.Stmt
 	getCreatorStmt           *sql.Stmt
 	getCreatorByIDStmt       *sql.Stmt
@@ -309,16 +351,19 @@ type Queries struct {
 	getFeedStmt              *sql.Stmt
 	getFunnelStmt            *sql.Stmt
 	getObjectStmt            *sql.Stmt
+	getObjectTypeByIDStmt    *sql.Stmt
 	getSessionByTokenStmt    *sql.Stmt
 	getTagByIDStmt           *sql.Stmt
 	listCreatorsStmt         *sql.Stmt
 	listFunnelsStmt          *sql.Stmt
+	listObjectTypesStmt      *sql.Stmt
 	listObjectsStmt          *sql.Stmt
 	listTagsStmt             *sql.Stmt
 	markFeedAsSeenStmt       *sql.Stmt
 	updateCreatorStmt        *sql.Stmt
 	updateFunnelStmt         *sql.Stmt
 	updateObjectStmt         *sql.Stmt
+	updateObjectTypeStmt     *sql.Stmt
 	updateTagStmt            *sql.Stmt
 }
 
@@ -326,6 +371,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
 		db:                       tx,
 		tx:                       tx,
+		countObjectTypesStmt:     q.countObjectTypesStmt,
 		countTagsStmt:            q.countTagsStmt,
 		createCreatorStmt:        q.createCreatorStmt,
 		createFeedStmt:           q.createFeedStmt,
@@ -336,6 +382,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		deleteCreatorStmt:        q.deleteCreatorStmt,
 		deleteFunnelStmt:         q.deleteFunnelStmt,
 		deleteObjectStmt:         q.deleteObjectStmt,
+		deleteObjectTypeStmt:     q.deleteObjectTypeStmt,
 		deleteTagStmt:            q.deleteTagStmt,
 		getCreatorStmt:           q.getCreatorStmt,
 		getCreatorByIDStmt:       q.getCreatorByIDStmt,
@@ -343,16 +390,19 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getFeedStmt:              q.getFeedStmt,
 		getFunnelStmt:            q.getFunnelStmt,
 		getObjectStmt:            q.getObjectStmt,
+		getObjectTypeByIDStmt:    q.getObjectTypeByIDStmt,
 		getSessionByTokenStmt:    q.getSessionByTokenStmt,
 		getTagByIDStmt:           q.getTagByIDStmt,
 		listCreatorsStmt:         q.listCreatorsStmt,
 		listFunnelsStmt:          q.listFunnelsStmt,
+		listObjectTypesStmt:      q.listObjectTypesStmt,
 		listObjectsStmt:          q.listObjectsStmt,
 		listTagsStmt:             q.listTagsStmt,
 		markFeedAsSeenStmt:       q.markFeedAsSeenStmt,
 		updateCreatorStmt:        q.updateCreatorStmt,
 		updateFunnelStmt:         q.updateFunnelStmt,
 		updateObjectStmt:         q.updateObjectStmt,
+		updateObjectTypeStmt:     q.updateObjectTypeStmt,
 		updateTagStmt:            q.updateTagStmt,
 	}
 }

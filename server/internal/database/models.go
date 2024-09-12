@@ -113,13 +113,14 @@ type ObjTask struct {
 }
 
 type ObjType struct {
-	ID          uuid.UUID       `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Fields      json.RawMessage `json:"fields"`
-	CreatorID   uuid.NullUUID   `json:"creator_id"`
-	CreatedAt   time.Time       `json:"created_at"`
-	DeletedAt   sql.NullTime    `json:"deleted_at"`
+	ID           uuid.UUID       `json:"id"`
+	Name         string          `json:"name"`
+	Description  string          `json:"description"`
+	Fields       json.RawMessage `json:"fields"`
+	CreatorID    uuid.NullUUID   `json:"creator_id"`
+	CreatedAt    time.Time       `json:"created_at"`
+	DeletedAt    sql.NullTime    `json:"deleted_at"`
+	FieldsSearch interface{}     `json:"fields_search"`
 }
 
 // This table has full-text search capabilities on its JSON data

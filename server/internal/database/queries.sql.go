@@ -14,6 +14,30 @@ import (
 	"github.com/lib/pq"
 )
 
+const countObjectTypes = `-- name: CountObjectTypes :one
+SELECT COUNT(*) 
+FROM obj_type o
+JOIN creator c ON o.creator_id = c.id
+WHERE c.org_id = $1
+  AND o.deleted_at IS NULL
+  AND ($2::text = '' OR 
+       o.name ILIKE '%' || $2 || '%' OR 
+       o.description ILIKE '%' || $2 || '%' OR
+       o.fields_search @@ to_tsquery('english', $2))
+`
+
+type CountObjectTypesParams struct {
+	OrgID   uuid.UUID `json:"org_id"`
+	Column2 string    `json:"column_2"`
+}
+
+func (q *Queries) CountObjectTypes(ctx context.Context, arg CountObjectTypesParams) (int64, error) {
+	row := q.queryRow(ctx, q.countObjectTypesStmt, countObjectTypes, arg.OrgID, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countTags = `-- name: CountTags :one
 SELECT COUNT(*) 
 FROM tag
@@ -244,6 +268,23 @@ func (q *Queries) DeleteObject(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const deleteObjectType = `-- name: DeleteObjectType :execrows
+UPDATE obj_type
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE obj_type.id = $1 AND deleted_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM obj_type_value WHERE type_id = $1
+  )
+`
+
+func (q *Queries) DeleteObjectType(ctx context.Context, id uuid.UUID) (int64, error) {
+	result, err := q.exec(ctx, q.deleteObjectTypeStmt, deleteObjectType, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const deleteTag = `-- name: DeleteTag :execrows
 DELETE FROM tag 
 WHERE id = $1 AND deleted_at IS NULL
@@ -402,6 +443,28 @@ func (q *Queries) GetObject(ctx context.Context, id uuid.UUID) (Obj, error) {
 	return i, err
 }
 
+const getObjectTypeByID = `-- name: GetObjectTypeByID :one
+SELECT id, name, description, fields, creator_id, created_at, deleted_at, fields_search FROM obj_type
+WHERE id = $1 AND deleted_at IS NULL
+LIMIT 1
+`
+
+func (q *Queries) GetObjectTypeByID(ctx context.Context, id uuid.UUID) (ObjType, error) {
+	row := q.queryRow(ctx, q.getObjectTypeByIDStmt, getObjectTypeByID, id)
+	var i ObjType
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Fields,
+		&i.CreatorID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+		&i.FieldsSearch,
+	)
+	return i, err
+}
+
 const getSessionByToken = `-- name: GetSessionByToken :one
 SELECT id, creator_id, jwt, expired_at, created_at FROM creator_session WHERE jwt = $1 LIMIT 1
 `
@@ -515,6 +578,69 @@ func (q *Queries) ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]Fun
 			&i.CreatorID,
 			&i.CreatedAt,
 			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listObjectTypes = `-- name: ListObjectTypes :many
+SELECT o.id, o.name, o.description, o.fields, o.created_at
+FROM obj_type o
+JOIN creator c ON o.creator_id = c.id
+WHERE c.org_id = $1
+  AND o.deleted_at IS NULL
+  AND ($2::text = '' OR 
+       o.name ILIKE '%' || $2 || '%' OR 
+       o.description ILIKE '%' || $2 || '%' OR
+       o.fields_search @@ to_tsquery('english', $2))
+ORDER BY o.created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type ListObjectTypesParams struct {
+	OrgID   uuid.UUID `json:"org_id"`
+	Column2 string    `json:"column_2"`
+	Limit   int32     `json:"limit"`
+	Offset  int32     `json:"offset"`
+}
+
+type ListObjectTypesRow struct {
+	ID          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Fields      json.RawMessage `json:"fields"`
+	CreatedAt   time.Time       `json:"created_at"`
+}
+
+func (q *Queries) ListObjectTypes(ctx context.Context, arg ListObjectTypesParams) ([]ListObjectTypesRow, error) {
+	rows, err := q.query(ctx, q.listObjectTypesStmt, listObjectTypes,
+		arg.OrgID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListObjectTypesRow
+	for rows.Next() {
+		var i ListObjectTypesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Fields,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -736,6 +862,41 @@ func (q *Queries) UpdateObject(ctx context.Context, arg UpdateObjectParams) (Obj
 		&i.CreatorID,
 		&i.CreatedAt,
 		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateObjectType = `-- name: UpdateObjectType :one
+UPDATE obj_type
+SET name = $2, description = $3, fields = $4
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, name, description, fields, creator_id, created_at, deleted_at, fields_search
+`
+
+type UpdateObjectTypeParams struct {
+	ID          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Fields      json.RawMessage `json:"fields"`
+}
+
+func (q *Queries) UpdateObjectType(ctx context.Context, arg UpdateObjectTypeParams) (ObjType, error) {
+	row := q.queryRow(ctx, q.updateObjectTypeStmt, updateObjectType,
+		arg.ID,
+		arg.Name,
+		arg.Description,
+		arg.Fields,
+	)
+	var i ObjType
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Fields,
+		&i.CreatorID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+		&i.FieldsSearch,
 	)
 	return i, err
 }

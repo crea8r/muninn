@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	CountObjectTypes(ctx context.Context, arg CountObjectTypesParams) (int64, error)
 	CountTags(ctx context.Context, arg CountTagsParams) (int64, error)
 	CreateCreator(ctx context.Context, arg CreateCreatorParams) (Creator, error)
 	CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error)
@@ -22,6 +23,7 @@ type Querier interface {
 	DeleteCreator(ctx context.Context, id uuid.UUID) error
 	DeleteFunnel(ctx context.Context, id uuid.UUID) error
 	DeleteObject(ctx context.Context, id uuid.UUID) error
+	DeleteObjectType(ctx context.Context, id uuid.UUID) (int64, error)
 	DeleteTag(ctx context.Context, id uuid.UUID) (int64, error)
 	GetCreator(ctx context.Context, id uuid.UUID) (Creator, error)
 	GetCreatorByID(ctx context.Context, id uuid.UUID) (Creator, error)
@@ -29,16 +31,19 @@ type Querier interface {
 	GetFeed(ctx context.Context, creatorID uuid.UUID) ([]Feed, error)
 	GetFunnel(ctx context.Context, id uuid.UUID) (Funnel, error)
 	GetObject(ctx context.Context, id uuid.UUID) (Obj, error)
+	GetObjectTypeByID(ctx context.Context, id uuid.UUID) (ObjType, error)
 	GetSessionByToken(ctx context.Context, jwt string) (CreatorSession, error)
 	GetTagByID(ctx context.Context, id uuid.UUID) (Tag, error)
 	ListCreators(ctx context.Context, arg ListCreatorsParams) ([]Creator, error)
 	ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]Funnel, error)
+	ListObjectTypes(ctx context.Context, arg ListObjectTypesParams) ([]ListObjectTypesRow, error)
 	ListObjects(ctx context.Context, arg ListObjectsParams) ([]Obj, error)
 	ListTags(ctx context.Context, arg ListTagsParams) ([]ListTagsRow, error)
 	MarkFeedAsSeen(ctx context.Context, dollar_1 []uuid.UUID) error
 	UpdateCreator(ctx context.Context, arg UpdateCreatorParams) (Creator, error)
 	UpdateFunnel(ctx context.Context, arg UpdateFunnelParams) (Funnel, error)
 	UpdateObject(ctx context.Context, arg UpdateObjectParams) (Obj, error)
+	UpdateObjectType(ctx context.Context, arg UpdateObjectTypeParams) (ObjType, error)
 	UpdateTag(ctx context.Context, arg UpdateTagParams) (Tag, error)
 }
 
