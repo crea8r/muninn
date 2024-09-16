@@ -180,7 +180,7 @@ const TagsPage: React.FC = () => {
           <SearchIcon color='gray.300' />
         </InputLeftElement>
         <Input
-          placeholder='Search tags...'
+          placeholder='Search in name and description'
           value={searchQuery}
           onChange={handleSearchChange}
         />

@@ -1,14 +1,14 @@
 export interface Funnel {
-  id: any;
+  id: string;
   name: string;
   description: string;
   steps: FunnelStep[];
 }
 
 export interface FunnelStep {
-  id: any;
+  id: string;
   name: string;
-  order: number;
+  step_order: number;
   definition: string;
   example: string;
   action: string;
@@ -24,3 +24,21 @@ export interface ObjectFunnel {
   funnelId: any;
   stepId: string;
 }
+
+export interface FunnelUpdate {
+  id: any;
+  name: string;
+  description: string;
+  steps: {
+    create: FunnelStep[];
+    update: FunnelStep[];
+    delete: string[];
+  };
+}
+
+// export interface FunnelUpdate {
+//   id: string;
+//   name?: string;
+//   description?: string;
+//   steps?: FunnelStep[];
+// }

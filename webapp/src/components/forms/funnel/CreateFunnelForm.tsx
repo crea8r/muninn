@@ -61,7 +61,7 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
       ...steps,
       {
         name: '',
-        order: steps.length,
+        step_order: steps.length,
         definition: '',
         example: '',
         action: '',
@@ -88,14 +88,14 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
       const temp = newSteps[index];
       newSteps[index] = newSteps[index + (direction === 'up' ? -1 : 1)];
       newSteps[index + (direction === 'up' ? -1 : 1)] = temp;
-      newSteps.forEach((step, i) => (step.order = i));
+      newSteps.forEach((step, i) => (step.step_order = i));
       setSteps(newSteps);
     }
   };
 
   const handleDeleteStep = (index: number) => {
     const newSteps = steps.filter((_, i) => i !== index);
-    newSteps.forEach((step, i) => (step.order = i));
+    newSteps.forEach((step, i) => (step.step_order = i));
     setSteps(newSteps);
   };
 

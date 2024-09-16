@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/crea8r/muninn/server/api/middleware"
+	"github.com/crea8r/muninn/server/internal/api/middleware"
 	"github.com/crea8r/muninn/server/internal/database"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -32,7 +32,12 @@ func (h *ObjectTypeHandler) CreateObjectType(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	creator := r.Context().Value(middleware.CreatorContextKey).(database.Creator)
+	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
+	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
+	if err != nil {
+		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
+		return
+	}
 
 	objType, err := h.DB.CreateObjectType(r.Context(), database.CreateObjectTypeParams{
 		Name:        req.Name,
@@ -108,7 +113,8 @@ func (h *ObjectTypeHandler) DeleteObjectType(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *ObjectTypeHandler) ListObjectTypes(w http.ResponseWriter, r *http.Request) {
-	creator := r.Context().Value(middleware.CreatorContextKey).(database.Creator)
+	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
+	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
 
 	query := r.URL.Query().Get("q")
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -125,7 +131,7 @@ func (h *ObjectTypeHandler) ListObjectTypes(w http.ResponseWriter, r *http.Reque
 
 	objectTypes, err := h.DB.ListObjectTypes(r.Context(), database.ListObjectTypesParams{
 		OrgID:  creator.OrgID,
-		Query:  query,
+		Column2:  query,
 		Limit:  int32(pageSize),
 		Offset: int32(offset),
 	})
@@ -137,7 +143,7 @@ func (h *ObjectTypeHandler) ListObjectTypes(w http.ResponseWriter, r *http.Reque
 
 	totalCount, err := h.DB.CountObjectTypes(r.Context(), database.CountObjectTypesParams{
 		OrgID: creator.OrgID,
-		Query: query,
+		Column2: query,
 	})
 
 	if err != nil {
@@ -146,10 +152,10 @@ func (h *ObjectTypeHandler) ListObjectTypes(w http.ResponseWriter, r *http.Reque
 	}
 
 	response := struct {
-		ObjectTypes []database.ObjectType `json:"object_types"`
-		TotalCount  int64                 `json:"total_count"`
+		ObjectTypes []database.ListObjectTypesRow `json:"objectTypes"`
+		TotalCount  int64                 `json:"totalCount"`
 		Page        int                   `json:"page"`
-		PageSize    int                   `json:"page_size"`
+		PageSize    int                   `json:"pageSize"`
 	}{
 		ObjectTypes: objectTypes,
 		TotalCount:  totalCount,

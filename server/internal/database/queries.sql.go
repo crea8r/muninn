@@ -7,12 +7,45 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
+
+const countFunnels = `-- name: CountFunnels :one
+SELECT COUNT(*)
+FROM funnel f
+JOIN creator c ON c.id = f.creator_id
+WHERE c.org_id = $1 AND f.deleted_at IS NULL
+  AND ($2::text = '' OR (
+    f.name ILIKE '%' || $2 || '%' OR
+    f.description ILIKE '%' || $2 || '%' OR
+    EXISTS (
+      SELECT 1 FROM step s
+      WHERE s.funnel_id = f.id AND (
+        s.name ILIKE '%' || $2 || '%' OR
+        s.definition ILIKE '%' || $2 || '%' OR
+        s.example ILIKE '%' || $2 || '%' OR
+        s.action ILIKE '%' || $2 || '%'
+      )
+    )
+  ))
+`
+
+type CountFunnelsParams struct {
+	OrgID   uuid.UUID `json:"org_id"`
+	Column2 string    `json:"column_2"`
+}
+
+func (q *Queries) CountFunnels(ctx context.Context, arg CountFunnelsParams) (int64, error) {
+	row := q.queryRow(ctx, q.countFunnelsStmt, countFunnels, arg.OrgID, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
 
 const countObjectTypes = `-- name: CountObjectTypes :one
 SELECT COUNT(*) 
@@ -124,19 +157,25 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 }
 
 const createFunnel = `-- name: CreateFunnel :one
-INSERT INTO funnel (name, description, creator_id)
-VALUES ($1, $2, $3)
+INSERT INTO funnel (id, name, description, creator_id)
+VALUES ($1, $2, $3, $4)
 RETURNING id, name, description, creator_id, created_at, deleted_at
 `
 
 type CreateFunnelParams struct {
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	CreatorID   uuid.NullUUID `json:"creator_id"`
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	CreatorID   uuid.UUID `json:"creator_id"`
 }
 
 func (q *Queries) CreateFunnel(ctx context.Context, arg CreateFunnelParams) (Funnel, error) {
-	row := q.queryRow(ctx, q.createFunnelStmt, createFunnel, arg.Name, arg.Description, arg.CreatorID)
+	row := q.queryRow(ctx, q.createFunnelStmt, createFunnel,
+		arg.ID,
+		arg.Name,
+		arg.Description,
+		arg.CreatorID,
+	)
 	var i Funnel
 	err := row.Scan(
 		&i.ID,
@@ -182,6 +221,40 @@ func (q *Queries) CreateObject(ctx context.Context, arg CreateObjectParams) (Obj
 	return i, err
 }
 
+const createObjectType = `-- name: CreateObjectType :one
+INSERT INTO obj_type (name, description, fields, creator_id)
+VALUES ($1, $2, $3, $4)
+RETURNING id, name, description, fields, creator_id, created_at, deleted_at, fields_search
+`
+
+type CreateObjectTypeParams struct {
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Fields      json.RawMessage `json:"fields"`
+	CreatorID   uuid.UUID       `json:"creator_id"`
+}
+
+func (q *Queries) CreateObjectType(ctx context.Context, arg CreateObjectTypeParams) (ObjType, error) {
+	row := q.queryRow(ctx, q.createObjectTypeStmt, createObjectType,
+		arg.Name,
+		arg.Description,
+		arg.Fields,
+		arg.CreatorID,
+	)
+	var i ObjType
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Fields,
+		&i.CreatorID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+		&i.FieldsSearch,
+	)
+	return i, err
+}
+
 const createOrganization = `-- name: CreateOrganization :one
 INSERT INTO org (name, profile, created_at)
 VALUES ($1, $2, CURRENT_TIMESTAMP)
@@ -201,6 +274,48 @@ func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganization
 		&i.Name,
 		&i.Profile,
 		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const createStep = `-- name: CreateStep :one
+INSERT INTO step (id, funnel_id, name, definition, example, action, step_order)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, funnel_id, name, definition, example, action, step_order, created_at, last_updated, deleted_at
+`
+
+type CreateStepParams struct {
+	ID         uuid.UUID `json:"id"`
+	FunnelID   uuid.UUID `json:"funnel_id"`
+	Name       string    `json:"name"`
+	Definition string    `json:"definition"`
+	Example    string    `json:"example"`
+	Action     string    `json:"action"`
+	StepOrder  int32     `json:"step_order"`
+}
+
+func (q *Queries) CreateStep(ctx context.Context, arg CreateStepParams) (Step, error) {
+	row := q.queryRow(ctx, q.createStepStmt, createStep,
+		arg.ID,
+		arg.FunnelID,
+		arg.Name,
+		arg.Definition,
+		arg.Example,
+		arg.Action,
+		arg.StepOrder,
+	)
+	var i Step
+	err := row.Scan(
+		&i.ID,
+		&i.FunnelID,
+		&i.Name,
+		&i.Definition,
+		&i.Example,
+		&i.Action,
+		&i.StepOrder,
+		&i.CreatedAt,
+		&i.LastUpdated,
 		&i.DeletedAt,
 	)
 	return i, err
@@ -251,7 +366,14 @@ func (q *Queries) DeleteCreator(ctx context.Context, id uuid.UUID) error {
 }
 
 const deleteFunnel = `-- name: DeleteFunnel :exec
-UPDATE funnel SET deleted_at = NOW() WHERE id = $1
+UPDATE funnel
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE funnel.id = $1 AND deleted_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM obj_step os
+    JOIN step s ON s.id = os.step_id
+    WHERE s.funnel_id = $1
+  )
 `
 
 func (q *Queries) DeleteFunnel(ctx context.Context, id uuid.UUID) error {
@@ -283,6 +405,20 @@ func (q *Queries) DeleteObjectType(ctx context.Context, id uuid.UUID) (int64, er
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const deleteStep = `-- name: DeleteStep :exec
+UPDATE step
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND deleted_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM obj_step os WHERE os.step_id = $1
+  )
+`
+
+func (q *Queries) DeleteStep(ctx context.Context, id uuid.UUID) error {
+	_, err := q.exec(ctx, q.deleteStepStmt, deleteStep, id)
+	return err
 }
 
 const deleteTag = `-- name: DeleteTag :execrows
@@ -407,12 +543,29 @@ func (q *Queries) GetFeed(ctx context.Context, creatorID uuid.UUID) ([]Feed, err
 }
 
 const getFunnel = `-- name: GetFunnel :one
-SELECT id, name, description, creator_id, created_at, deleted_at FROM funnel WHERE id = $1 LIMIT 1
+SELECT f.id, f.name, f.description, f.creator_id, f.created_at, f.deleted_at, c.org_id,
+       (SELECT COUNT(*) FROM obj_step os
+        JOIN step s ON s.id = os.step_id
+        WHERE s.funnel_id = f.id) AS object_count
+FROM funnel f
+JOIN creator c ON c.id = f.creator_id
+WHERE f.id = $1 AND f.deleted_at IS NULL
 `
 
-func (q *Queries) GetFunnel(ctx context.Context, id uuid.UUID) (Funnel, error) {
+type GetFunnelRow struct {
+	ID          uuid.UUID    `json:"id"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	CreatorID   uuid.UUID    `json:"creator_id"`
+	CreatedAt   time.Time    `json:"created_at"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
+	OrgID       uuid.UUID    `json:"org_id"`
+	ObjectCount int64        `json:"object_count"`
+}
+
+func (q *Queries) GetFunnel(ctx context.Context, id uuid.UUID) (GetFunnelRow, error) {
 	row := q.queryRow(ctx, q.getFunnelStmt, getFunnel, id)
-	var i Funnel
+	var i GetFunnelRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -420,6 +573,8 @@ func (q *Queries) GetFunnel(ctx context.Context, id uuid.UUID) (Funnel, error) {
 		&i.CreatorID,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.OrgID,
+		&i.ObjectCount,
 	)
 	return i, err
 }
@@ -478,6 +633,46 @@ func (q *Queries) GetSessionByToken(ctx context.Context, jwt string) (CreatorSes
 		&i.Jwt,
 		&i.ExpiredAt,
 		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getStep = `-- name: GetStep :one
+SELECT s.id, s.funnel_id, s.name, s.definition, s.example, s.action, s.step_order, s.created_at, s.last_updated, s.deleted_at, 
+       (SELECT COUNT(*) FROM obj_step os WHERE os.step_id = s.id) AS object_count
+FROM step s
+WHERE s.id = $1 AND s.deleted_at IS NULL
+`
+
+type GetStepRow struct {
+	ID          uuid.UUID    `json:"id"`
+	FunnelID    uuid.UUID    `json:"funnel_id"`
+	Name        string       `json:"name"`
+	Definition  string       `json:"definition"`
+	Example     string       `json:"example"`
+	Action      string       `json:"action"`
+	StepOrder   int32        `json:"step_order"`
+	CreatedAt   time.Time    `json:"created_at"`
+	LastUpdated time.Time    `json:"last_updated"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
+	ObjectCount int64        `json:"object_count"`
+}
+
+func (q *Queries) GetStep(ctx context.Context, id uuid.UUID) (GetStepRow, error) {
+	row := q.queryRow(ctx, q.getStepStmt, getStep, id)
+	var i GetStepRow
+	err := row.Scan(
+		&i.ID,
+		&i.FunnelID,
+		&i.Name,
+		&i.Definition,
+		&i.Example,
+		&i.Action,
+		&i.StepOrder,
+		&i.CreatedAt,
+		&i.LastUpdated,
+		&i.DeletedAt,
+		&i.ObjectCount,
 	)
 	return i, err
 }
@@ -550,27 +745,63 @@ func (q *Queries) ListCreators(ctx context.Context, arg ListCreatorsParams) ([]C
 }
 
 const listFunnels = `-- name: ListFunnels :many
-SELECT id, name, description, creator_id, created_at, deleted_at FROM funnel
-WHERE creator_id = $1
-ORDER BY created_at DESC
-LIMIT $2 OFFSET $3
+SELECT f.id, f.name, f.description, f.creator_id, f.created_at, f.deleted_at, c.org_id,
+       (SELECT COUNT(*) FROM obj_step os
+        JOIN step s ON s.id = os.step_id
+        WHERE s.funnel_id = f.id) AS object_count
+FROM funnel f
+JOIN creator c ON c.id = f.creator_id
+WHERE c.org_id = $1 AND f.deleted_at IS NULL
+  AND ($2::text = '' OR (
+    f.name ILIKE '%' || $2 || '%' OR
+    f.description ILIKE '%' || $2 || '%' OR
+    EXISTS (
+      SELECT 1 FROM step s
+      WHERE s.funnel_id = f.id AND (
+        s.name ILIKE '%' || $2 || '%' OR
+        s.definition ILIKE '%' || $2 || '%' OR
+        s.example ILIKE '%' || $2 || '%' OR
+        s.action ILIKE '%' || $2 || '%'
+      )
+    )
+  ))
+ORDER BY f.created_at DESC
+LIMIT $3 OFFSET $4
 `
 
 type ListFunnelsParams struct {
-	CreatorID uuid.NullUUID `json:"creator_id"`
-	Limit     int32         `json:"limit"`
-	Offset    int32         `json:"offset"`
+	OrgID   uuid.UUID `json:"org_id"`
+	Column2 string    `json:"column_2"`
+	Limit   int32     `json:"limit"`
+	Offset  int32     `json:"offset"`
 }
 
-func (q *Queries) ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]Funnel, error) {
-	rows, err := q.query(ctx, q.listFunnelsStmt, listFunnels, arg.CreatorID, arg.Limit, arg.Offset)
+type ListFunnelsRow struct {
+	ID          uuid.UUID    `json:"id"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	CreatorID   uuid.UUID    `json:"creator_id"`
+	CreatedAt   time.Time    `json:"created_at"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
+	OrgID       uuid.UUID    `json:"org_id"`
+	ObjectCount int64        `json:"object_count"`
+	Steps 		 []ListStepsByFunnelRow       `json:"steps"`
+}
+
+func (q *Queries) ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]ListFunnelsRow, error) {
+	rows, err := q.query(ctx, q.listFunnelsStmt, listFunnels,
+		arg.OrgID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Funnel
+	var items []ListFunnelsRow
 	for rows.Next() {
-		var i Funnel
+		var i ListFunnelsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -578,6 +809,8 @@ func (q *Queries) ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]Fun
 			&i.CreatorID,
 			&i.CreatedAt,
 			&i.DeletedAt,
+			&i.OrgID,
+			&i.ObjectCount,
 		); err != nil {
 			return nil, err
 		}
@@ -685,6 +918,63 @@ func (q *Queries) ListObjects(ctx context.Context, arg ListObjectsParams) ([]Obj
 			&i.CreatorID,
 			&i.CreatedAt,
 			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStepsByFunnel = `-- name: ListStepsByFunnel :many
+SELECT s.id, s.funnel_id, s.name, s.definition, s.example, s.action, s.step_order, s.created_at, s.last_updated, s.deleted_at, 
+       (SELECT COUNT(*) FROM obj_step os WHERE os.step_id = s.id) AS object_count
+FROM step s
+WHERE s.funnel_id = $1 AND s.deleted_at IS NULL
+ORDER BY s.step_order
+`
+
+type ListStepsByFunnelRow struct {
+	ID          uuid.UUID    `json:"id"`
+	FunnelID    uuid.UUID    `json:"funnel_id"`
+	Name        string       `json:"name"`
+	Definition  string       `json:"definition"`
+	Example     string       `json:"example"`
+	Action      string       `json:"action"`
+	StepOrder   int32        `json:"step_order"`
+	CreatedAt   time.Time    `json:"created_at"`
+	LastUpdated time.Time    `json:"last_updated"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
+	ObjectCount int64        `json:"object_count"`
+}
+
+func (q *Queries) ListStepsByFunnel(ctx context.Context, funnelID uuid.UUID) ([]ListStepsByFunnelRow, error) {
+	rows, err := q.query(ctx, q.listStepsByFunnelStmt, listStepsByFunnel, funnelID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListStepsByFunnelRow
+	for rows.Next() {
+		var i ListStepsByFunnelRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FunnelID,
+			&i.Name,
+			&i.Definition,
+			&i.Example,
+			&i.Action,
+			&i.StepOrder,
+			&i.CreatedAt,
+			&i.LastUpdated,
+			&i.DeletedAt,
+			&i.ObjectCount,
 		); err != nil {
 			return nil, err
 		}
@@ -808,7 +1098,7 @@ func (q *Queries) UpdateCreator(ctx context.Context, arg UpdateCreatorParams) (C
 const updateFunnel = `-- name: UpdateFunnel :one
 UPDATE funnel
 SET name = $2, description = $3
-WHERE id = $1
+WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, name, description, creator_id, created_at, deleted_at
 `
 
@@ -830,6 +1120,22 @@ func (q *Queries) UpdateFunnel(ctx context.Context, arg UpdateFunnelParams) (Fun
 		&i.DeletedAt,
 	)
 	return i, err
+}
+
+const updateObjStep = `-- name: UpdateObjStep :exec
+UPDATE obj_step
+SET step_id = $2
+WHERE step_id = $1
+`
+
+type UpdateObjStepParams struct {
+	StepID   uuid.UUID `json:"step_id"`
+	StepID_2 uuid.UUID `json:"step_id_2"`
+}
+
+func (q *Queries) UpdateObjStep(ctx context.Context, arg UpdateObjStepParams) error {
+	_, err := q.exec(ctx, q.updateObjStepStmt, updateObjStep, arg.StepID, arg.StepID_2)
+	return err
 }
 
 const updateObject = `-- name: UpdateObject :one
@@ -897,6 +1203,47 @@ func (q *Queries) UpdateObjectType(ctx context.Context, arg UpdateObjectTypePara
 		&i.CreatedAt,
 		&i.DeletedAt,
 		&i.FieldsSearch,
+	)
+	return i, err
+}
+
+const updateStep = `-- name: UpdateStep :one
+UPDATE step
+SET name = $2, definition = $3, example = $4, action = $5, step_order = $6, last_updated = CURRENT_TIMESTAMP
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, funnel_id, name, definition, example, action, step_order, created_at, last_updated, deleted_at
+`
+
+type UpdateStepParams struct {
+	ID         uuid.UUID `json:"id"`
+	Name       string    `json:"name"`
+	Definition string    `json:"definition"`
+	Example    string    `json:"example"`
+	Action     string    `json:"action"`
+	StepOrder  int32     `json:"step_order"`
+}
+
+func (q *Queries) UpdateStep(ctx context.Context, arg UpdateStepParams) (Step, error) {
+	row := q.queryRow(ctx, q.updateStepStmt, updateStep,
+		arg.ID,
+		arg.Name,
+		arg.Definition,
+		arg.Example,
+		arg.Action,
+		arg.StepOrder,
+	)
+	var i Step
+	err := row.Scan(
+		&i.ID,
+		&i.FunnelID,
+		&i.Name,
+		&i.Definition,
+		&i.Example,
+		&i.Action,
+		&i.StepOrder,
+		&i.CreatedAt,
+		&i.LastUpdated,
+		&i.DeletedAt,
 	)
 	return i, err
 }

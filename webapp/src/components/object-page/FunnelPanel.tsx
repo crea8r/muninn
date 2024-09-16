@@ -21,11 +21,11 @@ import {
 import { Funnel, FunnelStep, ObjectFunnel } from '../../types/';
 import {
   fetchObjectFunnels,
-  fetchAllFunnels,
   addObjectToFunnel,
   moveObjectInFunnel,
   removeObjectFromFunnel,
-} from '../../api';
+} from 'src/api';
+import { fetchAllFunnels } from 'src/api/funnel';
 
 interface FunnelPanelProps {
   objectId: string;
@@ -48,7 +48,7 @@ const FunnelPanel: React.FC<FunnelPanelProps> = ({ objectId }) => {
           fetchAllFunnels(),
         ]);
         setObjectFunnels(objectFunnelsData);
-        setAllFunnels(allFunnelsData);
+        setAllFunnels(allFunnelsData.funnels);
       } catch (error) {
         toast({
           title: 'Error loading funnels',

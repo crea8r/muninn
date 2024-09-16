@@ -21,29 +21,6 @@ RETURNING *;
 -- name: DeleteObject :exec
 UPDATE obj SET deleted_at = NOW() WHERE id = $1;
 
--- name: GetFunnel :one
-SELECT * FROM funnel WHERE id = $1 LIMIT 1;
-
--- name: ListFunnels :many
-SELECT * FROM funnel
-WHERE creator_id = $1
-ORDER BY created_at DESC
-LIMIT $2 OFFSET $3;
-
--- name: CreateFunnel :one
-INSERT INTO funnel (name, description, creator_id)
-VALUES ($1, $2, $3)
-RETURNING *;
-
--- name: UpdateFunnel :one
-UPDATE funnel
-SET name = $2, description = $3
-WHERE id = $1
-RETURNING *;
-
--- name: DeleteFunnel :exec
-UPDATE funnel SET deleted_at = NOW() WHERE id = $1;
-
 -- name: GetCreator :one
 SELECT * FROM creator WHERE id = $1 LIMIT 1;
 
@@ -138,7 +115,7 @@ WHERE org_id = $1
   AND deleted_at IS NULL
   AND ($2::text = '' OR (name ILIKE '%' || $2 || '%' OR description ILIKE '%' || $2 || '%'));
 
-  -- name: CreateObjectType :one
+-- name: CreateObjectType :one
 INSERT INTO obj_type (name, description, fields, creator_id)
 VALUES ($1, $2, $3, $4)
 RETURNING *;
@@ -185,3 +162,113 @@ WHERE c.org_id = $1
        o.name ILIKE '%' || $2 || '%' OR 
        o.description ILIKE '%' || $2 || '%' OR
        o.fields_search @@ to_tsquery('english', $2));
+
+-- name: CreateFunnel :one
+INSERT INTO funnel (id, name, description, creator_id)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
+
+-- name: GetFunnel :one
+SELECT f.*, c.org_id,
+       (SELECT COUNT(*) FROM obj_step os
+        JOIN step s ON s.id = os.step_id
+        WHERE s.funnel_id = f.id) AS object_count
+FROM funnel f
+JOIN creator c ON c.id = f.creator_id
+WHERE f.id = $1 AND f.deleted_at IS NULL;
+
+-- name: ListFunnels :many
+SELECT f.*, c.org_id,
+       (SELECT COUNT(*) FROM obj_step os
+        JOIN step s ON s.id = os.step_id
+        WHERE s.funnel_id = f.id) AS object_count
+FROM funnel f
+JOIN creator c ON c.id = f.creator_id
+WHERE c.org_id = $1 AND f.deleted_at IS NULL
+  AND ($2::text = '' OR (
+    f.name ILIKE '%' || $2 || '%' OR
+    f.description ILIKE '%' || $2 || '%' OR
+    EXISTS (
+      SELECT 1 FROM step s
+      WHERE s.funnel_id = f.id AND (
+        s.name ILIKE '%' || $2 || '%' OR
+        s.definition ILIKE '%' || $2 || '%' OR
+        s.example ILIKE '%' || $2 || '%' OR
+        s.action ILIKE '%' || $2 || '%'
+      )
+    )
+  ))
+ORDER BY f.created_at DESC
+LIMIT $3 OFFSET $4;
+
+-- name: UpdateFunnel :one
+UPDATE funnel
+SET name = $2, description = $3
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
+-- name: DeleteFunnel :exec
+UPDATE funnel
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE funnel.id = $1 AND deleted_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM obj_step os
+    JOIN step s ON s.id = os.step_id
+    WHERE s.funnel_id = $1
+  );
+
+-- name: CreateStep :one
+INSERT INTO step (id, funnel_id, name, definition, example, action, step_order)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING *;
+
+-- name: GetStep :one
+SELECT s.*, 
+       (SELECT COUNT(*) FROM obj_step os WHERE os.step_id = s.id) AS object_count
+FROM step s
+WHERE s.id = $1 AND s.deleted_at IS NULL;
+
+-- name: UpdateStep :one
+UPDATE step
+SET name = $2, definition = $3, example = $4, action = $5, step_order = $6, last_updated = CURRENT_TIMESTAMP
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
+-- name: DeleteStep :exec
+UPDATE step
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND deleted_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM obj_step os WHERE os.step_id = $1
+  );
+
+-- name: ListStepsByFunnel :many
+SELECT s.*, 
+       (SELECT COUNT(*) FROM obj_step os WHERE os.step_id = s.id) AS object_count
+FROM step s
+WHERE s.funnel_id = $1 AND s.deleted_at IS NULL
+ORDER BY s.step_order;
+
+-- name: UpdateObjStep :exec
+UPDATE obj_step
+SET step_id = $2
+WHERE step_id = $1;
+
+-- name: CountFunnels :one
+SELECT COUNT(*)
+FROM funnel f
+JOIN creator c ON c.id = f.creator_id
+WHERE c.org_id = $1 AND f.deleted_at IS NULL
+  AND ($2::text = '' OR (
+    f.name ILIKE '%' || $2 || '%' OR
+    f.description ILIKE '%' || $2 || '%' OR
+    EXISTS (
+      SELECT 1 FROM step s
+      WHERE s.funnel_id = f.id AND (
+        s.name ILIKE '%' || $2 || '%' OR
+        s.definition ILIKE '%' || $2 || '%' OR
+        s.example ILIKE '%' || $2 || '%' OR
+        s.action ILIKE '%' || $2 || '%'
+      )
+    )
+  ));

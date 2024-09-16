@@ -23,6 +23,8 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 	r.Use(corsMiddleware.Handler)
 
 	tagHandler := handlers.NewTagHandler(db)
+	objectTypeHandler := handlers.NewObjectTypeHandler(db)
+	funnelHandler := handlers.NewFunnelHandler(db)
 
 	// Public routes
 	r.Post("/auth/signup", handlers.SignUp(db))
@@ -38,6 +40,22 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 			r.Get("/", tagHandler.ListTags)
 			r.Put("/{id}", tagHandler.UpdateTag)
 			r.Delete("/{id}", tagHandler.DeleteTag)
+		})
+
+		r.Route("/setting/object-types", func(r chi.Router) {
+			r.Use(middleware.Permission)
+			r.Post("/", objectTypeHandler.CreateObjectType)
+			r.Get("/", objectTypeHandler.ListObjectTypes)
+			r.Put("/{id}", objectTypeHandler.UpdateObjectType)
+			r.Delete("/{id}", objectTypeHandler.DeleteObjectType)
+		})
+
+		r.Route("/setting/funnels", func(r chi.Router) {
+			r.Use(middleware.Permission)
+			r.Post("/", funnelHandler.CreateFunnel)
+			r.Get("/", funnelHandler.ListFunnels)
+			r.Put("/{id}", funnelHandler.UpdateFunnel)
+			r.Delete("/{id}", funnelHandler.DeleteFunnel)
 		})
 	})
 

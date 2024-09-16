@@ -61,12 +61,12 @@ type Feed struct {
 }
 
 type Funnel struct {
-	ID          uuid.UUID     `json:"id"`
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	CreatorID   uuid.NullUUID `json:"creator_id"`
-	CreatedAt   time.Time     `json:"created_at"`
-	DeletedAt   sql.NullTime  `json:"deleted_at"`
+	ID          uuid.UUID    `json:"id"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	CreatorID   uuid.UUID    `json:"creator_id"`
+	CreatedAt   time.Time    `json:"created_at"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
 }
 
 type List struct {
@@ -117,7 +117,7 @@ type ObjType struct {
 	Name         string          `json:"name"`
 	Description  string          `json:"description"`
 	Fields       json.RawMessage `json:"fields"`
-	CreatorID    uuid.NullUUID   `json:"creator_id"`
+	CreatorID    uuid.UUID       `json:"creator_id"`
 	CreatedAt    time.Time       `json:"created_at"`
 	DeletedAt    sql.NullTime    `json:"deleted_at"`
 	FieldsSearch interface{}     `json:"fields_search"`
@@ -145,16 +145,16 @@ type Org struct {
 }
 
 type Step struct {
-	ID          uuid.UUID     `json:"id"`
-	FunnelID    uuid.NullUUID `json:"funnel_id"`
-	Name        string        `json:"name"`
-	Definition  string        `json:"definition"`
-	Example     string        `json:"example"`
-	Action      string        `json:"action"`
-	ParentStep  uuid.NullUUID `json:"parent_step"`
-	CreatedAt   time.Time     `json:"created_at"`
-	LastUpdated time.Time     `json:"last_updated"`
-	DeletedAt   sql.NullTime  `json:"deleted_at"`
+	ID          uuid.UUID    `json:"id"`
+	FunnelID    uuid.UUID    `json:"funnel_id"`
+	Name        string       `json:"name"`
+	Definition  string       `json:"definition"`
+	Example     string       `json:"example"`
+	Action      string       `json:"action"`
+	StepOrder   int32        `json:"step_order"`
+	CreatedAt   time.Time    `json:"created_at"`
+	LastUpdated time.Time    `json:"last_updated"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
 }
 
 type Tag struct {

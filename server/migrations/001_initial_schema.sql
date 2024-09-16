@@ -71,7 +71,7 @@ CREATE TABLE obj_type (
     name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     fields JSONB NOT NULL,
-    creator_id UUID REFERENCES creator(id) ON DELETE CASCADE,
+    creator_id UUID NOT NULL REFERENCES creator(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
@@ -81,7 +81,7 @@ CREATE TABLE funnel (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
-    creator_id UUID REFERENCES creator(id) ON DELETE CASCADE,
+    creator_id UUID NOT NULL REFERENCES creator(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
@@ -89,12 +89,12 @@ CREATE TABLE funnel (
 -- Create the step table
 CREATE TABLE step (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    funnel_id UUID REFERENCES funnel(id) ON DELETE CASCADE,
+    funnel_id UUID NOT NULL REFERENCES funnel(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     definition TEXT NOT NULL,
     example TEXT NOT NULL,
     action TEXT NOT NULL,
-    parent_step UUID REFERENCES step(id) ON DELETE SET NULL,
+    step_order INT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
@@ -339,7 +339,7 @@ DECLARE
 BEGIN
   FOR key, value IN SELECT * FROM jsonb_each_text(j)
   LOOP
-    result := result || to_tsvector('english', coalesce(value, ''));
+    result := result || to_tsvector('english', coalesce(key, ''));
   END LOOP;
   RETURN result;
 END;

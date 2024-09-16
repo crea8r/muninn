@@ -10,10 +10,13 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
+  HStack,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { useHistory } from 'react-router-dom';
 import authService from 'src/services/authService';
+// import logo.png from src/assets/logo.png;
+import logo from 'src/assets/logo.png';
 
 const Header: React.FC = () => {
   const history = useHistory();
@@ -29,12 +32,16 @@ const Header: React.FC = () => {
         alignItems='center'
         justifyContent='space-between'
       >
-        <Box w='250px'>
-          {/* Logo */}
+        <HStack w='250px'>
+          <img
+            src={logo}
+            alt='Muninn'
+            style={{ width: '24px', height: '24px' }}
+          />
           <Box as='span' fontWeight='bold' fontSize='xl'>
             Muninn
           </Box>
-        </Box>
+        </HStack>
         <Flex alignItems='center' flex={1}>
           <InputGroup maxW='500px' mx='auto'>
             <InputLeftElement pointerEvents='none'>

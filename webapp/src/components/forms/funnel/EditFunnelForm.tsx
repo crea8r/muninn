@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -33,6 +33,7 @@ import {
   Tooltip,
   Alert,
   AlertIcon,
+  Badge,
 } from '@chakra-ui/react';
 import {
   AddIcon,
@@ -43,25 +44,15 @@ import {
   StarIcon,
   ArrowForwardIcon,
   WarningIcon,
+  EditIcon,
 } from '@chakra-ui/icons';
-import { Funnel, FunnelStep } from '../../../types';
+import { Funnel, FunnelStep, FunnelUpdate } from 'src/types';
 
 interface EditFunnelFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (editedFunnel: EditedFunnel) => void;
+  onSave: (editedFunnel: FunnelUpdate) => void;
   funnel?: Funnel;
-}
-
-interface EditedFunnel {
-  id: any;
-  name: string;
-  description: string;
-  steps: {
-    create: FunnelStep[];
-    update: FunnelStep[];
-    delete: string[];
-  };
 }
 
 // TODO: In Redesign Steps phase
@@ -81,28 +72,35 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
     {}
   );
   const [currentPhase, setCurrentPhase] = useState(0);
-
-  useEffect(() => {
-    if (funnel) {
-      setName(funnel.name);
-      setDescription(funnel.description);
-      setExistingSteps(funnel.steps);
-      setNewSteps(
-        funnel.steps.map((step) => ({ ...step, id: `new-${step.id}` }))
-      );
+  const setDefaultValue = (tmpFunnel: Funnel | undefined) => {
+    if (tmpFunnel) {
+      setName(tmpFunnel.name);
+      setDescription(tmpFunnel.description);
+      let tmpExistingSteps: FunnelStep[] = [],
+        tmpNewSteps: FunnelStep[] = [];
+      tmpFunnel.steps.forEach((step) => {
+        tmpExistingSteps.push(structuredClone(step));
+        tmpNewSteps.push({ ...structuredClone(step), id: `new-${step.id}` });
+      });
+      setExistingSteps(tmpExistingSteps);
+      setNewSteps(tmpNewSteps);
       setStepMapping(
         Object.fromEntries(
-          funnel.steps.map((step) => [step.id, `new-${step.id}`])
+          tmpFunnel.steps.map((step) => [step.id, `new-${step.id}`])
         )
       );
     }
+  };
+
+  useEffect(() => {
+    setDefaultValue(funnel);
   }, [funnel]);
 
   const handleAddStep = () => {
     const newStep: FunnelStep = {
       id: `new-${Date.now()}`,
       name: '',
-      order: newSteps.length,
+      step_order: newSteps.length,
       definition: '',
       example: '',
       action: '',
@@ -129,7 +127,7 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
       const temp = updatedSteps[index];
       updatedSteps[index] = updatedSteps[index + (direction === 'up' ? -1 : 1)];
       updatedSteps[index + (direction === 'up' ? -1 : 1)] = temp;
-      updatedSteps.forEach((step, i) => (step.order = i));
+      updatedSteps.forEach((step, i) => (step.step_order = i));
       setNewSteps(updatedSteps);
     }
   };
@@ -137,7 +135,7 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
   const handleDeleteStep = (index: number) => {
     const stepToDelete = newSteps[index];
     const updatedSteps = newSteps.filter((_, i) => i !== index);
-    updatedSteps.forEach((step, i) => (step.order = i));
+    updatedSteps.forEach((step, i) => (step.step_order = i));
     setNewSteps(updatedSteps);
 
     // Remove mapping for deleted step
@@ -155,13 +153,19 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
   };
 
   const handleSave = () => {
-    const editedFunnel: EditedFunnel = {
+    console.log('newSteps: ', newSteps);
+    console.log('oldSteps: ', existingSteps);
+    const editedFunnel: FunnelUpdate = {
       id: funnel!.id,
       name,
       description,
       steps: {
         create: newSteps.filter(
-          (step) => !step.id.toString().startsWith('new-')
+          (step) =>
+            !existingSteps.some(
+              (existingStep) =>
+                existingStep.id === step.id.toString().replace('new-', '')
+            )
         ),
         update: newSteps.filter(
           (step) =>
@@ -173,24 +177,23 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
         ),
         delete: existingSteps
           .filter(
-            (step) => !Object.values(stepMapping).includes(`new-${step.id}`)
+            (step) =>
+              !newSteps.some(
+                (newStep) =>
+                  step.id === newStep.id.toString().replace('new-', '')
+              )
           )
           .map((step) => step.id.toString()),
       },
     };
-    onSave(editedFunnel);
-    onClose();
+    console.log('editedFunnel: ', editedFunnel);
+    // onSave(editedFunnel);
+    // onClose();
   };
 
   const isStepNameUnique = (name: string, currentIndex: number) => {
     return !newSteps.some(
       (step, index) => index !== currentIndex && step.name === name
-    );
-  };
-
-  const isAllOldStepsMapped = () => {
-    return existingSteps.every((step) =>
-      Object.keys(stepMapping).includes(step.id.toString())
     );
   };
 
@@ -205,10 +208,10 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
         value={step.name}
         onChange={(e) => handleStepChange(index, 'name', e.target.value)}
         isInvalid={!isStepNameUnique(step.name, index)}
-        isReadOnly={
-          !isNewStep &&
-          existingSteps.some((existingStep) => existingStep.name === step.name)
-        }
+        isReadOnly={!isNewStep}
+        sx={{
+          backgroundColor: !isNewStep ? 'gray.100' : 'white',
+        }}
       />
       <HStack>
         <InfoIcon />
@@ -237,30 +240,28 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
         value={step.action}
         onChange={(e) => handleStepChange(index, 'action', e.target.value)}
       />
-      {isNewStep && (
-        <HStack justifyContent='space-between'>
-          <HStack>
-            <IconButton
-              aria-label='Move step up'
-              icon={<ChevronUpIcon />}
-              onClick={() => handleMoveStep(index, 'up')}
-              isDisabled={index === 0}
-            />
-            <IconButton
-              aria-label='Move step down'
-              icon={<ChevronDownIcon />}
-              onClick={() => handleMoveStep(index, 'down')}
-              isDisabled={index === newSteps.length - 1}
-            />
-          </HStack>
+      <HStack justifyContent='space-between'>
+        <HStack>
           <IconButton
-            aria-label='Delete step'
-            icon={<DeleteIcon />}
-            onClick={() => handleDeleteStep(index)}
-            colorScheme='red'
+            aria-label='Move step up'
+            icon={<ChevronUpIcon />}
+            onClick={() => handleMoveStep(index, 'up')}
+            isDisabled={index === 0}
+          />
+          <IconButton
+            aria-label='Move step down'
+            icon={<ChevronDownIcon />}
+            onClick={() => handleMoveStep(index, 'down')}
+            isDisabled={index === newSteps.length - 1}
           />
         </HStack>
-      )}
+        <IconButton
+          aria-label='Delete step'
+          icon={<DeleteIcon />}
+          onClick={() => handleDeleteStep(index)}
+          colorScheme='red'
+        />
+      </HStack>
     </VStack>
   );
 
@@ -269,22 +270,32 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
       <Button leftIcon={<AddIcon />} onClick={handleAddStep}>
         Add Step
       </Button>
-      <Accordion allowMultiple>
-        {newSteps.map((step, index) => (
-          <AccordionItem key={step.id}>
-            <h2>
-              <AccordionButton>
-                <Box flex='1' textAlign='left'>
-                  {index + 1}. {step.name || 'Untitled Step'}
-                </Box>
-                <AccordionIcon />
-              </AccordionButton>
-            </h2>
-            <AccordionPanel pb={4}>
-              {renderStepContent(step, index)}
-            </AccordionPanel>
-          </AccordionItem>
-        ))}
+      <Accordion allowToggle>
+        {newSteps.map((step, index) => {
+          const isNewStep = !existingSteps.some(
+            (existingStep) => existingStep.id === step.id.replace('new-', '')
+          );
+
+          return (
+            <AccordionItem key={step.id}>
+              <h2>
+                <AccordionButton>
+                  <Box
+                    flex='1'
+                    textAlign='left'
+                    sx={{ color: isNewStep ? 'blue' : 'grey' }}
+                  >
+                    {index + 1}. {step.name || 'Untitled Step'}
+                  </Box>
+                  <AccordionIcon />
+                </AccordionButton>
+              </h2>
+              <AccordionPanel pb={4}>
+                {renderStepContent(step, index, isNewStep)}
+              </AccordionPanel>
+            </AccordionItem>
+          );
+        })}
       </Accordion>
     </VStack>
   );
@@ -299,9 +310,14 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
             label={`Definition: ${step.definition}\nExample: ${step.example}\nAction: ${step.action}`}
           >
             <Box>
-              <Text>
-                {index + 1}. {step.name}
-              </Text>
+              <HStack>
+                <Box>
+                  {index + 1}. {step.name}{' '}
+                </Box>
+                {!newSteps.some(
+                  (newStep) => newStep.id.replace('new-', '') === step.id
+                ) && <DeleteIcon color='red.500' />}
+              </HStack>
               <Select
                 placeholder='Map to new step'
                 value={stepMapping[step.id.toString()] || ''}
@@ -320,7 +336,9 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
         ))}
       </VStack>
       <VStack flex={1} align='stretch'>
-        <Text fontWeight='bold'>New Steps</Text>
+        <Text fontWeight='bold' color='blue'>
+          New Steps
+        </Text>
         {newSteps.map((step, index) => (
           <Tooltip
             key={step.id}
@@ -338,50 +356,145 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
   const renderPhase3 = () => (
     <VStack spacing={4} align='stretch'>
       <Text fontWeight='bold'>Preview of Changes</Text>
-      {newSteps.map((step, index) => {
-        const oldStep = existingSteps.find(
-          (oldStep) => `new-${oldStep.id}` === step.id
+      {existingSteps.map((step) => {
+        const copyInNewStep = newSteps.find(
+          (newStep) => newStep.id.replace('new-', '') === step.id
         );
-        const action = oldStep ? 'Edit' : 'Create';
+        const action = copyInNewStep ? (
+          <Badge colorScheme='blue'>
+            <HStack>
+              <EditIcon /> <Text>Edit</Text>
+            </HStack>
+          </Badge>
+        ) : (
+          <Badge colorScheme='red'>
+            <HStack>
+              <DeleteIcon /> <Text>Delete</Text>
+            </HStack>
+          </Badge>
+        );
+        const mappedNewStepId = stepMapping[step.id];
+        const mappedNewStep = newSteps.find(
+          (newStep) => newStep.id === mappedNewStepId
+        );
         return (
           <Box key={step.id} p={2} borderWidth={1} borderRadius='md'>
-            <Text>
-              {index + 1}. {step.name} - {action}
+            <Text sx={{ mr: '4px' }}>
+              {action} {copyInNewStep ? copyInNewStep.step_order + 1 + '.' : ''}{' '}
+              {step.name}
             </Text>
-            {oldStep && (
-              <Text fontSize='sm' color='gray.500'>
-                Mapped from: {oldStep.name}
-              </Text>
+            {mappedNewStep &&
+              mappedNewStep.id.replace('new-', '') === step.id &&
+              ''}
+            {mappedNewStep &&
+              mappedNewStep.id.replace('new-', '') !== step.id && (
+                <Text fontSize='sm' color='gray.500'>
+                  Change object of this step to{' '}
+                  <Badge color='blue'>{mappedNewStep.name}</Badge>
+                </Text>
+              )}
+            {!mappedNewStep && (
+              <Box>
+                <WarningIcon color='red.500' /> Missing mapping to a new Step
+              </Box>
             )}
           </Box>
         );
       })}
-      {existingSteps
+      {newSteps
         .filter(
-          (step) => !Object.values(stepMapping).includes(`new-${step.id}`)
+          (step) =>
+            !existingSteps
+              .map((step) => {
+                return 'new-' + step.id;
+              })
+              .includes(step.id)
         )
-        .map((step) => (
-          <Box
-            key={step.id}
-            p={2}
-            borderWidth={1}
-            borderRadius='md'
-            bg='red.100'
-          >
-            <Text>{step.name} - Delete</Text>
-          </Box>
-        ))}
+        .map((step) => {
+          const mappedOldSteps = existingSteps.filter(
+            (oldStep) => stepMapping[oldStep.id.toString()] === step.id
+          );
+          return (
+            <Box key={step.id} p={2} borderWidth={1} borderRadius='md'>
+              <Text sx={{ mr: '4px' }}>
+                <Badge colorScheme='green'>
+                  <HStack>
+                    <AddIcon /> <Text>Create New</Text>
+                  </HStack>
+                </Badge>{' '}
+                {step.step_order + 1 + '.'} {step.name}
+              </Text>
+              {mappedOldSteps.length > 0 && (
+                <Text sx={{ mr: '4px' }}>
+                  Mapped from:{' '}
+                  {mappedOldSteps.map((oldStep) => (
+                    <Badge key={oldStep.id}>{oldStep.name}</Badge>
+                  ))}
+                </Text>
+              )}
+            </Box>
+          );
+        })}
       {!isAllOldStepsMapped() && (
         <Alert status='warning'>
           <AlertIcon />
           Warning: Not all existing steps are mapped to new steps.
         </Alert>
       )}
+      {createdStepHasOldName().length > 0 && (
+        <Alert status='warning'>
+          <AlertIcon />
+          Warning: You cannot create a new step with an old step's name{' '}
+          {createdStepHasOldName().map((name: string) => (
+            <Badge key={name}>{name}</Badge>
+          ))}
+          .
+        </Alert>
+      )}
     </VStack>
   );
 
+  const isAllOldStepsMapped = useCallback(
+    function () {
+      return existingSteps.every((step) =>
+        Object.keys(stepMapping).includes(step.id.toString())
+      );
+    },
+    [existingSteps, stepMapping]
+  );
+
+  const createdStepHasOldName = useCallback(
+    function () {
+      return newSteps
+        .filter((newStep) =>
+          existingSteps.some(
+            (oldStep) =>
+              newStep.name === oldStep.name &&
+              newStep.id.replace('new-', '') !== oldStep.id
+          )
+        )
+        .map((step) => step.name);
+    },
+    [existingSteps, newSteps]
+  );
+
+  const shouldSaveButtonDisabled = useCallback(() => {
+    return (
+      currentPhase !== 2 ||
+      !isAllOldStepsMapped() ||
+      createdStepHasOldName().length !== 0
+    );
+  }, [currentPhase, isAllOldStepsMapped, createdStepHasOldName]);
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size='xl'>
+    <Modal
+      isOpen={isOpen}
+      onClose={() => {
+        setCurrentPhase(0);
+        onClose();
+      }}
+      size='xl'
+    >
       <ModalOverlay />
       <ModalContent maxWidth='800px'>
         <ModalHeader>Edit Funnel</ModalHeader>
@@ -424,10 +537,20 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
         </ModalBody>
         <ModalFooter>
           <Button
+            variant='ghost'
+            mr={3}
+            onClick={() => {
+              setDefaultValue(funnel);
+              setCurrentPhase(0);
+            }}
+          >
+            Reset
+          </Button>
+          <Button
             colorScheme='blue'
             mr={3}
             onClick={handleSave}
-            isDisabled={currentPhase !== 2 || !isAllOldStepsMapped()}
+            isDisabled={shouldSaveButtonDisabled()}
           >
             Save Changes
           </Button>
