@@ -10,6 +10,8 @@ The v0 ignore these
 - No ENUM type
 - `creator` only ties to `task`, make it quite strict to use this project. Should we add more connection?
 - Remove `creator_session` in database
+- Create a task to create `obj_type_value`.`search_vector`
+- Create a task to aggregate `obj_type_value`.`search_vector`, `fact`.`text`::tsvector into one vector in `obj`. This would make search and query much more efficient.
 
 ## Front-end improvement
 

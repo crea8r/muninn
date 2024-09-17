@@ -4,8 +4,10 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/crea8r/muninn/server/internal/api/middleware"
 	"github.com/crea8r/muninn/server/internal/database"
@@ -69,7 +71,7 @@ func (h *FunnelHandler) UpdateFunnel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
+	fmt.Println(update)
 	ctx := r.Context()
 
 	// Update funnel
@@ -82,11 +84,16 @@ func (h *FunnelHandler) UpdateFunnel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	// Create new steps
 	for _, step := range update.StepsCreate {
+		newUUIDStepID := uuid.New()
+		for oldStepID, newStepID := range update.StepMapping {
+			if newStepID == step.ID {
+				update.StepMapping[oldStepID] = newUUIDStepID.String()
+			}
+		}
 		_, err := h.db.CreateStep(ctx, database.CreateStepParams{
-			ID:         uuid.New(),
+			ID:         newUUIDStepID,
 			FunnelID:   uuid.MustParse(update.ID),
 			Name:       step.Name,
 			Definition: step.Definition,
@@ -99,7 +106,6 @@ func (h *FunnelHandler) UpdateFunnel(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 	// Update existing steps
 	for _, step := range update.StepsUpdate {
 		_, err := h.db.UpdateStep(ctx, database.UpdateStepParams{
@@ -115,7 +121,6 @@ func (h *FunnelHandler) UpdateFunnel(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 	// Delete steps
 	for _, stepID := range update.StepsDelete {
 		err := h.db.DeleteStep(ctx, uuid.MustParse(stepID))
@@ -124,7 +129,6 @@ func (h *FunnelHandler) UpdateFunnel(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 	// Update obj_step mappings
 	for oldStepID, newStepID := range update.StepMapping {
 		err := h.db.UpdateObjStep(ctx, database.UpdateObjStepParams{
@@ -136,7 +140,6 @@ func (h *FunnelHandler) UpdateFunnel(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 	json.NewEncoder(w).Encode(updatedFunnel)
 }
 
@@ -159,6 +162,18 @@ func (h *FunnelHandler) DeleteFunnel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type ListFunnelsRowWithStep struct {
+	ID          uuid.UUID    `json:"id"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	CreatorID   uuid.UUID    `json:"creator_id"`
+	CreatedAt   time.Time    `json:"created_at"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
+	OrgID       uuid.UUID    `json:"org_id"`
+	ObjectCount int64        `json:"object_count"`
+	Steps 			[]database.ListStepsByFunnelRow `json:"steps"`
 }
 
 func (h *FunnelHandler) ListFunnels(w http.ResponseWriter, r *http.Request) {
@@ -196,23 +211,31 @@ func (h *FunnelHandler) ListFunnels(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	funnelWithSteps := make([]ListFunnelsRowWithStep, len(funnels))
 	for i, funnel := range funnels {
 		steps, err := h.db.ListStepsByFunnel(ctx, funnel.ID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		funnels[i].Steps = steps
+		funnelWithSteps[i].ID = funnel.ID
+		funnelWithSteps[i].Name = funnel.Name
+		funnelWithSteps[i].Description = funnel.Description
+		funnelWithSteps[i].CreatorID = funnel.CreatorID
+		funnelWithSteps[i].CreatedAt = funnel.CreatedAt
+		funnelWithSteps[i].DeletedAt = funnel.DeletedAt
+		funnelWithSteps[i].OrgID = funnel.OrgID
+		funnelWithSteps[i].ObjectCount = funnel.ObjectCount
+		funnelWithSteps[i].Steps = steps
 	}
 
 	response := struct {
-		Funnels    []database.ListFunnelsRow `json:"funnels"`
+		Funnels    []ListFunnelsRowWithStep `json:"funnels"`
 		TotalCount int64             `json:"totalCount"`
 		Page       int               `json:"page"`
 		PageSize   int               `json:"pageSize"`
 	}{
-		Funnels:    funnels,
+		Funnels:    funnelWithSteps,
 		TotalCount: totalCount,
 		Page:       page,
 		PageSize:   pageSize,

@@ -3,21 +3,18 @@ import {
   Box,
   Flex,
   Input,
-  Tag,
+  Tag as ChakraTag,
   TagCloseButton,
   TagLabel,
   Text,
 } from '@chakra-ui/react';
+import { Tag } from 'src/types';
+import { listTags } from 'src/api/tag';
 
 interface TagInputProps {
-  tags: { id: string; text: string }[];
-  onChange: (tags: { id: string; text: string }[]) => void;
+  tags: Tag[];
+  onChange: (tags: Tag[]) => void;
   isReadOnly?: boolean;
-}
-
-interface Suggestion {
-  id: string;
-  text: string;
 }
 
 const TagInput: React.FC<TagInputProps> = ({
@@ -26,27 +23,13 @@ const TagInput: React.FC<TagInputProps> = ({
   isReadOnly = false,
 }) => {
   const [inputValue, setInputValue] = useState('');
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<Tag[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Mock function to fetch tag suggestions
-  // In a real application, this would be an API call
-  const fetchSuggestions = async (query: string): Promise<Suggestion[]> => {
-    // Simulating API delay
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    const mockSuggestions = [
-      { id: '1', text: 'React' },
-      { id: '2', text: 'TypeScript' },
-      { id: '3', text: 'JavaScript' },
-      { id: '4', text: 'Node.js' },
-      { id: '5', text: 'GraphQL' },
-    ];
-    return mockSuggestions.filter(
-      (tag) =>
-        tag.text.toLowerCase().includes(query.toLowerCase()) &&
-        !tags.some((existingTag) => existingTag.id === tag.id)
-    );
+  const fetchSuggestions = async (query: string): Promise<Tag[]> => {
+    const response = await listTags({ page: 0, pageSize: 10, query });
+    return response.tags;
   };
 
   useEffect(() => {
@@ -79,9 +62,17 @@ const TagInput: React.FC<TagInputProps> = ({
 
   const addTag = (text: string) => {
     const suggestion = suggestions.find(
-      (s) => s.text.toLowerCase() === text.toLowerCase()
+      (s) => s.name.toLowerCase() === text.toLowerCase()
     );
-    const newTag = suggestion || { id: Date.now().toString(), text };
+    const newTag = suggestion || {
+      id: Date.now().toString(),
+      name: text,
+      description: '',
+      color_schema: {
+        text: '#fff',
+        background: '#000',
+      },
+    };
     onChange([...tags, newTag]);
     setInputValue('');
     setShowSuggestions(false);
@@ -91,8 +82,8 @@ const TagInput: React.FC<TagInputProps> = ({
     onChange(tags.filter((tag) => tag.id !== id));
   };
 
-  const handleSuggestionClick = (suggestion: Suggestion) => {
-    addTag(suggestion.text);
+  const handleSuggestionClick = (suggestion: Tag) => {
+    addTag(suggestion.name);
     inputRef.current?.focus();
   };
 
@@ -108,19 +99,12 @@ const TagInput: React.FC<TagInputProps> = ({
         p={2}
       >
         {tags.map((tag) => (
-          <Tag
-            key={tag.id}
-            size='md'
-            borderRadius='full'
-            variant='solid'
-            colorScheme='blue'
-            m={1}
+          <ChakraTag
+            backgroundColor={tag.color_schema.background}
+            color={tag.color_schema.text}
           >
-            <TagLabel>{tag.text}</TagLabel>
-            {!isReadOnly && (
-              <TagCloseButton onClick={() => removeTag(tag.id)} />
-            )}
-          </Tag>
+            {tag.name}
+          </ChakraTag>
         ))}
         {!isReadOnly && (
           <Input
@@ -159,7 +143,7 @@ const TagInput: React.FC<TagInputProps> = ({
               _hover={{ bg: 'gray.100' }}
               onClick={() => handleSuggestionClick(suggestion)}
             >
-              {suggestion.text}
+              {suggestion.name}
             </Text>
           ))}
         </Box>

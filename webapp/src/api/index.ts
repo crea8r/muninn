@@ -6,7 +6,15 @@ export const fetchObjectDetails = async (objectId: any) => {
       id: 1,
       name: 'string',
       description: 'string',
-      tags: [{ id: '1', text: 'string' }],
+      tags: [
+        {
+          id: '1',
+          name: 'string',
+          description: '',
+          color_schema: { text: '#fff', background: '#000' },
+        },
+      ],
+      typeValues: [{ id: '1', objectTypeId: '1', values: { key: 'value' } }],
       createdAt: '1-1-24',
       updatedAt: '1-1-24',
     },
@@ -86,6 +94,7 @@ export const fetchObjectTypes = async (objectId: any) => {
   return {
     objectTypes: [
       {
+        id: '1',
         objectTypeId: '1',
         values: {
           email: 'john@example.com',
@@ -135,6 +144,7 @@ export const addObjectType = async (
 ) => {
   return {
     objectTypeId: 'new',
+    id: 'new',
     values: { key: 'value' },
   };
 };
@@ -150,6 +160,7 @@ export const updateObjectTypeValue = async (
   value: any
 ) => {
   return {
+    id: 'updated',
     objectTypeId: 'new',
     values: { key: 'value' },
   };

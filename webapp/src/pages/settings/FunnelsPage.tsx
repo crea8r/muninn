@@ -191,7 +191,6 @@ const FunnelsPage: React.FC = () => {
         <Thead>
           <Tr>
             <Th>Name</Th>
-            <Th>Description</Th>
             <Th>Steps</Th>
             <Th>Actions</Th>
           </Tr>
@@ -206,8 +205,12 @@ const FunnelsPage: React.FC = () => {
           ) : (
             funnels.map((funnel) => (
               <Tr key={funnel.id}>
-                <Td fontWeight='bold'>{funnel.name}</Td>
-                <Td>{funnel.description}</Td>
+                <Td maxWidth='250px'>
+                  <VStack align='left'>
+                    <Text fontWeight='bold'>{funnel.name}</Text>
+                    <Box>{funnel.description}</Box>
+                  </VStack>
+                </Td>
                 <Td>
                   <UnorderedList>
                     {funnel.steps.map((step, index) => (
@@ -215,7 +218,7 @@ const FunnelsPage: React.FC = () => {
                     ))}
                   </UnorderedList>
                 </Td>
-                <Td>
+                <Td width='200px'>
                   <Button size='sm' onClick={() => handleEdit(funnel)} mr={2}>
                     Edit
                   </Button>

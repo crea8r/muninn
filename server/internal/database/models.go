@@ -81,13 +81,13 @@ type List struct {
 }
 
 type Obj struct {
-	ID          uuid.UUID     `json:"id"`
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	IDString    string        `json:"id_string"`
-	CreatorID   uuid.NullUUID `json:"creator_id"`
-	CreatedAt   time.Time     `json:"created_at"`
-	DeletedAt   sql.NullTime  `json:"deleted_at"`
+	ID          uuid.UUID    `json:"id"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	IDString    string       `json:"id_string"`
+	CreatorID   uuid.UUID    `json:"creator_id"`
+	CreatedAt   time.Time    `json:"created_at"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
 }
 
 type ObjFact struct {

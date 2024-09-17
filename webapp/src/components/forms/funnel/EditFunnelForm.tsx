@@ -155,40 +155,55 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
   const handleSave = () => {
     console.log('newSteps: ', newSteps);
     console.log('oldSteps: ', existingSteps);
+    let processedMapping: any = {};
+    Object.keys(stepMapping).forEach((oldStepId) => {
+      let newStepId = stepMapping[oldStepId];
+      newStepId = existingSteps.some((existingStep) => {
+        return existingStep.id === newStepId.replace('new-', '');
+      })
+        ? newStepId.replace('new-', '')
+        : newStepId;
+      processedMapping[oldStepId] = newStepId;
+    });
     const editedFunnel: FunnelUpdate = {
       id: funnel!.id,
       name,
       description,
-      steps: {
-        create: newSteps.filter(
-          (step) =>
-            !existingSteps.some(
-              (existingStep) =>
-                existingStep.id === step.id.toString().replace('new-', '')
-            )
-        ),
-        update: newSteps.filter(
+      steps_create: newSteps.filter(
+        (step) =>
+          !existingSteps.some(
+            (existingStep) =>
+              existingStep.id === step.id.toString().replace('new-', '')
+          )
+      ),
+      steps_update: newSteps
+        .filter(
           (step) =>
             step.id.toString().startsWith('new-') &&
             existingSteps.some(
               (existingStep) =>
                 existingStep.id === step.id.toString().replace('new-', '')
             )
-        ),
-        delete: existingSteps
-          .filter(
-            (step) =>
-              !newSteps.some(
-                (newStep) =>
-                  step.id === newStep.id.toString().replace('new-', '')
-              )
-          )
-          .map((step) => step.id.toString()),
-      },
+        )
+        .map((step) => {
+          return {
+            ...step,
+            id: step.id.replace('new-', ''),
+          };
+        }),
+      steps_delete: existingSteps
+        .filter(
+          (step) =>
+            !newSteps.some(
+              (newStep) => step.id === newStep.id.toString().replace('new-', '')
+            )
+        )
+        .map((step) => step.id.toString()),
+      step_mapping: processedMapping,
     };
     console.log('editedFunnel: ', editedFunnel);
-    // onSave(editedFunnel);
-    // onClose();
+    onSave(editedFunnel);
+    onClose();
   };
 
   const isStepNameUnique = (name: string, currentIndex: number) => {

@@ -27,12 +27,12 @@ const Header: React.FC = () => {
   return (
     <Box as='header' bg='white' boxShadow='sm' py={4}>
       <Flex
-        maxW='container.xl'
+        // maxW='container.xl'
         mx='auto'
         alignItems='center'
         justifyContent='space-between'
       >
-        <HStack w='250px'>
+        <HStack w='250px' paddingLeft='8px'>
           <img
             src={logo}
             alt='Muninn'
@@ -51,7 +51,7 @@ const Header: React.FC = () => {
           </InputGroup>
         </Flex>
         <Menu>
-          <MenuButton>
+          <MenuButton paddingRight='16px'>
             <Avatar size='sm' />
           </MenuButton>
           <MenuList>

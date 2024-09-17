@@ -19,7 +19,11 @@ import { useHistory } from 'react-router-dom';
 interface NewObjectFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateObject: (name: string, description: string) => Promise<string>;
+  onCreateObject: (
+    name: string,
+    description: string,
+    idString: string
+  ) => Promise<string>;
 }
 
 const NewObjectForm: React.FC<NewObjectFormProps> = ({
@@ -28,6 +32,7 @@ const NewObjectForm: React.FC<NewObjectFormProps> = ({
   onCreateObject,
 }) => {
   const [name, setName] = useState('');
+  const [idString, setIDString] = useState('');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const history = useHistory();
@@ -36,7 +41,7 @@ const NewObjectForm: React.FC<NewObjectFormProps> = ({
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const newObjectId = await onCreateObject(name, description);
+      const newObjectId = await onCreateObject(name, description, idString);
       onClose();
       history.push(`/objects/${newObjectId}`);
     } catch (error) {
@@ -62,6 +67,14 @@ const NewObjectForm: React.FC<NewObjectFormProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder='Enter object name'
+                />
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel>ID String</FormLabel>
+                <Input
+                  value={idString}
+                  onChange={(e) => setIDString(e.target.value)}
+                  placeholder='Object id string, useful for adding info from csv'
                 />
               </FormControl>
               <FormControl>

@@ -1,26 +1,3 @@
--- name: GetObject :one
-SELECT * FROM obj WHERE id = $1 LIMIT 1;
-
--- name: ListObjects :many
-SELECT * FROM obj
-WHERE creator_id = $1
-ORDER BY created_at DESC
-LIMIT $2 OFFSET $3;
-
--- name: CreateObject :one
-INSERT INTO obj (name, description, id_string, creator_id)
-VALUES ($1, $2, $3, $4)
-RETURNING *;
-
--- name: UpdateObject :one
-UPDATE obj
-SET name = $2, description = $3, id_string = $4
-WHERE id = $1
-RETURNING *;
-
--- name: DeleteObject :exec
-UPDATE obj SET deleted_at = NOW() WHERE id = $1;
-
 -- name: GetCreator :one
 SELECT * FROM creator WHERE id = $1 LIMIT 1;
 
@@ -272,3 +249,64 @@ WHERE c.org_id = $1 AND f.deleted_at IS NULL
       )
     )
   ));
+
+-- name: CreateObject :one
+INSERT INTO obj (name, description, id_string, creator_id)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
+
+-- name: UpdateObject :one
+UPDATE obj
+SET name = $2, description = $3, id_string = $4
+WHERE id = $1
+RETURNING *;
+
+-- name: DeleteObject :exec
+UPDATE obj SET deleted_at = NOW() WHERE id = $1;
+
+-- name: ListObjectsByOrgID :many
+WITH object_data AS (
+    SELECT o.id, o.name, o.description, o.id_string, o.creator_id,
+           o.created_at, o.deleted_at,
+           array_agg(DISTINCT t.id) AS tag_ids,
+           string_agg(DISTINCT otv.search_vector::text, ' ')::tsvector AS type_values,
+           string_agg(DISTINCT f.text, ' ')::tsvector AS fact_search
+    FROM obj o
+    JOIN creator c ON o.creator_id = c.id
+    LEFT JOIN obj_tag ot ON o.id = ot.obj_id
+    LEFT JOIN tag t ON ot.tag_id = t.id
+    LEFT JOIN obj_type_value otv ON o.id = otv.obj_id
+    LEFT JOIN obj_fact of ON o.id = of.obj_id
+    LEFT JOIN fact f ON of.fact_id = f.id
+    WHERE c.org_id = $1 AND o.deleted_at IS NULL
+    GROUP BY o.id
+)
+SELECT od.id, od.name, od.description, od.id_string, od.created_at,
+       (SELECT jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema))
+        FROM tag t
+        WHERE t.id = ANY(od.tag_ids)) AS tags,
+       od.type_values
+FROM object_data od
+WHERE ($2 = '' OR
+      od.name ILIKE '%' || $2 || '%' OR 
+      od.description ILIKE '%' || $2 || '%' OR 
+      od.id_string ILIKE '%' || $2 || '%' OR 
+      od.fact_search @@ to_tsquery('english', $2) OR
+      od.type_values @@ to_tsquery('english', $2))
+ORDER BY od.created_at DESC
+LIMIT $3 OFFSET $4;
+
+-- name: CountObjectsByOrgID :one
+SELECT COUNT(DISTINCT o.id)
+FROM obj o
+JOIN creator c ON o.creator_id = c.id
+LEFT JOIN obj_tag ot ON o.id = ot.obj_id
+LEFT JOIN tag t ON ot.tag_id = t.id
+LEFT JOIN obj_type_value otv ON o.id = otv.obj_id
+LEFT JOIN obj_fact of ON o.id = of.obj_id
+LEFT JOIN fact f ON of.fact_id = f.id
+WHERE c.org_id = $1 AND o.deleted_at IS NULL
+  AND ($2 = '' OR
+       to_tsvector('english', o.name || ' ' || o.description || ' ' || o.id_string) @@ to_tsquery('english', $2) OR
+       to_tsvector('english', f.text) @@ to_tsquery('english', $2) OR
+       otv.search_vector @@ to_tsquery('english', $2));

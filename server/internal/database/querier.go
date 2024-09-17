@@ -13,6 +13,7 @@ import (
 type Querier interface {
 	CountFunnels(ctx context.Context, arg CountFunnelsParams) (int64, error)
 	CountObjectTypes(ctx context.Context, arg CountObjectTypesParams) (int64, error)
+	CountObjectsByOrgID(ctx context.Context, arg CountObjectsByOrgIDParams) (int64, error)
 	CountTags(ctx context.Context, arg CountTagsParams) (int64, error)
 	CreateCreator(ctx context.Context, arg CreateCreatorParams) (Creator, error)
 	CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error)
@@ -34,7 +35,6 @@ type Querier interface {
 	GetCreatorByUsername(ctx context.Context, arg GetCreatorByUsernameParams) (Creator, error)
 	GetFeed(ctx context.Context, creatorID uuid.UUID) ([]Feed, error)
 	GetFunnel(ctx context.Context, id uuid.UUID) (GetFunnelRow, error)
-	GetObject(ctx context.Context, id uuid.UUID) (Obj, error)
 	GetObjectTypeByID(ctx context.Context, id uuid.UUID) (ObjType, error)
 	GetSessionByToken(ctx context.Context, jwt string) (CreatorSession, error)
 	GetStep(ctx context.Context, id uuid.UUID) (GetStepRow, error)
@@ -42,7 +42,7 @@ type Querier interface {
 	ListCreators(ctx context.Context, arg ListCreatorsParams) ([]Creator, error)
 	ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]ListFunnelsRow, error)
 	ListObjectTypes(ctx context.Context, arg ListObjectTypesParams) ([]ListObjectTypesRow, error)
-	ListObjects(ctx context.Context, arg ListObjectsParams) ([]Obj, error)
+	ListObjectsByOrgID(ctx context.Context, arg ListObjectsByOrgIDParams) ([]ListObjectsByOrgIDRow, error)
 	ListStepsByFunnel(ctx context.Context, funnelID uuid.UUID) ([]ListStepsByFunnelRow, error)
 	ListTags(ctx context.Context, arg ListTagsParams) ([]ListTagsRow, error)
 	MarkFeedAsSeen(ctx context.Context, dollar_1 []uuid.UUID) error

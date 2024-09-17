@@ -215,7 +215,8 @@ const ObjectsPage: React.FC = () => {
         onClose={() => setIsCreatingObject(false)}
         onCreateObject={function (
           name: string,
-          description: string
+          description: string,
+          idString: string
         ): Promise<string> {
           throw new Error('Function not implemented.');
         }}

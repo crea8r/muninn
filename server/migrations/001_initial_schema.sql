@@ -133,7 +133,7 @@ CREATE TABLE obj (
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     id_string TEXT NOT NULL,
-    creator_id UUID REFERENCES creator(id) ON DELETE CASCADE,
+    creator_id UUID NOT NULL REFERENCES creator(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE,
     UNIQUE (id_string, creator_id)

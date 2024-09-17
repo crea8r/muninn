@@ -4,6 +4,7 @@ import (
 	"github.com/crea8r/muninn/server/internal/api/handlers"
 	"github.com/crea8r/muninn/server/internal/api/middleware"
 	"github.com/crea8r/muninn/server/internal/database"
+	"github.com/crea8r/muninn/server/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
 )
@@ -25,6 +26,8 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 	tagHandler := handlers.NewTagHandler(db)
 	objectTypeHandler := handlers.NewObjectTypeHandler(db)
 	funnelHandler := handlers.NewFunnelHandler(db)
+	objectModel := models.NewObjectModel(db)
+	objectHandler := handlers.NewObjectHandler(objectModel, db)
 
 	// Public routes
 	r.Post("/auth/signup", handlers.SignUp(db))
@@ -56,6 +59,13 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 			r.Get("/", funnelHandler.ListFunnels)
 			r.Put("/{id}", funnelHandler.UpdateFunnel)
 			r.Delete("/{id}", funnelHandler.DeleteFunnel)
+		})
+			
+		r.Route("/setting/objects", func(r chi.Router) {
+			r.Post("/", objectHandler.Create)
+			r.Get("/", objectHandler.List)
+			r.Put("/{id}", objectHandler.Update)
+			r.Delete("/{id}", objectHandler.Delete)
 		})
 	})
 

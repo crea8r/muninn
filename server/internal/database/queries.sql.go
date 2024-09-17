@@ -71,6 +71,34 @@ func (q *Queries) CountObjectTypes(ctx context.Context, arg CountObjectTypesPara
 	return count, err
 }
 
+const countObjectsByOrgID = `-- name: CountObjectsByOrgID :one
+SELECT COUNT(DISTINCT o.id)
+FROM obj o
+JOIN creator c ON o.creator_id = c.id
+LEFT JOIN obj_tag ot ON o.id = ot.obj_id
+LEFT JOIN tag t ON ot.tag_id = t.id
+LEFT JOIN obj_type_value otv ON o.id = otv.obj_id
+LEFT JOIN obj_fact of ON o.id = of.obj_id
+LEFT JOIN fact f ON of.fact_id = f.id
+WHERE c.org_id = $1 AND o.deleted_at IS NULL
+  AND ($2 = '' OR
+       to_tsvector('english', o.name || ' ' || o.description || ' ' || o.id_string) @@ to_tsquery('english', $2) OR
+       to_tsvector('english', f.text) @@ to_tsquery('english', $2) OR
+       otv.search_vector @@ to_tsquery('english', $2))
+`
+
+type CountObjectsByOrgIDParams struct {
+	OrgID   uuid.UUID   `json:"org_id"`
+	Column2 interface{} `json:"column_2"`
+}
+
+func (q *Queries) CountObjectsByOrgID(ctx context.Context, arg CountObjectsByOrgIDParams) (int64, error) {
+	row := q.queryRow(ctx, q.countObjectsByOrgIDStmt, countObjectsByOrgID, arg.OrgID, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countTags = `-- name: CountTags :one
 SELECT COUNT(*) 
 FROM tag
@@ -195,10 +223,10 @@ RETURNING id, name, description, id_string, creator_id, created_at, deleted_at
 `
 
 type CreateObjectParams struct {
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	IDString    string        `json:"id_string"`
-	CreatorID   uuid.NullUUID `json:"creator_id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	IDString    string    `json:"id_string"`
+	CreatorID   uuid.UUID `json:"creator_id"`
 }
 
 func (q *Queries) CreateObject(ctx context.Context, arg CreateObjectParams) (Obj, error) {
@@ -579,25 +607,6 @@ func (q *Queries) GetFunnel(ctx context.Context, id uuid.UUID) (GetFunnelRow, er
 	return i, err
 }
 
-const getObject = `-- name: GetObject :one
-SELECT id, name, description, id_string, creator_id, created_at, deleted_at FROM obj WHERE id = $1 LIMIT 1
-`
-
-func (q *Queries) GetObject(ctx context.Context, id uuid.UUID) (Obj, error) {
-	row := q.queryRow(ctx, q.getObjectStmt, getObject, id)
-	var i Obj
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.IDString,
-		&i.CreatorID,
-		&i.CreatedAt,
-		&i.DeletedAt,
-	)
-	return i, err
-}
-
 const getObjectTypeByID = `-- name: GetObjectTypeByID :one
 SELECT id, name, description, fields, creator_id, created_at, deleted_at, fields_search FROM obj_type
 WHERE id = $1 AND deleted_at IS NULL
@@ -785,7 +794,6 @@ type ListFunnelsRow struct {
 	DeletedAt   sql.NullTime `json:"deleted_at"`
 	OrgID       uuid.UUID    `json:"org_id"`
 	ObjectCount int64        `json:"object_count"`
-	Steps 		 []ListStepsByFunnelRow       `json:"steps"`
 }
 
 func (q *Queries) ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]ListFunnelsRow, error) {
@@ -888,36 +896,78 @@ func (q *Queries) ListObjectTypes(ctx context.Context, arg ListObjectTypesParams
 	return items, nil
 }
 
-const listObjects = `-- name: ListObjects :many
-SELECT id, name, description, id_string, creator_id, created_at, deleted_at FROM obj
-WHERE creator_id = $1
-ORDER BY created_at DESC
-LIMIT $2 OFFSET $3
+const listObjectsByOrgID = `-- name: ListObjectsByOrgID :many
+WITH object_data AS (
+    SELECT o.id, o.name, o.description, o.id_string, o.creator_id,
+           o.created_at, o.deleted_at,
+           array_agg(DISTINCT t.id) AS tag_ids,
+           string_agg(DISTINCT otv.search_vector::text, ' ')::tsvector AS type_values,
+           string_agg(DISTINCT f.text, ' ')::tsvector AS fact_search
+    FROM obj o
+    JOIN creator c ON o.creator_id = c.id
+    LEFT JOIN obj_tag ot ON o.id = ot.obj_id
+    LEFT JOIN tag t ON ot.tag_id = t.id
+    LEFT JOIN obj_type_value otv ON o.id = otv.obj_id
+    LEFT JOIN obj_fact of ON o.id = of.obj_id
+    LEFT JOIN fact f ON of.fact_id = f.id
+    WHERE c.org_id = $1 AND o.deleted_at IS NULL
+    GROUP BY o.id
+)
+SELECT od.id, od.name, od.description, od.id_string, od.created_at,
+       (SELECT jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema))
+        FROM tag t
+        WHERE t.id = ANY(od.tag_ids)) AS tags,
+       od.type_values
+FROM object_data od
+WHERE ($2 = '' OR
+      od.name ILIKE '%' || $2 || '%' OR 
+      od.description ILIKE '%' || $2 || '%' OR 
+      od.id_string ILIKE '%' || $2 || '%' OR 
+      od.fact_search @@ to_tsquery('english', $2) OR
+      od.type_values @@ to_tsquery('english', $2))
+ORDER BY od.created_at DESC
+LIMIT $3 OFFSET $4
 `
 
-type ListObjectsParams struct {
-	CreatorID uuid.NullUUID `json:"creator_id"`
-	Limit     int32         `json:"limit"`
-	Offset    int32         `json:"offset"`
+type ListObjectsByOrgIDParams struct {
+	OrgID   uuid.UUID   `json:"org_id"`
+	Column2 interface{} `json:"column_2"`
+	Limit   int32       `json:"limit"`
+	Offset  int32       `json:"offset"`
 }
 
-func (q *Queries) ListObjects(ctx context.Context, arg ListObjectsParams) ([]Obj, error) {
-	rows, err := q.query(ctx, q.listObjectsStmt, listObjects, arg.CreatorID, arg.Limit, arg.Offset)
+type ListObjectsByOrgIDRow struct {
+	ID          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	IDString    string          `json:"id_string"`
+	CreatedAt   time.Time       `json:"created_at"`
+	Tags        json.RawMessage `json:"tags"`
+	TypeValues  interface{}     `json:"type_values"`
+}
+
+func (q *Queries) ListObjectsByOrgID(ctx context.Context, arg ListObjectsByOrgIDParams) ([]ListObjectsByOrgIDRow, error) {
+	rows, err := q.query(ctx, q.listObjectsByOrgIDStmt, listObjectsByOrgID,
+		arg.OrgID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Obj
+	var items []ListObjectsByOrgIDRow
 	for rows.Next() {
-		var i Obj
+		var i ListObjectsByOrgIDRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
 			&i.Description,
 			&i.IDString,
-			&i.CreatorID,
 			&i.CreatedAt,
-			&i.DeletedAt,
+			&i.Tags,
+			&i.TypeValues,
 		); err != nil {
 			return nil, err
 		}

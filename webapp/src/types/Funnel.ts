@@ -29,16 +29,8 @@ export interface FunnelUpdate {
   id: any;
   name: string;
   description: string;
-  steps: {
-    create: FunnelStep[];
-    update: FunnelStep[];
-    delete: string[];
-  };
+  steps_create: FunnelStep[];
+  steps_update: FunnelStep[];
+  steps_delete: string[];
+  step_mapping: { [oldId: string]: string };
 }
-
-// export interface FunnelUpdate {
-//   id: string;
-//   name?: string;
-//   description?: string;
-//   steps?: FunnelStep[];
-// }

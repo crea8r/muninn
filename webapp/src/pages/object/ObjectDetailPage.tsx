@@ -16,17 +16,17 @@ import {
   BreadcrumbLink,
 } from '@chakra-ui/react';
 import { ChevronRightIcon } from '@chakra-ui/icons';
-import { RichTextEditor, RichTextViewer } from '../../components/rich-text';
+import { RichTextEditor, RichTextViewer } from 'src/components/rich-text';
 import {
   TagInput,
   ObjectTypePanel,
   TaskPanel,
   FunnelPanel,
   ActivityFeed,
-} from '../../components/object-page';
-import { FactForm } from '../../components/forms';
-import { Object, Fact, NewFact } from '../../types/';
-import { fetchObjectDetails, updateObject, addFact } from '../../api';
+} from 'src/components/object-page';
+import { FactForm } from 'src/components/forms';
+import { Object, Fact, NewFact, Tag } from 'src/types/';
+import { fetchObjectDetails, updateObject, addFact } from 'src/api';
 
 interface ObjectDetailPageProps {
   objectId: string;
@@ -70,7 +70,7 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({ objectId }) => {
     // }
   };
 
-  const handleTagsChange = (newTags: { id: string; text: string }[]) => {
+  const handleTagsChange = (newTags: Tag[]) => {
     if (object) {
       setObject({ ...object, tags: newTags });
     }
