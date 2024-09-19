@@ -6,6 +6,7 @@ import NewTagForm from './tag/NewTagForm';
 import ObjectTypeForm from './ObjectTypeForm';
 import TaskForm from './TaskForm';
 import EditTagForm from './tag/EditTagForm';
+import ObjectForm from './object/ObjectForm';
 
 export {
   CreateFunnelForm,
@@ -16,4 +17,5 @@ export {
   ObjectTypeForm,
   TaskForm,
   EditTagForm,
+  ObjectForm,
 };

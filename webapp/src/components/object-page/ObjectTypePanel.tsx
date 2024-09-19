@@ -3,49 +3,47 @@ import {
   Box,
   VStack,
   Heading,
-  Text,
   Button,
   useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
   useToast,
+  SimpleGrid,
 } from '@chakra-ui/react';
-import { ObjectType, ObjectTypeValue } from '../../types/';
-import {
-  fetchObjectTypes,
-  addObjectType,
-  updateObjectTypeValue,
-  removeObjectType,
-} from '../../api';
+import { ObjectType, ObjectTypeValue } from 'src/types/';
+import { listObjectTypes } from 'src/api/objType';
+import ObjectTypeCard from 'src/components/forms/object/ObjectTypeCard';
+import AddObjectTypeModal from 'src/components/forms/object/AddObjectTypeModal';
 
 interface ObjectTypePanelProps {
   objectId: string;
+  objectTypes: ObjectTypeValue[];
+  onAddObjectTypeValue: (objectId: string, payload: any) => void;
+  onRemoveObjectTypeValue: (objectId: string, objTypeValueId: string) => void;
+  onUpdateObjectTypeValue: (
+    objectId: string,
+    objTypeValueId: string,
+    payload: any
+  ) => void;
 }
 
-const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({ objectId }) => {
-  const [objectTypes, setObjectTypes] = useState<ObjectTypeValue[]>([]);
+const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
+  objectId,
+  objectTypes,
+  onAddObjectTypeValue,
+  onRemoveObjectTypeValue,
+  onUpdateObjectTypeValue,
+}) => {
   const [availableTypes, setAvailableTypes] = useState<ObjectType[]>([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [selectedType, setSelectedType] = useState<string>('');
-  const [typeValues, setTypeValues] = useState<{ [key: string]: string }>({});
   const toast = useToast();
 
   useEffect(() => {
     const loadObjectTypes = async () => {
       try {
-        const { objectTypes, availableTypes } = await fetchObjectTypes(
-          objectId
-        );
-        setObjectTypes(objectTypes);
-        setAvailableTypes(availableTypes);
+        const resp = await listObjectTypes({
+          page: 1,
+          pageSize: 100,
+        });
+        setAvailableTypes(resp.objectTypes);
       } catch (error) {
         toast({
           title: 'Error loading object types',
@@ -60,16 +58,9 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({ objectId }) => {
     loadObjectTypes();
   }, [objectId, toast]);
 
-  const handleAddType = async () => {
-    if (!selectedType) return;
-
+  const handleAddType = async (payload: any) => {
     try {
-      const newObjectType = await addObjectType(
-        objectId,
-        selectedType,
-        typeValues
-      );
-      setObjectTypes([...objectTypes, newObjectType]);
+      await onAddObjectTypeValue(objectId, payload);
       onClose();
       toast({
         title: 'Object type added',
@@ -88,148 +79,34 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({ objectId }) => {
     }
   };
 
-  const handleUpdateTypeValue = async (
-    typeId: string,
-    field: string,
-    value: string
-  ) => {
-    try {
-      const updatedType = await updateObjectTypeValue(
-        objectId,
-        typeId,
-        field,
-        value
-      );
-      setObjectTypes(
-        objectTypes.map((type) =>
-          type.objectTypeId === typeId ? updatedType : type
-        )
-      );
-      toast({
-        title: 'Object type value updated',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error updating object type value',
-        description: 'Please try again later.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleRemoveType = async (typeId: string) => {
-    try {
-      await removeObjectType(objectId, typeId);
-      setObjectTypes(
-        objectTypes.filter((type) => type.objectTypeId !== typeId)
-      );
-      toast({
-        title: 'Object type removed',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error removing object type',
-        description: 'Please try again later.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-  console.log('availableTypes: ', availableTypes);
   return (
     <Box>
       <VStack align='stretch' spacing={4}>
         <Heading size='md'>Object Types</Heading>
-        {objectTypes.map((type) => (
-          <Box key={type.objectTypeId} borderWidth={1} borderRadius='md' p={4}>
-            <Heading size='sm'>
-              {availableTypes.filter(
-                (ot: ObjectType) => ot.id === type.objectTypeId
-              )[0]?.name || 'Unknown type'}
-            </Heading>
-            {Object.entries(type.values).map(([field, value]) => (
-              <FormControl key={field} mt={2}>
-                <FormLabel>{field}</FormLabel>
-                <Input
-                  value={value}
-                  onChange={(e) =>
-                    handleUpdateTypeValue(
-                      type.objectTypeId,
-                      field,
-                      e.target.value
-                    )
-                  }
-                />
-              </FormControl>
-            ))}
-            <Button
-              mt={2}
-              colorScheme='red'
-              size='sm'
-              onClick={() => handleRemoveType(type.objectTypeId)}
-            >
-              Remove Type
-            </Button>
-          </Box>
-        ))}
+        <SimpleGrid columns={[1, 2, 3]} spacing={4}>
+          {objectTypes.map((typeValue) => (
+            <ObjectTypeCard
+              key={typeValue.id}
+              objectTypeValue={typeValue}
+              objectType={availableTypes.find(
+                (type) => type.id === typeValue.objectTypeId
+              )}
+              onUpdate={(payload) =>
+                onUpdateObjectTypeValue(objectId, typeValue.id, payload)
+              }
+              onDelete={() => onRemoveObjectTypeValue(objectId, typeValue.id)}
+            />
+          ))}
+        </SimpleGrid>
         <Button onClick={onOpen}>Add New Type</Button>
       </VStack>
 
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Add New Object Type</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <FormControl>
-              <FormLabel>Select Type</FormLabel>
-              <Select
-                placeholder='Select type'
-                onChange={(e) => {
-                  setSelectedType(e.target.value);
-                  const selectedTypeFields =
-                    availableTypes.find((t) => t.id === e.target.value)
-                      ?.fields || {};
-                  setTypeValues(
-                    Object.fromEntries(
-                      Object.keys(selectedTypeFields).map((key) => [key, ''])
-                    )
-                  );
-                }}
-              >
-                {availableTypes.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
-              </Select>
-            </FormControl>
-            {Object.entries(typeValues).map(([field, value]) => (
-              <FormControl key={field} mt={2}>
-                <FormLabel>{field}</FormLabel>
-                <Input
-                  value={value}
-                  onChange={(e) =>
-                    setTypeValues({ ...typeValues, [field]: e.target.value })
-                  }
-                />
-              </FormControl>
-            ))}
-            <Button mt={4} colorScheme='blue' onClick={handleAddType}>
-              Add Type
-            </Button>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      <AddObjectTypeModal
+        isOpen={isOpen}
+        onClose={onClose}
+        availableTypes={availableTypes}
+        onAddType={handleAddType}
+      />
     </Box>
   );
 };

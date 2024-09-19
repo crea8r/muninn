@@ -7,25 +7,29 @@ import {
   TagCloseButton,
   TagLabel,
   Text,
+  useToast,
 } from '@chakra-ui/react';
 import { Tag } from 'src/types';
-import { listTags } from 'src/api/tag';
+import { createTag, listTags } from 'src/api/tag';
 
 interface TagInputProps {
   tags: Tag[];
-  onChange: (tags: Tag[]) => void;
   isReadOnly?: boolean;
+  onAddTag: (tagId: string) => void;
+  onRemoveTag: (tagId: string) => void;
 }
 
 const TagInput: React.FC<TagInputProps> = ({
   tags,
-  onChange,
   isReadOnly = false,
+  onAddTag,
+  onRemoveTag,
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState<Tag[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
 
   const fetchSuggestions = async (query: string): Promise<Tag[]> => {
     const response = await listTags({ page: 0, pageSize: 10, query });
@@ -55,31 +59,100 @@ const TagInput: React.FC<TagInputProps> = ({
     if (e.key === 'Enter' && inputValue) {
       e.preventDefault();
       addTag(inputValue);
-    } else if (e.key === 'Backspace' && !inputValue) {
+    } else if (
+      e.key === 'Backspace' &&
+      !inputValue &&
+      tags &&
+      tags.length > 0
+    ) {
       removeTag(tags[tags.length - 1].id);
     }
   };
 
-  const addTag = (text: string) => {
-    const suggestion = suggestions.find(
+  const addTag = async (text: string) => {
+    const newTag = suggestions?.find(
       (s) => s.name.toLowerCase() === text.toLowerCase()
     );
-    const newTag = suggestion || {
-      id: Date.now().toString(),
-      name: text,
-      description: '',
-      color_schema: {
-        text: '#fff',
-        background: '#000',
-      },
-    };
-    onChange([...tags, newTag]);
-    setInputValue('');
-    setShowSuggestions(false);
+    if (newTag && !tags.some((tag) => tag.id === newTag.id)) {
+      try {
+        await onAddTag(newTag.id);
+        setInputValue('');
+        setShowSuggestions(false);
+        toast({
+          title: 'Tag added.',
+          description: `Tag "${newTag.name}" has been added.`,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      } catch (error) {
+        toast({
+          title: 'Error adding tag.',
+          description: 'There was an error adding the tag.',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } else {
+      // create new tag
+      try {
+        const newTag = await createTag({
+          name: text,
+          description: '',
+          color_schema: { background: '#e2e8f0', text: '#2d3748' },
+        });
+        setInputValue('');
+        toast({
+          title: 'Success',
+          description: `Tag "${text}" has been created.`,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        await onAddTag(newTag.id);
+        toast({
+          title: 'Success',
+          description: `Tag "${newTag.name}" has been added.`,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      } catch (e) {
+        toast({
+          title: 'Error',
+          description: 'There was an error creating or adding the tag.',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      } finally {
+        setShowSuggestions(false);
+      }
+    }
   };
 
-  const removeTag = (id: string) => {
-    onChange(tags.filter((tag) => tag.id !== id));
+  const removeTag = async (id: string) => {
+    try {
+      await onRemoveTag(id);
+      setInputValue('');
+      setShowSuggestions(false);
+      toast({
+        title: 'Success',
+        description: `Tag is successfully removed.`,
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'There was an error removing the tag.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   const handleSuggestionClick = (suggestion: Tag) => {
@@ -102,8 +175,11 @@ const TagInput: React.FC<TagInputProps> = ({
           <ChakraTag
             backgroundColor={tag.color_schema.background}
             color={tag.color_schema.text}
+            key={tag.id}
+            margin={1}
           >
-            {tag.name}
+            <TagLabel>{tag.name}</TagLabel>
+            <TagCloseButton onClick={() => removeTag(tag.id)} />
           </ChakraTag>
         ))}
         {!isReadOnly && (
@@ -118,10 +194,11 @@ const TagInput: React.FC<TagInputProps> = ({
             _focus={{ outline: 'none' }}
             flexGrow={1}
             minWidth='120px'
+            marginTop={1}
           />
         )}
       </Flex>
-      {showSuggestions && suggestions.length > 0 && (
+      {showSuggestions && suggestions?.length > 0 && (
         <Box
           position='absolute'
           top='100%'

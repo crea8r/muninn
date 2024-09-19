@@ -5,7 +5,7 @@ import {
   Heading,
   Button,
   HStack,
-  Tag,
+  Tag as ChakraTag,
   Text,
   Input,
   InputGroup,
@@ -24,10 +24,11 @@ import {
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { useHistory } from 'react-router-dom';
-import { Object, ObjectTypeValue } from 'src/types/';
-import { fetchObjects, fetchObjectTypeValues } from 'src/api/object';
+import { NewObject, Object, ObjectTypeValue, Tag } from 'src/types/';
+import { fetchObjects } from 'src/api/object';
 import ImporterDialog from 'src/components/ImporterDialog';
-import NewObjectForm from 'src/components/forms/NewObjectForm';
+import { ObjectForm } from 'src/components/forms/';
+import { createObject } from 'src/api/object';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -60,15 +61,12 @@ const ObjectsPage: React.FC = () => {
       setTotalCount(totalCount);
 
       // Fetch object type values for each object
-      const typeValuesPromises = objects.map((obj) =>
-        fetchObjectTypeValues(obj.id)
-      );
-      const typeValuesResults = await Promise.all(typeValuesPromises);
-      const newObjectTypeValues = objects.reduce((acc, obj, index) => {
-        acc[obj.id] = typeValuesResults[index];
-        return acc;
-      }, {} as { [key: string]: ObjectTypeValue[] });
-      setObjectTypeValues(newObjectTypeValues);
+      // const typeValuesResults = {};
+      // const newObjectTypeValues = objects.reduce((acc, obj, index) => {
+      //   acc[obj.id] = typeValuesResults[index];
+      //   return acc;
+      // }, {} as { [key: string]: ObjectTypeValue[] });
+      // setObjectTypeValues(newObjectTypeValues);
     } catch (error) {
       console.error('Error loading objects:', error);
     }
@@ -82,6 +80,15 @@ const ObjectsPage: React.FC = () => {
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
     setCurrentPage(1);
+  };
+
+  const handleAddNewObject = async (data: NewObject) => {
+    try {
+      const newObject = await createObject(data);
+      history.push('/objects/' + newObject.id);
+    } catch (e) {
+      throw e;
+    }
   };
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
@@ -137,7 +144,7 @@ const ObjectsPage: React.FC = () => {
                   <Spinner />
                 </Td>
               </Tr>
-            ) : (
+            ) : objects.length > 0 ? (
               objects.map((obj) => (
                 <Tr
                   key={obj.id}
@@ -145,7 +152,24 @@ const ObjectsPage: React.FC = () => {
                   _hover={{ bg: 'gray.100', cursor: 'pointer' }}
                 >
                   <Td>{obj.name}</Td>
-                  <Td>{obj.description}</Td>
+                  <Td>
+                    <Box mb={1}>{obj.description}</Box>
+                    {obj.tags.length > 0 && (
+                      <Box>
+                        {obj.tags.map((tag: Tag) => (
+                          <ChakraTag
+                            key={tag.id}
+                            title={tag.description}
+                            textColor={tag.color_schema.text}
+                            background={tag.color_schema.background}
+                            mr={1}
+                          >
+                            {tag.name}
+                          </ChakraTag>
+                        ))}
+                      </Box>
+                    )}
+                  </Td>
                   <Td>
                     <HStack spacing={2}>
                       {objectTypeValues[obj.id]?.map((typeValue) => (
@@ -153,7 +177,7 @@ const ObjectsPage: React.FC = () => {
                           key={typeValue.objectTypeId}
                           label={
                             <VStack align='start'>
-                              {window.Object.entries(typeValue.values).map(
+                              {window.Object.entries(typeValue.type_values).map(
                                 ([key, value]) => (
                                   <Text key={key}>
                                     {key}: {value}
@@ -163,13 +187,21 @@ const ObjectsPage: React.FC = () => {
                             </VStack>
                           }
                         >
-                          <Tag colorScheme='blue'>{typeValue.objectTypeId}</Tag>
+                          <ChakraTag colorScheme='blue'>
+                            {typeValue.objectTypeId}
+                          </ChakraTag>
                         </Tooltip>
                       ))}
                     </HStack>
                   </Td>
                 </Tr>
               ))
+            ) : (
+              <Tr>
+                <Td colSpan={3} textAlign='center'>
+                  No objects found, try to search with a full word
+                </Td>
+              </Tr>
             )}
           </Tbody>
         </Table>
@@ -210,16 +242,10 @@ const ObjectsPage: React.FC = () => {
       </Flex>
 
       <ImporterDialog isOpen={isOpen} onClose={onClose} />
-      <NewObjectForm
+      <ObjectForm
         isOpen={isCreatingObject}
         onClose={() => setIsCreatingObject(false)}
-        onCreateObject={function (
-          name: string,
-          description: string,
-          idString: string
-        ): Promise<string> {
-          throw new Error('Function not implemented.');
-        }}
+        onCreateObject={handleAddNewObject}
       />
     </Box>
   );

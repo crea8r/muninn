@@ -14,9 +14,10 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
+  HStack,
 } from '@chakra-ui/react';
-import { ChevronRightIcon } from '@chakra-ui/icons';
-import { RichTextEditor, RichTextViewer } from 'src/components/rich-text';
+import { ChevronRightIcon, EditIcon } from '@chakra-ui/icons';
+import { RichTextViewer } from 'src/components/rich-text';
 import {
   TagInput,
   ObjectTypePanel,
@@ -24,25 +25,35 @@ import {
   FunnelPanel,
   ActivityFeed,
 } from 'src/components/object-page';
-import { FactForm } from 'src/components/forms';
-import { Object, Fact, NewFact, Tag } from 'src/types/';
+import { FactForm, ObjectForm } from 'src/components/forms';
+import { Object, Fact, NewFact, Tag, UpdateObject } from 'src/types/';
 import { fetchObjectDetails, updateObject, addFact } from 'src/api';
+import { useParams } from 'react-router-dom';
+import {
+  addObjectTypeValue,
+  addTagToObject,
+  removeObjectTypeValue,
+  removeTagFromObject,
+  updateObjectTypeValue,
+} from 'src/api/object';
+import ActionSuggestion from 'src/components/object-page/ActionSuggestion';
 
-interface ObjectDetailPageProps {
-  objectId: string;
-}
+interface ObjectDetailPageProps {}
 
-const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({ objectId }) => {
+const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({}) => {
+  const { objectId } = useParams<{ objectId: string }>();
   const [object, setObject] = useState<Object | null>(null);
-  const [isEditing, setIsEditing] = useState(true);
   const [facts, setFacts] = useState<Fact[]>([]);
   const toast = useToast();
+  const [showEditObject, setShowEditObject] = useState(false);
+  const [forceUpdate, setForceUpdate] = useState(0);
 
   useEffect(() => {
     const loadObjectDetails = async () => {
       try {
         const details = await fetchObjectDetails(objectId);
-        setObject(details.object);
+        console.log('details:', details);
+        setObject(details);
         setFacts(details.facts);
       } catch (error) {
         toast({
@@ -56,49 +67,21 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({ objectId }) => {
     };
 
     loadObjectDetails();
-  }, [objectId, toast]);
+  }, [objectId, toast, forceUpdate]);
 
-  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (object) {
-      setObject({ ...object, name: event.target.value });
-    }
+  const handleTagsAdd = async (tagId: string) => {
+    await addTagToObject(objectId, tagId);
+    setForceUpdate(forceUpdate + 1);
+  };
+  const handleTagsRemove = async (tagId: string) => {
+    await removeTagFromObject(objectId, tagId);
+    setForceUpdate(forceUpdate + 1);
   };
 
-  const handleDescriptionChange = (content: any) => {
-    // if (object) {
-    //   setObject({ ...object, description: content });
-    // }
+  const handleUpdateObject = async (updatedObject: UpdateObject) => {
+    await updateObject(updatedObject);
+    setForceUpdate(forceUpdate + 1);
   };
-
-  const handleTagsChange = (newTags: Tag[]) => {
-    if (object) {
-      setObject({ ...object, tags: newTags });
-    }
-  };
-
-  const handleSave = async () => {
-    if (object) {
-      try {
-        await updateObject(object);
-        setIsEditing(false);
-        toast({
-          title: 'Object updated',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-      } catch (error) {
-        toast({
-          title: 'Error updating object',
-          description: 'Please try again later.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
-    }
-  };
-
   const handleAddFact = async (newFact: NewFact) => {
     try {
       const addedFact = await addFact(newFact);
@@ -119,6 +102,25 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({ objectId }) => {
       });
     }
   };
+  const handleAddObjectTypeValue = async (objectId: string, payload: any) => {
+    await addObjectTypeValue(objectId, payload);
+    setForceUpdate(forceUpdate + 1);
+  };
+  const handleRemoveObjectTypeValue = async (
+    objectId: string,
+    objTypeValueId: string
+  ) => {
+    await removeObjectTypeValue(objectId, objTypeValueId);
+    setForceUpdate(forceUpdate + 1);
+  };
+  const handleUpdateObjectTypeValue = async (
+    objectId: string,
+    objTypeValueId: string,
+    payload: any
+  ) => {
+    await updateObjectTypeValue(objectId, objTypeValueId, payload);
+    setForceUpdate(forceUpdate + 1);
+  };
 
   if (!object) {
     return <Text>Loading...</Text>;
@@ -127,7 +129,7 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({ objectId }) => {
   return (
     // <Flex height='calc(100vh - 72px)' overflow='hidden'>
     <Flex height='calc(100vh - 96px)' overflow='hidden'>
-      {/* <Flex height='100%' overflow='hidden'> */}
+      {/*<Flex height='100%' overflow='hidden'>*/}
       {/* Left Column */}
       <Box
         width='60%'
@@ -155,46 +157,54 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({ objectId }) => {
               <BreadcrumbLink href='#'>{object.name}</BreadcrumbLink>
             </BreadcrumbItem>
           </Breadcrumb>
-
-          <Heading as='h1' size='xl'>
-            {isEditing ? (
-              <input
-                value={object.name}
-                onChange={handleNameChange}
-                style={{ fontSize: 'inherit', width: '100%' }}
-              />
-            ) : (
-              object.name
-            )}
-          </Heading>
+          <HStack>
+            <Heading as='h1' size='xl'>
+              {object.name}
+            </Heading>
+            <EditIcon
+              fontSize='x-large'
+              onClick={() => {
+                setShowEditObject(true);
+              }}
+            />
+          </HStack>
+          <RichTextViewer content={object.description} />
           <TagInput
             tags={object.tags}
-            onChange={handleTagsChange}
-            isReadOnly={!isEditing}
+            onAddTag={handleTagsAdd}
+            onRemoveTag={handleTagsRemove}
+            isReadOnly={false}
           />
-          {isEditing ? (
-            <RichTextEditor
-              initialValue={object.description}
-              onSave={handleDescriptionChange}
-            />
-          ) : (
-            <RichTextViewer content={object.description} />
-          )}
           <Tabs>
             <TabList>
               <Tab>Object Type</Tab>
               <Tab>Tasks</Tab>
               <Tab>Funnel</Tab>
+              <Tab>🪄 Suggestion</Tab>
             </TabList>
             <TabPanels>
               <TabPanel>
-                <ObjectTypePanel objectId={objectId} />
+                <ObjectTypePanel
+                  objectId={objectId}
+                  objectTypes={object.typeValues}
+                  onAddObjectTypeValue={handleAddObjectTypeValue}
+                  onRemoveObjectTypeValue={handleRemoveObjectTypeValue}
+                  onUpdateObjectTypeValue={handleUpdateObjectTypeValue}
+                />
               </TabPanel>
               <TabPanel>
                 <TaskPanel objectId={objectId} />
               </TabPanel>
               <TabPanel>
                 <FunnelPanel objectId={objectId} />
+              </TabPanel>
+              <TabPanel>
+                <ActionSuggestion
+                  objectId={objectId}
+                  onActionTaken={(data: any) => {
+                    console.log('data:', data);
+                  }}
+                />
               </TabPanel>
             </TabPanels>
           </Tabs>
@@ -211,6 +221,7 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({ objectId }) => {
           scrollbarWidth: 'none',
         }}
       >
+        {/* <VStack align='stretch' spacing={4} height='100%'> */}
         <VStack align='stretch' spacing={4} height='100%'>
           <Heading as='h2' size='lg'>
             Activity
@@ -218,11 +229,15 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({ objectId }) => {
           <Box flexGrow={1} overflowY='auto'>
             <ActivityFeed facts={facts} />
           </Box>
-          <Box>
-            <FactForm onSave={handleAddFact} objectId={objectId} />
-          </Box>
+          <FactForm onSave={handleAddFact} objectId={objectId} />
         </VStack>
       </Box>
+      <ObjectForm
+        initialObject={object}
+        isOpen={showEditObject}
+        onClose={() => setShowEditObject(false)}
+        onUpdateObject={handleUpdateObject}
+      />
     </Flex>
   );
 };

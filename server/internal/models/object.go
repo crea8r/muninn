@@ -26,11 +26,49 @@ type Object struct {
 type ObjectTypeValue struct {
 	ID           uuid.UUID         `json:"id"`
 	ObjectTypeID uuid.UUID         `json:"objectTypeId"`
-	Values       map[string]string `json:"values"`
+	TypeValues       map[string]string `json:"type_values"`
 }
 
 type ObjectModel struct {
 	DB *database.Queries
+}
+
+type ObjectDetail struct {
+	ID          uuid.UUID         `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	IDString    string            `json:"idString"`
+	CreatorID   uuid.UUID         `json:"creatorId"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	Tags        []database.Tag             `json:"tags"`
+	TypeValues  []ObjectTypeValue `json:"typeValues"`
+	Tasks       []Task            `json:"tasks"`
+	StepsAndFunnels []StepAndFunnel `json:"stepsAndFunnels"`
+	Facts       []Fact            `json:"facts"`
+}
+
+type Task struct {
+	ID        uuid.UUID      `json:"id"`
+	Content   string         `json:"content"`
+	Deadline  sql.NullTime   `json:"deadline"`
+	Status    string         `json:"status"`
+	CreatedAt time.Time      `json:"createdAt"`
+	AssignedID uuid.NullUUID `json:"assignedId"`
+}
+
+type StepAndFunnel struct {
+	StepID    uuid.UUID `json:"stepId"`
+	StepName  string    `json:"stepName"`
+	FunnelID  uuid.UUID `json:"funnelId"`
+	FunnelName string   `json:"funnelName"`
+}
+
+type Fact struct {
+	ID         uuid.UUID    `json:"id"`
+	Text       string       `json:"text"`
+	HappenedAt sql.NullTime `json:"happenedAt"`
+	Location   string       `json:"location"`
+	CreatedAt  time.Time    `json:"createdAt"`
 }
 
 func NewObjectModel(db *database.Queries) *ObjectModel {
@@ -84,7 +122,6 @@ func (m *ObjectModel) Delete(ctx context.Context, id uuid.UUID) error {
 }
 
 func (m *ObjectModel) List(ctx context.Context, orgID uuid.UUID, search string, limit, offset int32) ([]Object, int64, error) {
-	fmt.Println("in ObjectModel.List")
 	objects, err := m.DB.ListObjectsByOrgID(ctx, database.ListObjectsByOrgIDParams{
 		OrgID:  orgID,
 		Column2: search,
@@ -94,7 +131,6 @@ func (m *ObjectModel) List(ctx context.Context, orgID uuid.UUID, search string, 
 	if err != nil {
 		return nil, 0, err
 	}
-	fmt.Println("in ObjectModel.CountObjectsByOrgID")
 	count, err := m.DB.CountObjectsByOrgID(ctx, database.CountObjectsByOrgIDParams{
 		OrgID:  orgID,
 		Column2: search,
@@ -102,17 +138,19 @@ func (m *ObjectModel) List(ctx context.Context, orgID uuid.UUID, search string, 
 	if err != nil {
 		return nil, 0, err
 	}
-
 	result := make([]Object, len(objects))
 	for i, obj := range objects {
 		var tags []database.Tag
 		var typeValues []ObjectTypeValue
-
-		err = json.Unmarshal(obj.Tags, &tags)
+		tagsBytes, ok := obj.Tags.([]byte)
+		if !ok {
+			return nil, 0, fmt.Errorf("expected []byte for Tags, got %T", obj.Tags)
+		}
+		
+		err = json.Unmarshal(tagsBytes, &tags)
 		if err != nil {
 			return nil, 0, err
 		}
-
 		typeValuesBytes, ok := obj.TypeValues.([]byte)
 		if !ok {
 			return nil, 0, fmt.Errorf("expected []byte for TypeValues, got %T", obj.TypeValues)
@@ -121,7 +159,7 @@ func (m *ObjectModel) List(ctx context.Context, orgID uuid.UUID, search string, 
 		if err != nil {
 			return nil, 0, err
 		}
-
+		
 		result[i] = Object{
 			ID:          obj.ID,
 			Name:        obj.Name,
@@ -134,4 +172,148 @@ func (m *ObjectModel) List(ctx context.Context, orgID uuid.UUID, search string, 
 	}
 
 	return result, count, nil
+}
+
+func (m *ObjectModel) GetDetails(ctx context.Context, id, orgID uuid.UUID) (*ObjectDetail, error) {
+	data, err := m.DB.GetObjectDetails(ctx, database.GetObjectDetailsParams{
+		ID:    id,
+		OrgID: orgID,
+	})
+	if err != nil {
+		fmt.Println("error getting object details:", err)
+		return nil, err
+	}
+	var tags []database.Tag
+	var typeValues []ObjectTypeValue
+	var tasks []Task
+	var stepsAndFunnels []StepAndFunnel
+	var facts []Fact
+
+	tagsBytes, ok := data.Tags.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("expected []byte for Tags, got %T", data.Tags)
+	}
+	err = json.Unmarshal(tagsBytes, &tags)
+	if err != nil {
+		return nil, err
+	}
+
+	typeValuesBytes, ok := data.TypeValues.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("expected []byte for TypeValues, got %T", data.TypeValues)
+	}
+	err = json.Unmarshal(typeValuesBytes, &typeValues)
+	if err != nil {
+		return nil, err
+	}
+
+	tasksBytes, ok := data.Tasks.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("expected []byte for Tasks, got %T", data.Tasks)
+	}
+	err = json.Unmarshal(tasksBytes, &tasks)
+	if err != nil {
+		return nil, err
+	}
+
+	stepsAndFunnelsBytes, ok := data.StepsAndFunnels.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("expected []byte for StepsAndFunnels, got %T", data.StepsAndFunnels)
+	}
+	err = json.Unmarshal(stepsAndFunnelsBytes, &stepsAndFunnels)
+	if err != nil {
+		return nil, err
+	}
+
+	factsBytes, ok := data.Facts.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("expected []byte for Facts, got %T", data.Facts)
+	}
+	err = json.Unmarshal(factsBytes, &facts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ObjectDetail{
+		ID:          data.ID,
+		Name:        data.Name,
+		Description: data.Description,
+		IDString:    data.IDString,
+		CreatorID:   data.CreatorID,
+		CreatedAt:   data.CreatedAt,
+		Tags:        tags,
+		TypeValues:  typeValues,
+		Tasks:       tasks,
+		StepsAndFunnels: stepsAndFunnels,
+		Facts:       facts,
+	}, nil
+}
+
+func (m *ObjectModel) AddTag(ctx context.Context, objectID, tagID, orgID uuid.UUID) error {
+	return m.DB.AddTagToObject(ctx, database.AddTagToObjectParams{
+		ObjID:  objectID,
+		TagID:  tagID,
+		OrgID:  orgID,
+	})
+}
+
+func (m *ObjectModel) RemoveTag(ctx context.Context, objectID, tagID, orgID uuid.UUID) error {
+	return m.DB.RemoveTagFromObject(ctx, database.RemoveTagFromObjectParams{
+		ObjID:  objectID,
+		TagID:  tagID,
+		OrgID:  orgID,
+	})
+}
+
+func (m *ObjectModel) AddObjectTypeValue(ctx context.Context, objectID, typeID uuid.UUID, values json.RawMessage, orgID uuid.UUID) (*ObjectTypeValue, error) {
+	result, err := m.DB.AddObjectTypeValue(ctx, database.AddObjectTypeValueParams{
+		ObjID:  objectID,
+		TypeID: typeID,
+		Column3: values,
+		OrgID:  orgID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var parsedValues map[string]string
+	err = json.Unmarshal(result.TypeValues, &parsedValues)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ObjectTypeValue{
+		ID:           result.ID,
+		ObjectTypeID: result.TypeID,
+		TypeValues:       parsedValues,
+	}, nil
+}
+
+func (m *ObjectModel) RemoveObjectTypeValue(ctx context.Context, typeValueID, orgID uuid.UUID) error {
+	return m.DB.RemoveObjectTypeValue(ctx, database.RemoveObjectTypeValueParams{
+		ID:    typeValueID,
+		OrgID: orgID,
+	})
+}
+
+func (m *ObjectModel) UpdateObjectTypeValue(ctx context.Context, typeValueID, orgID uuid.UUID, values json.RawMessage) (*ObjectTypeValue, error) {
+	result, err := m.DB.UpdateObjectTypeValue(ctx, database.UpdateObjectTypeValueParams{
+		ID:         typeValueID,
+		OrgID:      orgID,
+		Column3: values,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var parsedValues map[string]string
+	err = json.Unmarshal(result.TypeValues, &parsedValues)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ObjectTypeValue{
+		ID:           result.ID,
+		ObjectTypeID: result.TypeID,
+		TypeValues:       parsedValues,
+	}, nil
 }

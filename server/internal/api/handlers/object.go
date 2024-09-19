@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -100,7 +100,7 @@ func (h *ObjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *ObjectHandler) List(w http.ResponseWriter, r *http.Request) {
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
 	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
-	fmt.Println("creator: ",creator)
+	
 	if err != nil {
 		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
 		return
@@ -109,7 +109,6 @@ func (h *ObjectHandler) List(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
-	fmt.Println("search: ",search)
 	if page < 1 {
 		page = 1
 	}
@@ -119,13 +118,12 @@ func (h *ObjectHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	offset := int32((page - 1) * pageSize)
 	limit := int32(pageSize)
-	fmt.Println("before ObjectModel.List: ")
+	
 	objects, totalCount, err := h.ObjectModel.List(r.Context(), creator.OrgID, search, limit, offset)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("after ObjectModel.List: ",objects)
 	response := struct {
 		Objects    []models.Object `json:"objects"`
 		TotalCount int64           `json:"totalCount"`
@@ -140,4 +138,184 @@ func (h *ObjectHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func (h *ObjectHandler) GetDetails(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid object ID", http.StatusBadRequest)
+		return
+	}
+	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
+	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
+	if err != nil {
+		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
+		return
+	}
+
+	objectDetails, err := h.ObjectModel.GetDetails(r.Context(), id, creator.OrgID)
+	if err != nil {
+		http.Error(w, "Object not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(objectDetails)
+}
+
+func (h *ObjectHandler) AddTag(w http.ResponseWriter, r *http.Request) {
+	objectID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid object ID", http.StatusBadRequest)
+		return
+	}
+
+	var input struct {
+		TagID uuid.UUID `json:"tagId"`
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
+	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
+	if err != nil {
+		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
+		return
+	}
+
+	err = h.ObjectModel.AddTag(r.Context(), objectID, input.TagID, creator.OrgID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *ObjectHandler) RemoveTag(w http.ResponseWriter, r *http.Request) {
+	objectID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid object ID", http.StatusBadRequest)
+		return
+	}
+
+	tagID, err := uuid.Parse(chi.URLParam(r, "tagId"))
+	if err != nil {
+		http.Error(w, "Invalid tag ID", http.StatusBadRequest)
+		return
+	}
+
+	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
+	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
+	if err != nil {
+		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
+		return
+	}
+
+	err = h.ObjectModel.RemoveTag(r.Context(), objectID, tagID, creator.OrgID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *ObjectHandler) AddObjectTypeValue(w http.ResponseWriter, r *http.Request) {
+	objectID, err := uuid.Parse(chi.URLParam(r, "id"))
+	d,_ := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Invalid object ID", http.StatusBadRequest)
+		return
+	}
+
+	var input struct {
+		TypeID uuid.UUID          `json:"typeId"`
+		Values json.RawMessage    `json:"values"`
+	}
+
+	err = json.Unmarshal(d, &input)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
+	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
+	if err != nil {
+		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
+		return
+	}
+	
+	typeValue, err := h.ObjectModel.AddObjectTypeValue(r.Context(), objectID, input.TypeID, input.Values, creator.OrgID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(typeValue)
+}
+
+func (h *ObjectHandler) RemoveObjectTypeValue(w http.ResponseWriter, r *http.Request) {
+	typeValueID, err := uuid.Parse(chi.URLParam(r, "typeValueId"))
+	if err != nil {
+		http.Error(w, "Invalid object ID", http.StatusBadRequest)
+		return
+	}
+	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
+	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
+	if err != nil {
+		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
+		return
+	}
+
+	err = h.ObjectModel.RemoveObjectTypeValue(r.Context(), typeValueID, creator.OrgID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *ObjectHandler) UpdateObjectTypeValue(w http.ResponseWriter, r *http.Request) {
+	_, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid object ID", http.StatusBadRequest)
+		return
+	}
+
+	typeValueID, err := uuid.Parse(chi.URLParam(r, "typeValueId"))
+	if err != nil {
+		http.Error(w, "Invalid type value ID", http.StatusBadRequest)
+		return
+	}
+
+	var input struct {
+		Values json.RawMessage `json:"type_values"`
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
+	OrgID := uuid.MustParse(claims.OrgID)
+
+	updatedTypeValue, err := h.ObjectModel.UpdateObjectTypeValue(r.Context(), typeValueID, OrgID, input.Values)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(updatedTypeValue)
 }

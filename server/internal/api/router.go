@@ -61,11 +61,21 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 			r.Delete("/{id}", funnelHandler.DeleteFunnel)
 		})
 			
-		r.Route("/setting/objects", func(r chi.Router) {
+		r.Route("/objects", func(r chi.Router) {
+			// Object routes
 			r.Post("/", objectHandler.Create)
 			r.Get("/", objectHandler.List)
+			r.Get("/{id}", objectHandler.GetDetails)
 			r.Put("/{id}", objectHandler.Update)
 			r.Delete("/{id}", objectHandler.Delete)
+			// Tag routes
+			r.Post("/{id}/tags", objectHandler.AddTag)
+			r.Delete("/{id}/tags/{tagId}", objectHandler.RemoveTag)
+
+			// Object type value routes
+			r.Post("/{id}/type-values", objectHandler.AddObjectTypeValue)
+			r.Put("/{id}/type-values/{typeValueId}", objectHandler.UpdateObjectTypeValue)
+			r.Delete("/{id}/type-values/{typeValueId}", objectHandler.RemoveObjectTypeValue)
 		})
 	})
 

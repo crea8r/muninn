@@ -7,7 +7,13 @@ import {
   ObjectFunnel,
   FunnelUpdate,
 } from './Funnel';
-import { Object, ObjectType, ObjectTypeValue } from './Object';
+import {
+  Object,
+  ObjectType,
+  ObjectTypeValue,
+  NewObject,
+  UpdateObject,
+} from './Object';
 import { TaskStatus, Task, NewTask } from './Task';
 import { Tag } from './Tag';
 
@@ -22,9 +28,11 @@ export type {
   Object,
   ObjectType,
   ObjectTypeValue,
+  NewObject,
   Task,
   NewTask,
   Tag,
   ObjectFunnel,
   FunnelUpdate,
+  UpdateObject,
 };

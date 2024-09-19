@@ -15,6 +15,65 @@ import (
 	"github.com/lib/pq"
 )
 
+const addObjectTypeValue = `-- name: AddObjectTypeValue :one
+INSERT INTO obj_type_value (obj_id, type_id, type_values)
+SELECT $1, $2, $3::jsonb
+FROM obj o
+JOIN creator c ON o.creator_id = c.id
+JOIN obj_type ot ON ot.creator_id = c.id
+WHERE o.id = $1 AND ot.id = $2 AND c.org_id = $4
+RETURNING id, obj_id, type_id, type_values, created_at, last_updated, deleted_at, search_vector
+`
+
+type AddObjectTypeValueParams struct {
+	ObjID   uuid.UUID       `json:"obj_id"`
+	TypeID  uuid.UUID       `json:"type_id"`
+	Column3 json.RawMessage `json:"column_3"`
+	OrgID   uuid.UUID       `json:"org_id"`
+}
+
+func (q *Queries) AddObjectTypeValue(ctx context.Context, arg AddObjectTypeValueParams) (ObjTypeValue, error) {
+	row := q.queryRow(ctx, q.addObjectTypeValueStmt, addObjectTypeValue,
+		arg.ObjID,
+		arg.TypeID,
+		arg.Column3,
+		arg.OrgID,
+	)
+	var i ObjTypeValue
+	err := row.Scan(
+		&i.ID,
+		&i.ObjID,
+		&i.TypeID,
+		&i.TypeValues,
+		&i.CreatedAt,
+		&i.LastUpdated,
+		&i.DeletedAt,
+		&i.SearchVector,
+	)
+	return i, err
+}
+
+const addTagToObject = `-- name: AddTagToObject :exec
+INSERT INTO obj_tag (obj_id, tag_id)
+SELECT $1, $2
+FROM obj o
+JOIN creator c ON o.creator_id = c.id
+JOIN tag t ON t.org_id = c.org_id
+WHERE o.id = $1 AND t.id = $2 AND c.org_id = $3
+ON CONFLICT DO NOTHING
+`
+
+type AddTagToObjectParams struct {
+	ObjID uuid.UUID `json:"obj_id"`
+	TagID uuid.UUID `json:"tag_id"`
+	OrgID uuid.UUID `json:"org_id"`
+}
+
+func (q *Queries) AddTagToObject(ctx context.Context, arg AddTagToObjectParams) error {
+	_, err := q.exec(ctx, q.addTagToObjectStmt, addTagToObject, arg.ObjID, arg.TagID, arg.OrgID)
+	return err
+}
+
 const countFunnels = `-- name: CountFunnels :one
 SELECT COUNT(*)
 FROM funnel f
@@ -607,6 +666,104 @@ func (q *Queries) GetFunnel(ctx context.Context, id uuid.UUID) (GetFunnelRow, er
 	return i, err
 }
 
+const getObjectDetails = `-- name: GetObjectDetails :one
+WITH object_data AS (
+    SELECT o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at,
+           c.org_id,
+           coalesce(json_agg(DISTINCT jsonb_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema)) FILTER (WHERE t.id IS NOT NULL), '[]') 
+           AS tags,
+           coalesce(json_agg(DISTINCT jsonb_build_object(
+               'id', otv.id,
+               'objectTypeId', ot.id,
+               'objectTypeName', ot.name,
+               'objectTypeFields', ot.fields,
+               'type_values', otv.type_values
+           )) FILTER (WHERE otv.id IS NOT NULL), '[]')
+           AS type_values,
+           coalesce(json_agg(DISTINCT jsonb_build_object(
+               'id', task.id,
+               'content', task.content,
+               'deadline', task.deadline,
+               'status', task.status,
+               'createdAt', task.created_at,
+               'assignedId', task.assigned_id
+           )) FILTER (WHERE task.id IS NOT NULL), '[]')
+           AS tasks,
+           coalesce(json_agg(DISTINCT jsonb_build_object(
+               'stepId', s.id,
+               'stepName', s.name,
+               'funnelId', f.id,
+               'funnelName', f.name
+           )) FILTER (WHERE s.id IS NOT NULL), '[]')
+           AS steps_and_funnels,
+           coalesce(json_agg(DISTINCT jsonb_build_object(
+               'id', fact.id,
+               'text', fact.text,
+               'happenedAt', fact.happened_at,
+               'location', fact.location,
+               'createdAt', fact.created_at
+           )) FILTER (WHERE fact.id IS NOT NULL), '[]')
+           AS facts
+    FROM obj o
+    JOIN creator c ON o.creator_id = c.id
+    LEFT JOIN obj_tag otg ON o.id = otg.obj_id
+    LEFT JOIN tag t ON otg.tag_id = t.id
+    LEFT JOIN obj_type_value otv ON o.id = otv.obj_id
+    LEFT JOIN obj_type ot ON otv.type_id = ot.id
+    LEFT JOIN obj_task ota ON o.id = ota.obj_id
+    LEFT JOIN task ON ota.task_id = task.id
+    LEFT JOIN obj_step os ON o.id = os.obj_id
+    LEFT JOIN step s ON os.step_id = s.id
+    LEFT JOIN funnel f ON s.funnel_id = f.id
+    LEFT JOIN obj_fact of ON o.id = of.obj_id
+    LEFT JOIN fact ON of.fact_id = fact.id
+    WHERE o.id = $1 AND c.org_id = $2
+    GROUP BY o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at, c.org_id
+)
+SELECT id, name, description, id_string, creator_id, created_at, org_id, tags, type_values, tasks, steps_and_funnels, facts
+FROM object_data
+`
+
+type GetObjectDetailsParams struct {
+	ID    uuid.UUID `json:"id"`
+	OrgID uuid.UUID `json:"org_id"`
+}
+
+type GetObjectDetailsRow struct {
+	ID              uuid.UUID   `json:"id"`
+	Name            string      `json:"name"`
+	Description     string      `json:"description"`
+	IDString        string      `json:"id_string"`
+	CreatorID       uuid.UUID   `json:"creator_id"`
+	CreatedAt       time.Time   `json:"created_at"`
+	OrgID           uuid.UUID   `json:"org_id"`
+	Tags            interface{} `json:"tags"`
+	TypeValues      interface{} `json:"type_values"`
+	Tasks           interface{} `json:"tasks"`
+	StepsAndFunnels interface{} `json:"steps_and_funnels"`
+	Facts           interface{} `json:"facts"`
+}
+
+func (q *Queries) GetObjectDetails(ctx context.Context, arg GetObjectDetailsParams) (GetObjectDetailsRow, error) {
+	row := q.queryRow(ctx, q.getObjectDetailsStmt, getObjectDetails, arg.ID, arg.OrgID)
+	var i GetObjectDetailsRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.IDString,
+		&i.CreatorID,
+		&i.CreatedAt,
+		&i.OrgID,
+		&i.Tags,
+		&i.TypeValues,
+		&i.Tasks,
+		&i.StepsAndFunnels,
+		&i.Facts,
+	)
+	return i, err
+}
+
 const getObjectTypeByID = `-- name: GetObjectTypeByID :one
 SELECT id, name, description, fields, creator_id, created_at, deleted_at, fields_search FROM obj_type
 WHERE id = $1 AND deleted_at IS NULL
@@ -900,8 +1057,10 @@ const listObjectsByOrgID = `-- name: ListObjectsByOrgID :many
 WITH object_data AS (
     SELECT o.id, o.name, o.description, o.id_string, o.creator_id,
            o.created_at, o.deleted_at,
+           to_tsvector('english', o.name || ' ' || o.description || ' ' || o.id_string) AS obj_search,
            array_agg(DISTINCT t.id) AS tag_ids,
-           string_agg(DISTINCT otv.search_vector::text, ' ')::tsvector AS type_values,
+           array_agg(DISTINCT otv.id) AS type_value_ids,
+           string_agg(DISTINCT otv.search_vector::text, ' ')::tsvector AS type_search,
            string_agg(DISTINCT f.text, ' ')::tsvector AS fact_search
     FROM obj o
     JOIN creator c ON o.creator_id = c.id
@@ -914,17 +1073,18 @@ WITH object_data AS (
     GROUP BY o.id
 )
 SELECT od.id, od.name, od.description, od.id_string, od.created_at,
-       (SELECT jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema))
+       coalesce((SELECT jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema))
         FROM tag t
-        WHERE t.id = ANY(od.tag_ids)) AS tags,
-       od.type_values
+        WHERE t.id = ANY(od.tag_ids)),'[]') AS tags,
+       coalesce((SELECT jsonb_agg(jsonb_build_object('id', otv.id, 'objectTypeId', otv.type_id, 'type_values', otv.type_values))
+        FROM obj_type_value otv
+        WHERE otv.id = ANY(od.type_value_ids)),'[]') AS type_values
 FROM object_data od
 WHERE ($2 = '' OR
-      od.name ILIKE '%' || $2 || '%' OR 
-      od.description ILIKE '%' || $2 || '%' OR 
-      od.id_string ILIKE '%' || $2 || '%' OR 
+      od.obj_search @@ to_tsquery('english', $2) OR
       od.fact_search @@ to_tsquery('english', $2) OR
-      od.type_values @@ to_tsquery('english', $2))
+      od.type_search @@ to_tsquery('english', $2)
+      )
 ORDER BY od.created_at DESC
 LIMIT $3 OFFSET $4
 `
@@ -937,13 +1097,13 @@ type ListObjectsByOrgIDParams struct {
 }
 
 type ListObjectsByOrgIDRow struct {
-	ID          uuid.UUID       `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	IDString    string          `json:"id_string"`
-	CreatedAt   time.Time       `json:"created_at"`
-	Tags        json.RawMessage `json:"tags"`
-	TypeValues  interface{}     `json:"type_values"`
+	ID          uuid.UUID   `json:"id"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	IDString    string      `json:"id_string"`
+	CreatedAt   time.Time   `json:"created_at"`
+	Tags        interface{} `json:"tags"`
+	TypeValues  interface{} `json:"type_values"`
 }
 
 func (q *Queries) ListObjectsByOrgID(ctx context.Context, arg ListObjectsByOrgIDParams) ([]ListObjectsByOrgIDRow, error) {
@@ -1109,6 +1269,47 @@ func (q *Queries) MarkFeedAsSeen(ctx context.Context, dollar_1 []uuid.UUID) erro
 	return err
 }
 
+const removeObjectTypeValue = `-- name: RemoveObjectTypeValue :exec
+DELETE FROM obj_type_value
+WHERE obj_type_value.id = $1
+AND EXISTS (
+    SELECT 1 FROM obj o
+    JOIN creator c ON o.creator_id = c.id
+    WHERE o.id = obj_type_value.obj_id AND c.org_id = $2
+)
+`
+
+type RemoveObjectTypeValueParams struct {
+	ID    uuid.UUID `json:"id"`
+	OrgID uuid.UUID `json:"org_id"`
+}
+
+func (q *Queries) RemoveObjectTypeValue(ctx context.Context, arg RemoveObjectTypeValueParams) error {
+	_, err := q.exec(ctx, q.removeObjectTypeValueStmt, removeObjectTypeValue, arg.ID, arg.OrgID)
+	return err
+}
+
+const removeTagFromObject = `-- name: RemoveTagFromObject :exec
+DELETE FROM obj_tag
+WHERE obj_id = $1 AND tag_id = $2
+AND EXISTS (
+    SELECT 1 FROM obj o
+    JOIN creator c ON o.creator_id = c.id
+    WHERE o.id = $1 AND c.org_id = $3
+)
+`
+
+type RemoveTagFromObjectParams struct {
+	ObjID uuid.UUID `json:"obj_id"`
+	TagID uuid.UUID `json:"tag_id"`
+	OrgID uuid.UUID `json:"org_id"`
+}
+
+func (q *Queries) RemoveTagFromObject(ctx context.Context, arg RemoveTagFromObjectParams) error {
+	_, err := q.exec(ctx, q.removeTagFromObjectStmt, removeTagFromObject, arg.ObjID, arg.TagID, arg.OrgID)
+	return err
+}
+
 const updateCreator = `-- name: UpdateCreator :one
 UPDATE creator
 SET username = $2, profile = $3, role = $4
@@ -1253,6 +1454,40 @@ func (q *Queries) UpdateObjectType(ctx context.Context, arg UpdateObjectTypePara
 		&i.CreatedAt,
 		&i.DeletedAt,
 		&i.FieldsSearch,
+	)
+	return i, err
+}
+
+const updateObjectTypeValue = `-- name: UpdateObjectTypeValue :one
+UPDATE obj_type_value
+SET type_values = $3::jsonb
+WHERE obj_type_value.id = $1
+  AND EXISTS (
+    SELECT 1 FROM obj o
+    JOIN creator c ON o.creator_id = c.id
+    WHERE o.id = obj_type_value.obj_id AND c.org_id = $2
+  )
+RETURNING id, obj_id, type_id, type_values, created_at, last_updated, deleted_at, search_vector
+`
+
+type UpdateObjectTypeValueParams struct {
+	ID      uuid.UUID       `json:"id"`
+	OrgID   uuid.UUID       `json:"org_id"`
+	Column3 json.RawMessage `json:"column_3"`
+}
+
+func (q *Queries) UpdateObjectTypeValue(ctx context.Context, arg UpdateObjectTypeValueParams) (ObjTypeValue, error) {
+	row := q.queryRow(ctx, q.updateObjectTypeValueStmt, updateObjectTypeValue, arg.ID, arg.OrgID, arg.Column3)
+	var i ObjTypeValue
+	err := row.Scan(
+		&i.ID,
+		&i.ObjID,
+		&i.TypeID,
+		&i.TypeValues,
+		&i.CreatedAt,
+		&i.LastUpdated,
+		&i.DeletedAt,
+		&i.SearchVector,
 	)
 	return i, err
 }

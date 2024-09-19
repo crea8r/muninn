@@ -1,6 +1,4 @@
-// src/mocks/objectsApi.ts
-
-import { Object, ObjectType, ObjectTypeValue } from '../types/';
+import { Object, NewObject, ObjectTypeValue, UpdateObject } from 'src/types/';
 import { axiosWithAuth } from './utils';
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -17,14 +15,71 @@ export const fetchObjects = async (
   pageSize: number,
   search?: string
 ): Promise<ListObjectResponse> => {
-  const response = await axiosWithAuth().get(`${API_URL}/setting/objects`, {
-    params: { page, pageSize, q: search },
+  const response = await axiosWithAuth().get(`${API_URL}/objects`, {
+    params: { page, pageSize, search },
   });
   return response.data;
 };
 
-export const fetchObjectTypeValues = async (
-  objectId: string
-): Promise<ObjectTypeValue[]> => {
-  return [];
+export const createObject = async (newObject: NewObject): Promise<Object> => {
+  const response = await axiosWithAuth().post(`${API_URL}/objects`, newObject);
+  return response.data;
+};
+
+export const fetchObjectDetails = async (objectId: any) => {
+  const response = await axiosWithAuth().get(`${API_URL}/objects/` + objectId);
+  return response.data;
+};
+
+export const updateObject = async (object: UpdateObject) => {
+  const response = await axiosWithAuth().put(
+    `${API_URL}/objects/${object.id}`,
+    object
+  );
+  return response.data;
+};
+
+export const addTagToObject = async (objectId: string, tagId: string) => {
+  const response = await axiosWithAuth().post(
+    `${API_URL}/objects/${objectId}/tags`,
+    { tagId }
+  );
+  return response.data;
+};
+
+export const removeTagFromObject = async (objectId: string, tagId: string) => {
+  const response = await axiosWithAuth().delete(
+    `${API_URL}/objects/${objectId}/tags/${tagId}`
+  );
+  return response.data;
+};
+
+export const addObjectTypeValue = async (objectId: string, payload: any) => {
+  const response = await axiosWithAuth().post(
+    `${API_URL}/objects/${objectId}/type-values`,
+    payload
+  );
+  return response.data;
+};
+
+export const removeObjectTypeValue = async (
+  objectId: string,
+  objectTypeValueId: string
+) => {
+  const response = await axiosWithAuth().delete(
+    `${API_URL}/objects/${objectId}/type-values/${objectTypeValueId}`
+  );
+  return response.data;
+};
+
+export const updateObjectTypeValue = async (
+  objectId: string,
+  objectTypeValueId: string,
+  payload: any
+) => {
+  const response = await axiosWithAuth().put(
+    `${API_URL}/objects/${objectId}/type-values/${objectTypeValueId}`,
+    payload
+  );
+  return response.data;
 };

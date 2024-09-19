@@ -47,11 +47,7 @@ func (h *TagHandler) CreateTag(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
 		return
 	}
-	err = json.Unmarshal(req.ColorSchema, &ColorSchema{})
-	if err != nil {
-		http.Error(w, "Invalid color schema", http.StatusBadRequest)
-		return
-	}
+	
 	tag, err := h.DB.CreateTag(r.Context(), database.CreateTagParams{
 		Name:        req.Name,
 		Description: req.Description,

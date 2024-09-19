@@ -76,7 +76,7 @@ const App: React.FC = () => {
                     />
                     <ProtectedRoute
                       exact
-                      path='/objects/:id'
+                      path='/objects/:objectId'
                       component={ObjectDetailPage}
                     />
                     <ProtectedRoute

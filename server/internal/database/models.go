@@ -74,7 +74,7 @@ type List struct {
 	Name          string          `json:"name"`
 	Description   string          `json:"description"`
 	FilterSetting json.RawMessage `json:"filter_setting"`
-	CreatorID     uuid.NullUUID   `json:"creator_id"`
+	CreatorID     uuid.UUID       `json:"creator_id"`
 	CreatedAt     time.Time       `json:"created_at"`
 	LastUpdated   time.Time       `json:"last_updated"`
 	DeletedAt     sql.NullTime    `json:"deleted_at"`
@@ -126,9 +126,9 @@ type ObjType struct {
 // This table has full-text search capabilities on its JSON data
 type ObjTypeValue struct {
 	ID          uuid.UUID       `json:"id"`
-	ObjID       uuid.NullUUID   `json:"obj_id"`
-	TypeID      uuid.NullUUID   `json:"type_id"`
-	Values      json.RawMessage `json:"values"`
+	ObjID       uuid.UUID       `json:"obj_id"`
+	TypeID      uuid.UUID       `json:"type_id"`
+	TypeValues  json.RawMessage `json:"type_values"`
 	CreatedAt   time.Time       `json:"created_at"`
 	LastUpdated time.Time       `json:"last_updated"`
 	DeletedAt   sql.NullTime    `json:"deleted_at"`

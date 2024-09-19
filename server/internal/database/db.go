@@ -24,6 +24,12 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
+	if q.addObjectTypeValueStmt, err = db.PrepareContext(ctx, addObjectTypeValue); err != nil {
+		return nil, fmt.Errorf("error preparing query AddObjectTypeValue: %w", err)
+	}
+	if q.addTagToObjectStmt, err = db.PrepareContext(ctx, addTagToObject); err != nil {
+		return nil, fmt.Errorf("error preparing query AddTagToObject: %w", err)
+	}
 	if q.countFunnelsStmt, err = db.PrepareContext(ctx, countFunnels); err != nil {
 		return nil, fmt.Errorf("error preparing query CountFunnels: %w", err)
 	}
@@ -93,6 +99,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getFunnelStmt, err = db.PrepareContext(ctx, getFunnel); err != nil {
 		return nil, fmt.Errorf("error preparing query GetFunnel: %w", err)
 	}
+	if q.getObjectDetailsStmt, err = db.PrepareContext(ctx, getObjectDetails); err != nil {
+		return nil, fmt.Errorf("error preparing query GetObjectDetails: %w", err)
+	}
 	if q.getObjectTypeByIDStmt, err = db.PrepareContext(ctx, getObjectTypeByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetObjectTypeByID: %w", err)
 	}
@@ -126,6 +135,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.markFeedAsSeenStmt, err = db.PrepareContext(ctx, markFeedAsSeen); err != nil {
 		return nil, fmt.Errorf("error preparing query MarkFeedAsSeen: %w", err)
 	}
+	if q.removeObjectTypeValueStmt, err = db.PrepareContext(ctx, removeObjectTypeValue); err != nil {
+		return nil, fmt.Errorf("error preparing query RemoveObjectTypeValue: %w", err)
+	}
+	if q.removeTagFromObjectStmt, err = db.PrepareContext(ctx, removeTagFromObject); err != nil {
+		return nil, fmt.Errorf("error preparing query RemoveTagFromObject: %w", err)
+	}
 	if q.updateCreatorStmt, err = db.PrepareContext(ctx, updateCreator); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateCreator: %w", err)
 	}
@@ -141,6 +156,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.updateObjectTypeStmt, err = db.PrepareContext(ctx, updateObjectType); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateObjectType: %w", err)
 	}
+	if q.updateObjectTypeValueStmt, err = db.PrepareContext(ctx, updateObjectTypeValue); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateObjectTypeValue: %w", err)
+	}
 	if q.updateStepStmt, err = db.PrepareContext(ctx, updateStep); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateStep: %w", err)
 	}
@@ -152,6 +170,16 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
+	if q.addObjectTypeValueStmt != nil {
+		if cerr := q.addObjectTypeValueStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing addObjectTypeValueStmt: %w", cerr)
+		}
+	}
+	if q.addTagToObjectStmt != nil {
+		if cerr := q.addTagToObjectStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing addTagToObjectStmt: %w", cerr)
+		}
+	}
 	if q.countFunnelsStmt != nil {
 		if cerr := q.countFunnelsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing countFunnelsStmt: %w", cerr)
@@ -267,6 +295,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getFunnelStmt: %w", cerr)
 		}
 	}
+	if q.getObjectDetailsStmt != nil {
+		if cerr := q.getObjectDetailsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getObjectDetailsStmt: %w", cerr)
+		}
+	}
 	if q.getObjectTypeByIDStmt != nil {
 		if cerr := q.getObjectTypeByIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getObjectTypeByIDStmt: %w", cerr)
@@ -322,6 +355,16 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing markFeedAsSeenStmt: %w", cerr)
 		}
 	}
+	if q.removeObjectTypeValueStmt != nil {
+		if cerr := q.removeObjectTypeValueStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing removeObjectTypeValueStmt: %w", cerr)
+		}
+	}
+	if q.removeTagFromObjectStmt != nil {
+		if cerr := q.removeTagFromObjectStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing removeTagFromObjectStmt: %w", cerr)
+		}
+	}
 	if q.updateCreatorStmt != nil {
 		if cerr := q.updateCreatorStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateCreatorStmt: %w", cerr)
@@ -345,6 +388,11 @@ func (q *Queries) Close() error {
 	if q.updateObjectTypeStmt != nil {
 		if cerr := q.updateObjectTypeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateObjectTypeStmt: %w", cerr)
+		}
+	}
+	if q.updateObjectTypeValueStmt != nil {
+		if cerr := q.updateObjectTypeValueStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateObjectTypeValueStmt: %w", cerr)
 		}
 	}
 	if q.updateStepStmt != nil {
@@ -394,95 +442,107 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                       DBTX
-	tx                       *sql.Tx
-	countFunnelsStmt         *sql.Stmt
-	countObjectTypesStmt     *sql.Stmt
-	countObjectsByOrgIDStmt  *sql.Stmt
-	countTagsStmt            *sql.Stmt
-	createCreatorStmt        *sql.Stmt
-	createFeedStmt           *sql.Stmt
-	createFunnelStmt         *sql.Stmt
-	createObjectStmt         *sql.Stmt
-	createObjectTypeStmt     *sql.Stmt
-	createOrganizationStmt   *sql.Stmt
-	createStepStmt           *sql.Stmt
-	createTagStmt            *sql.Stmt
-	deleteCreatorStmt        *sql.Stmt
-	deleteFunnelStmt         *sql.Stmt
-	deleteObjectStmt         *sql.Stmt
-	deleteObjectTypeStmt     *sql.Stmt
-	deleteStepStmt           *sql.Stmt
-	deleteTagStmt            *sql.Stmt
-	getCreatorStmt           *sql.Stmt
-	getCreatorByIDStmt       *sql.Stmt
-	getCreatorByUsernameStmt *sql.Stmt
-	getFeedStmt              *sql.Stmt
-	getFunnelStmt            *sql.Stmt
-	getObjectTypeByIDStmt    *sql.Stmt
-	getSessionByTokenStmt    *sql.Stmt
-	getStepStmt              *sql.Stmt
-	getTagByIDStmt           *sql.Stmt
-	listCreatorsStmt         *sql.Stmt
-	listFunnelsStmt          *sql.Stmt
-	listObjectTypesStmt      *sql.Stmt
-	listObjectsByOrgIDStmt   *sql.Stmt
-	listStepsByFunnelStmt    *sql.Stmt
-	listTagsStmt             *sql.Stmt
-	markFeedAsSeenStmt       *sql.Stmt
-	updateCreatorStmt        *sql.Stmt
-	updateFunnelStmt         *sql.Stmt
-	updateObjStepStmt        *sql.Stmt
-	updateObjectStmt         *sql.Stmt
-	updateObjectTypeStmt     *sql.Stmt
-	updateStepStmt           *sql.Stmt
-	updateTagStmt            *sql.Stmt
+	db                        DBTX
+	tx                        *sql.Tx
+	addObjectTypeValueStmt    *sql.Stmt
+	addTagToObjectStmt        *sql.Stmt
+	countFunnelsStmt          *sql.Stmt
+	countObjectTypesStmt      *sql.Stmt
+	countObjectsByOrgIDStmt   *sql.Stmt
+	countTagsStmt             *sql.Stmt
+	createCreatorStmt         *sql.Stmt
+	createFeedStmt            *sql.Stmt
+	createFunnelStmt          *sql.Stmt
+	createObjectStmt          *sql.Stmt
+	createObjectTypeStmt      *sql.Stmt
+	createOrganizationStmt    *sql.Stmt
+	createStepStmt            *sql.Stmt
+	createTagStmt             *sql.Stmt
+	deleteCreatorStmt         *sql.Stmt
+	deleteFunnelStmt          *sql.Stmt
+	deleteObjectStmt          *sql.Stmt
+	deleteObjectTypeStmt      *sql.Stmt
+	deleteStepStmt            *sql.Stmt
+	deleteTagStmt             *sql.Stmt
+	getCreatorStmt            *sql.Stmt
+	getCreatorByIDStmt        *sql.Stmt
+	getCreatorByUsernameStmt  *sql.Stmt
+	getFeedStmt               *sql.Stmt
+	getFunnelStmt             *sql.Stmt
+	getObjectDetailsStmt      *sql.Stmt
+	getObjectTypeByIDStmt     *sql.Stmt
+	getSessionByTokenStmt     *sql.Stmt
+	getStepStmt               *sql.Stmt
+	getTagByIDStmt            *sql.Stmt
+	listCreatorsStmt          *sql.Stmt
+	listFunnelsStmt           *sql.Stmt
+	listObjectTypesStmt       *sql.Stmt
+	listObjectsByOrgIDStmt    *sql.Stmt
+	listStepsByFunnelStmt     *sql.Stmt
+	listTagsStmt              *sql.Stmt
+	markFeedAsSeenStmt        *sql.Stmt
+	removeObjectTypeValueStmt *sql.Stmt
+	removeTagFromObjectStmt   *sql.Stmt
+	updateCreatorStmt         *sql.Stmt
+	updateFunnelStmt          *sql.Stmt
+	updateObjStepStmt         *sql.Stmt
+	updateObjectStmt          *sql.Stmt
+	updateObjectTypeStmt      *sql.Stmt
+	updateObjectTypeValueStmt *sql.Stmt
+	updateStepStmt            *sql.Stmt
+	updateTagStmt             *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                       tx,
-		tx:                       tx,
-		countFunnelsStmt:         q.countFunnelsStmt,
-		countObjectTypesStmt:     q.countObjectTypesStmt,
-		countObjectsByOrgIDStmt:  q.countObjectsByOrgIDStmt,
-		countTagsStmt:            q.countTagsStmt,
-		createCreatorStmt:        q.createCreatorStmt,
-		createFeedStmt:           q.createFeedStmt,
-		createFunnelStmt:         q.createFunnelStmt,
-		createObjectStmt:         q.createObjectStmt,
-		createObjectTypeStmt:     q.createObjectTypeStmt,
-		createOrganizationStmt:   q.createOrganizationStmt,
-		createStepStmt:           q.createStepStmt,
-		createTagStmt:            q.createTagStmt,
-		deleteCreatorStmt:        q.deleteCreatorStmt,
-		deleteFunnelStmt:         q.deleteFunnelStmt,
-		deleteObjectStmt:         q.deleteObjectStmt,
-		deleteObjectTypeStmt:     q.deleteObjectTypeStmt,
-		deleteStepStmt:           q.deleteStepStmt,
-		deleteTagStmt:            q.deleteTagStmt,
-		getCreatorStmt:           q.getCreatorStmt,
-		getCreatorByIDStmt:       q.getCreatorByIDStmt,
-		getCreatorByUsernameStmt: q.getCreatorByUsernameStmt,
-		getFeedStmt:              q.getFeedStmt,
-		getFunnelStmt:            q.getFunnelStmt,
-		getObjectTypeByIDStmt:    q.getObjectTypeByIDStmt,
-		getSessionByTokenStmt:    q.getSessionByTokenStmt,
-		getStepStmt:              q.getStepStmt,
-		getTagByIDStmt:           q.getTagByIDStmt,
-		listCreatorsStmt:         q.listCreatorsStmt,
-		listFunnelsStmt:          q.listFunnelsStmt,
-		listObjectTypesStmt:      q.listObjectTypesStmt,
-		listObjectsByOrgIDStmt:   q.listObjectsByOrgIDStmt,
-		listStepsByFunnelStmt:    q.listStepsByFunnelStmt,
-		listTagsStmt:             q.listTagsStmt,
-		markFeedAsSeenStmt:       q.markFeedAsSeenStmt,
-		updateCreatorStmt:        q.updateCreatorStmt,
-		updateFunnelStmt:         q.updateFunnelStmt,
-		updateObjStepStmt:        q.updateObjStepStmt,
-		updateObjectStmt:         q.updateObjectStmt,
-		updateObjectTypeStmt:     q.updateObjectTypeStmt,
-		updateStepStmt:           q.updateStepStmt,
-		updateTagStmt:            q.updateTagStmt,
+		db:                        tx,
+		tx:                        tx,
+		addObjectTypeValueStmt:    q.addObjectTypeValueStmt,
+		addTagToObjectStmt:        q.addTagToObjectStmt,
+		countFunnelsStmt:          q.countFunnelsStmt,
+		countObjectTypesStmt:      q.countObjectTypesStmt,
+		countObjectsByOrgIDStmt:   q.countObjectsByOrgIDStmt,
+		countTagsStmt:             q.countTagsStmt,
+		createCreatorStmt:         q.createCreatorStmt,
+		createFeedStmt:            q.createFeedStmt,
+		createFunnelStmt:          q.createFunnelStmt,
+		createObjectStmt:          q.createObjectStmt,
+		createObjectTypeStmt:      q.createObjectTypeStmt,
+		createOrganizationStmt:    q.createOrganizationStmt,
+		createStepStmt:            q.createStepStmt,
+		createTagStmt:             q.createTagStmt,
+		deleteCreatorStmt:         q.deleteCreatorStmt,
+		deleteFunnelStmt:          q.deleteFunnelStmt,
+		deleteObjectStmt:          q.deleteObjectStmt,
+		deleteObjectTypeStmt:      q.deleteObjectTypeStmt,
+		deleteStepStmt:            q.deleteStepStmt,
+		deleteTagStmt:             q.deleteTagStmt,
+		getCreatorStmt:            q.getCreatorStmt,
+		getCreatorByIDStmt:        q.getCreatorByIDStmt,
+		getCreatorByUsernameStmt:  q.getCreatorByUsernameStmt,
+		getFeedStmt:               q.getFeedStmt,
+		getFunnelStmt:             q.getFunnelStmt,
+		getObjectDetailsStmt:      q.getObjectDetailsStmt,
+		getObjectTypeByIDStmt:     q.getObjectTypeByIDStmt,
+		getSessionByTokenStmt:     q.getSessionByTokenStmt,
+		getStepStmt:               q.getStepStmt,
+		getTagByIDStmt:            q.getTagByIDStmt,
+		listCreatorsStmt:          q.listCreatorsStmt,
+		listFunnelsStmt:           q.listFunnelsStmt,
+		listObjectTypesStmt:       q.listObjectTypesStmt,
+		listObjectsByOrgIDStmt:    q.listObjectsByOrgIDStmt,
+		listStepsByFunnelStmt:     q.listStepsByFunnelStmt,
+		listTagsStmt:              q.listTagsStmt,
+		markFeedAsSeenStmt:        q.markFeedAsSeenStmt,
+		removeObjectTypeValueStmt: q.removeObjectTypeValueStmt,
+		removeTagFromObjectStmt:   q.removeTagFromObjectStmt,
+		updateCreatorStmt:         q.updateCreatorStmt,
+		updateFunnelStmt:          q.updateFunnelStmt,
+		updateObjStepStmt:         q.updateObjStepStmt,
+		updateObjectStmt:          q.updateObjectStmt,
+		updateObjectTypeStmt:      q.updateObjectTypeStmt,
+		updateObjectTypeValueStmt: q.updateObjectTypeValueStmt,
+		updateStepStmt:            q.updateStepStmt,
+		updateTagStmt:             q.updateTagStmt,
 	}
 }

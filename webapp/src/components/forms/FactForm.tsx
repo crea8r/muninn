@@ -14,6 +14,7 @@ import {
   ModalCloseButton,
   Button,
   useDisclosure,
+  HStack,
 } from '@chakra-ui/react';
 import { CalendarIcon, EditIcon } from '@chakra-ui/icons';
 import { RichTextEditor } from '../rich-text/';
@@ -54,23 +55,28 @@ const FactForm: React.FC<FactFormProps> = ({ onSave, objectId }) => {
   };
 
   return (
-    <Box>
+    <Box width='100%'>
       <Flex justifyContent='space-between' mb={2}>
-        <Flex alignItems='center'>
+        <HStack>
           <Text mr={2}>{fact.happened_at}</Text>
-          <IconButton
-            aria-label='Change date'
-            icon={<CalendarIcon />}
-            size='sm'
-            onClick={() => datePickerRef.current?.showPicker()}
-          />
-          <Input
-            ref={datePickerRef}
-            type='datetime-local'
-            onChange={handleDateChange}
-            style={{ position: 'absolute', visibility: 'hidden' }}
-          />
-        </Flex>
+          <div style={{ position: 'relative' }}>
+            <IconButton
+              aria-label='Change date'
+              icon={<CalendarIcon />}
+              size='sm'
+              onClick={() => datePickerRef.current?.showPicker()}
+            />
+            <Input
+              ref={datePickerRef}
+              type='datetime-local'
+              onChange={handleDateChange}
+              style={{
+                position: 'absolute',
+                visibility: 'hidden',
+              }}
+            />
+          </div>
+        </HStack>
         <Flex alignItems='center'>
           <Text mr={2}>{fact.location || 'Set location'}</Text>
           <IconButton
