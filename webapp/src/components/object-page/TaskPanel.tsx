@@ -21,6 +21,7 @@ import {
 import { Task } from '../../types/';
 import { fetchTasks, addTask, updateTaskStatus, reassignTask } from '../../api';
 import { TaskForm } from '../forms/';
+import ActionSuggestion from './ActionSuggestion';
 
 interface TaskPanelProps {
   objectId: string;
@@ -118,6 +119,12 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ objectId }) => {
     <Box>
       <VStack align='stretch' spacing={4}>
         <Heading size='md'>Tasks</Heading>
+        <ActionSuggestion
+          objectId={objectId}
+          onActionTaken={(data: any) => {
+            console.log('data:', data);
+          }}
+        />
         {tasks.map((task) => (
           <Box key={task.id} borderWidth={1} borderRadius='md' p={4}>
             <Text fontWeight='bold'>{task.content}</Text>

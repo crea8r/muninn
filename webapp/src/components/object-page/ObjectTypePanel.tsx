@@ -82,8 +82,8 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
   return (
     <Box>
       <VStack align='stretch' spacing={4}>
-        <Heading size='md'>Object Types</Heading>
-        <SimpleGrid columns={[1, 2, 3]} spacing={4}>
+        <Button onClick={onOpen}>Add New Type</Button>
+        <SimpleGrid columns={[1, 2]} spacing={4}>
           {objectTypes.map((typeValue) => (
             <ObjectTypeCard
               key={typeValue.id}
@@ -98,7 +98,6 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
             />
           ))}
         </SimpleGrid>
-        <Button onClick={onOpen}>Add New Type</Button>
       </VStack>
 
       <AddObjectTypeModal

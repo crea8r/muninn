@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Box, VStack, Text, Button, Flex, useToast } from '@chakra-ui/react';
-import { FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
+import {
+  Box,
+  VStack,
+  Text,
+  Button,
+  Flex,
+  useToast,
+  IconButton,
+  HStack,
+} from '@chakra-ui/react';
+import { FaThumbsUp, FaThumbsDown, FaTrash, FaBookmark } from 'react-icons/fa';
+import { FiPlusCircle, FiRefreshCcw } from 'react-icons/fi';
 
 // Mock action suggestions
 const mockActions = [
@@ -83,43 +93,42 @@ const ActionSuggestion: React.FC<ActionSuggestionProps> = ({
   };
 
   return (
-    <Box borderWidth={1} borderRadius='md' p={4}>
-      <Text fontSize='xl' fontWeight='bold' mb={4}>
-        AI Suggested Actions
-      </Text>
-      <VStack spacing={4} align='stretch'>
+    <Box borderWidth={0} p={0}>
+      <HStack>
+        <Text fontSize='md' fontWeight='semi-bold' mb={4}>
+          🪄 Suggestion
+        </Text>
+        <Button leftIcon={<FiRefreshCcw />}>Generate new</Button>
+      </HStack>
+
+      <VStack spacing={2}>
         {suggestions.map((action, index) => (
-          <Box key={index} borderWidth={1} borderRadius='md' p={3}>
+          <HStack align='center'>
             <Text mb={2}>{action}</Text>
-            <Flex justifyContent='space-between'>
-              {/* <Button
-                size='sm'
-                colorScheme='blue'
-                onClick={() => handleActionClick(action)}
-              >
-                Take Action
-              </Button> */}
+            <Flex>
               <Flex>
-                <Button
+                <IconButton
                   size='sm'
-                  leftIcon={<FaThumbsUp />}
-                  mr={2}
+                  icon={<FaBookmark />}
+                  mr={1}
                   onClick={() => handleFeedback(action, true)}
                   colorScheme='blue'
-                >
-                  Like
-                </Button>
-                <Button
+                  variant='ghost'
+                  title='save'
+                  aria-label='save'
+                />
+                <IconButton
                   size='sm'
-                  leftIcon={<FaThumbsDown />}
+                  icon={<FaTrash />}
                   onClick={() => handleFeedback(action, false)}
                   colorScheme='red'
-                >
-                  Dislike
-                </Button>
+                  variant='ghost'
+                  title='delete'
+                  aria-label='delete'
+                />
               </Flex>
             </Flex>
-          </Box>
+          </HStack>
         ))}
       </VStack>
     </Box>

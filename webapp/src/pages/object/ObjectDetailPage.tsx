@@ -15,8 +15,11 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   HStack,
+  IconButton,
+  useMediaQuery,
 } from '@chakra-ui/react';
 import { ChevronRightIcon, EditIcon } from '@chakra-ui/icons';
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { RichTextViewer } from 'src/components/rich-text';
 import {
   TagInput,
@@ -26,7 +29,7 @@ import {
   ActivityFeed,
 } from 'src/components/object-page';
 import { FactForm, ObjectForm } from 'src/components/forms';
-import { Object, Fact, NewFact, Tag, UpdateObject } from 'src/types/';
+import { Object, Fact, NewFact, UpdateObject } from 'src/types/';
 import { fetchObjectDetails, updateObject, addFact } from 'src/api';
 import { useParams } from 'react-router-dom';
 import {
@@ -36,23 +39,25 @@ import {
   removeTagFromObject,
   updateObjectTypeValue,
 } from 'src/api/object';
-import ActionSuggestion from 'src/components/object-page/ActionSuggestion';
 
-interface ObjectDetailPageProps {}
-
-const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({}) => {
+const ObjectDetailPage: React.FC = () => {
   const { objectId } = useParams<{ objectId: string }>();
   const [object, setObject] = useState<Object | null>(null);
   const [facts, setFacts] = useState<Fact[]>([]);
   const toast = useToast();
   const [showEditObject, setShowEditObject] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
+  const [isLargerThan1280] = useMediaQuery('(min-width: 1280px)');
+
+  useEffect(() => {
+    setIsRightPanelOpen(isLargerThan1280);
+  }, [isLargerThan1280]);
 
   useEffect(() => {
     const loadObjectDetails = async () => {
       try {
         const details = await fetchObjectDetails(objectId);
-        console.log('details:', details);
         setObject(details);
         setFacts(details.facts);
       } catch (error) {
@@ -73,6 +78,7 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({}) => {
     await addTagToObject(objectId, tagId);
     setForceUpdate(forceUpdate + 1);
   };
+
   const handleTagsRemove = async (tagId: string) => {
     await removeTagFromObject(objectId, tagId);
     setForceUpdate(forceUpdate + 1);
@@ -82,6 +88,7 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({}) => {
     await updateObject(updatedObject);
     setForceUpdate(forceUpdate + 1);
   };
+
   const handleAddFact = async (newFact: NewFact) => {
     try {
       const addedFact = await addFact(newFact);
@@ -102,10 +109,12 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({}) => {
       });
     }
   };
+
   const handleAddObjectTypeValue = async (objectId: string, payload: any) => {
     await addObjectTypeValue(objectId, payload);
     setForceUpdate(forceUpdate + 1);
   };
+
   const handleRemoveObjectTypeValue = async (
     objectId: string,
     objTypeValueId: string
@@ -113,6 +122,7 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({}) => {
     await removeObjectTypeValue(objectId, objTypeValueId);
     setForceUpdate(forceUpdate + 1);
   };
+
   const handleUpdateObjectTypeValue = async (
     objectId: string,
     objTypeValueId: string,
@@ -127,20 +137,19 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({}) => {
   }
 
   return (
-    // <Flex height='calc(100vh - 72px)' overflow='hidden'>
     <Flex height='calc(100vh - 96px)' overflow='hidden'>
-      {/*<Flex height='100%' overflow='hidden'>*/}
       {/* Left Column */}
       <Box
-        width='60%'
+        width={isRightPanelOpen ? '60%' : '100%'}
         p={4}
-        borderRight='1px solid'
+        borderRight={isRightPanelOpen ? '1px solid' : 'none'}
         borderColor='gray.200'
         overflowY='auto'
         css={{
           '&::-webkit-scrollbar': { display: 'none' },
           scrollbarWidth: 'none',
         }}
+        transition='width 0.3s'
       >
         <VStack align='stretch' spacing={4}>
           <Breadcrumb
@@ -154,57 +163,32 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({}) => {
               <BreadcrumbLink href='/objects'>Objects</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbItem isCurrentPage>
-              <BreadcrumbLink href='#'>{object.name}</BreadcrumbLink>
+              <BreadcrumbLink href='#' fontWeight='bold'>
+                {object.name}
+              </BreadcrumbLink>
             </BreadcrumbItem>
           </Breadcrumb>
-          <HStack>
-            <Heading as='h1' size='xl'>
-              {object.name}
-            </Heading>
-            <EditIcon
-              fontSize='x-large'
-              onClick={() => {
-                setShowEditObject(true);
-              }}
-            />
-          </HStack>
-          <RichTextViewer content={object.description} />
-          <TagInput
-            tags={object.tags}
-            onAddTag={handleTagsAdd}
-            onRemoveTag={handleTagsRemove}
-            isReadOnly={false}
-          />
+          <Heading as='h2' size='lg'>
+            Activity
+          </Heading>
           <Tabs>
             <TabList>
-              <Tab>Object Type</Tab>
+              <Tab>Facts</Tab>
               <Tab>Tasks</Tab>
               <Tab>Funnel</Tab>
-              <Tab>🪄 Suggestion</Tab>
             </TabList>
             <TabPanels>
               <TabPanel>
-                <ObjectTypePanel
-                  objectId={objectId}
-                  objectTypes={object.typeValues}
-                  onAddObjectTypeValue={handleAddObjectTypeValue}
-                  onRemoveObjectTypeValue={handleRemoveObjectTypeValue}
-                  onUpdateObjectTypeValue={handleUpdateObjectTypeValue}
-                />
+                <Box flexGrow={1} overflowY='auto'>
+                  <ActivityFeed facts={facts} />
+                </Box>
+                <FactForm onSave={handleAddFact} objectId={objectId} />
               </TabPanel>
               <TabPanel>
                 <TaskPanel objectId={objectId} />
               </TabPanel>
               <TabPanel>
                 <FunnelPanel objectId={objectId} />
-              </TabPanel>
-              <TabPanel>
-                <ActionSuggestion
-                  objectId={objectId}
-                  onActionTaken={(data: any) => {
-                    console.log('data:', data);
-                  }}
-                />
               </TabPanel>
             </TabPanels>
           </Tabs>
@@ -213,24 +197,68 @@ const ObjectDetailPage: React.FC<ObjectDetailPageProps> = ({}) => {
 
       {/* Right Column */}
       <Box
-        width='40%'
-        p={4}
+        width={isRightPanelOpen ? '40%' : '40px'}
+        minWidth={isRightPanelOpen ? '300px' : '40px'}
+        p={isRightPanelOpen ? 4 : 0}
         overflowY='auto'
+        overflowX='visible'
         css={{
           '&::-webkit-scrollbar': { display: 'none' },
           scrollbarWidth: 'none',
         }}
+        transition='width 0.1s, padding 0s'
+        position={isLargerThan1280 ? 'relative' : 'absolute'}
+        right={0}
+        top={0}
+        bottom={0}
+        bg='gray.50'
+        zIndex={100}
+        boxShadow={
+          isLargerThan1280
+            ? 'none'
+            : isRightPanelOpen
+            ? '0 0 10px rgba(0,0,0,0.1)'
+            : 'none'
+        }
       >
-        {/* <VStack align='stretch' spacing={4} height='100%'> */}
-        <VStack align='stretch' spacing={4} height='100%'>
-          <Heading as='h2' size='lg'>
-            Activity
-          </Heading>
-          <Box flexGrow={1} overflowY='auto'>
-            <ActivityFeed facts={facts} />
-          </Box>
-          <FactForm onSave={handleAddFact} objectId={objectId} />
-        </VStack>
+        <IconButton
+          aria-label='Toggle right panel'
+          icon={isRightPanelOpen ? <FiChevronRight /> : <FiChevronLeft />}
+          position='absolute'
+          left={isRightPanelOpen ? '0' : '0'}
+          top='0'
+          onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
+          zIndex={2}
+        />
+        {isRightPanelOpen && (
+          <VStack align='stretch' spacing={4} height='100%' mt={10}>
+            <HStack>
+              <Heading as='h1' size='xl'>
+                {object.name}
+              </Heading>
+              <EditIcon
+                fontSize='x-large'
+                onClick={() => {
+                  setShowEditObject(true);
+                }}
+              />
+            </HStack>
+            <RichTextViewer content={object.description} />
+            <TagInput
+              tags={object.tags}
+              onAddTag={handleTagsAdd}
+              onRemoveTag={handleTagsRemove}
+              isReadOnly={false}
+            />
+            <ObjectTypePanel
+              objectId={objectId}
+              objectTypes={object.typeValues}
+              onAddObjectTypeValue={handleAddObjectTypeValue}
+              onRemoveObjectTypeValue={handleRemoveObjectTypeValue}
+              onUpdateObjectTypeValue={handleUpdateObjectTypeValue}
+            />
+          </VStack>
+        )}
       </Box>
       <ObjectForm
         initialObject={object}
