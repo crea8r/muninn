@@ -13,8 +13,10 @@ import {
   Select,
   Input,
   VStack,
+  FormHelperText,
 } from '@chakra-ui/react';
 import { ObjectType } from 'src/types/';
+import { MasterFormElement } from 'src/components/rich-object-form/MasterFormElement';
 
 interface AddObjectTypeModalProps {
   isOpen: boolean;
@@ -77,17 +79,25 @@ const AddObjectTypeModal: React.FC<AddObjectTypeModalProps> = ({
                 ))}
               </Select>
             </FormControl>
-            {Object.entries(typeValues).map(([field, value]) => (
-              <FormControl key={field}>
-                <FormLabel>{field}</FormLabel>
-                <Input
+            {Object.entries(typeValues).map(([field, value]) => {
+              console.log(
+                'selectedType: ',
+                availableTypes.find((t) => t.id === selectedType)?.fields[field]
+              );
+              const dataType = availableTypes.find((t) => t.id === selectedType)
+                ?.fields[field];
+              return (
+                <MasterFormElement
+                  key={field}
+                  field={field}
+                  dataType={dataType}
                   value={value}
-                  onChange={(e) =>
-                    setTypeValues({ ...typeValues, [field]: e.target.value })
+                  onChange={(value) =>
+                    setTypeValues({ ...typeValues, [field]: value })
                   }
                 />
-              </FormControl>
-            ))}
+              );
+            })}
           </VStack>
         </ModalBody>
         <ModalFooter>

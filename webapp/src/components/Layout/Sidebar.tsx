@@ -226,7 +226,7 @@ const Sidebar: React.FC = () => {
             />
             <SidebarItem
               icon={FiFolder}
-              text='All Objects'
+              text='Everything'
               to='/objects'
               isActive={isActive('/objects')}
               isCollapsed={isCollapsed}

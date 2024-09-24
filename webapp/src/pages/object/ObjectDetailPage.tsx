@@ -29,7 +29,7 @@ import {
   ActivityFeed,
 } from 'src/components/object-page';
 import { FactForm, ObjectForm } from 'src/components/forms';
-import { Object, Fact, NewFact, UpdateObject } from 'src/types/';
+import { Fact, NewFact, UpdateObject } from 'src/types/';
 import { fetchObjectDetails, updateObject, addFact } from 'src/api';
 import { useParams } from 'react-router-dom';
 import {
@@ -38,11 +38,15 @@ import {
   removeObjectTypeValue,
   removeTagFromObject,
   updateObjectTypeValue,
-} from 'src/api/object';
+  addOrMoveObjectInFunnel,
+  deleteObjectFromFunnel,
+  updateObjectStepSubStatus,
+} from 'src/api';
+import { ObjectDetail } from 'src/types/Object';
 
 const ObjectDetailPage: React.FC = () => {
   const { objectId } = useParams<{ objectId: string }>();
-  const [object, setObject] = useState<Object | null>(null);
+  const [object, setObject] = useState<ObjectDetail | null>(null);
   const [facts, setFacts] = useState<Fact[]>([]);
   const toast = useToast();
   const [showEditObject, setShowEditObject] = useState(false);
@@ -132,6 +136,24 @@ const ObjectDetailPage: React.FC = () => {
     setForceUpdate(forceUpdate + 1);
   };
 
+  const handleAddOrMoveObjectInFunnel = async (
+    objectId: string,
+    stepId: string
+  ) => {
+    await addOrMoveObjectInFunnel(objectId, stepId);
+    setForceUpdate(forceUpdate + 1);
+  };
+
+  const handleDeleteObjectFromFunnel = async (objectStepId: string) => {
+    await deleteObjectFromFunnel(objectStepId);
+    setForceUpdate(forceUpdate + 1);
+  };
+
+  const handleUpdateSubStatus = async (objectId: string, subStatus: number) => {
+    await updateObjectStepSubStatus(objectId, subStatus);
+    setForceUpdate(forceUpdate + 1);
+  };
+
   if (!object) {
     return <Text>Loading...</Text>;
   }
@@ -180,7 +202,10 @@ const ObjectDetailPage: React.FC = () => {
             <TabPanels>
               <TabPanel>
                 <Box flexGrow={1} overflowY='auto'>
-                  <ActivityFeed facts={facts} />
+                  <ActivityFeed
+                    facts={facts}
+                    stepsAndFunnels={object.stepsAndFunnels}
+                  />
                 </Box>
                 <FactForm onSave={handleAddFact} objectId={objectId} />
               </TabPanel>
@@ -188,7 +213,13 @@ const ObjectDetailPage: React.FC = () => {
                 <TaskPanel objectId={objectId} />
               </TabPanel>
               <TabPanel>
-                <FunnelPanel objectId={objectId} />
+                <FunnelPanel
+                  objectId={objectId}
+                  onAddOrMoveObjectInFunnel={handleAddOrMoveObjectInFunnel}
+                  onDeleteObjectFromFunnel={handleDeleteObjectFromFunnel}
+                  onUpdateSubStatus={handleUpdateSubStatus}
+                  stepsAndFunnels={object.stepsAndFunnels}
+                />
               </TabPanel>
             </TabPanels>
           </Tabs>
@@ -243,7 +274,10 @@ const ObjectDetailPage: React.FC = () => {
                 }}
               />
             </HStack>
-            <RichTextViewer content={object.description} />
+            {object.description && object.description !== '' && (
+              <RichTextViewer content={object.description} />
+            )}
+
             <TagInput
               tags={object.tags}
               onAddTag={handleTagsAdd}

@@ -6,12 +6,6 @@ import {
   Text,
   Button,
   useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
   FormControl,
   FormLabel,
   Input,
@@ -19,7 +13,7 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import { Task } from '../../types/';
-import { fetchTasks, addTask, updateTaskStatus, reassignTask } from '../../api';
+import { listTasks, createTask, updateTask } from 'src/api';
 import { TaskForm } from '../forms/';
 import ActionSuggestion from './ActionSuggestion';
 
@@ -35,8 +29,8 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ objectId }) => {
   useEffect(() => {
     const loadTasks = async () => {
       try {
-        const fetchedTasks = await fetchTasks(objectId);
-        setTasks(fetchedTasks);
+        // const fetchedTasks = await listTasks(objectId);
+        // setTasks(fetchedTasks);
       } catch (error) {
         toast({
           title: 'Error loading tasks',
@@ -53,8 +47,8 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ objectId }) => {
 
   const handleAddTask = async (newTask: Task) => {
     try {
-      const addedTask = await addTask(objectId, newTask);
-      setTasks([...tasks, addedTask]);
+      // const addedTask = await addTask(objectId, newTask);
+      // setTasks([...tasks, addedTask]);
       onClose();
       toast({
         title: 'Task added',
@@ -75,8 +69,8 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ objectId }) => {
 
   const handleUpdateTaskStatus = async (taskId: number, newStatus: string) => {
     try {
-      const updatedTask = await updateTaskStatus(taskId, newStatus);
-      setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)));
+      // const updatedTask = await updateTaskStatus(taskId, newStatus);
+      // setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)));
       toast({
         title: 'Task status updated',
         status: 'success',
@@ -96,8 +90,8 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ objectId }) => {
 
   const handleReassignTask = async (taskId: number, newAssigneeId: number) => {
     try {
-      const updatedTask = await reassignTask(taskId, newAssigneeId);
-      setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)));
+      // const updatedTask = await reassignTask(taskId, newAssigneeId);
+      // setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)));
       toast({
         title: 'Task reassigned',
         status: 'success',
@@ -145,7 +139,7 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ objectId }) => {
             <FormControl mt={2}>
               <FormLabel>Assigned To</FormLabel>
               <Input
-                value={task.assignedTo}
+                value={task.assignedName}
                 onChange={(e) =>
                   handleReassignTask(task.id, parseInt(e.target.value))
                 }

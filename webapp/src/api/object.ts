@@ -1,4 +1,4 @@
-import { Object, NewObject, ObjectTypeValue, UpdateObject } from 'src/types/';
+import { Object, NewObject, UpdateObject } from 'src/types/';
 import { axiosWithAuth } from './utils';
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -80,6 +80,50 @@ export const updateObjectTypeValue = async (
   const response = await axiosWithAuth().put(
     `${API_URL}/objects/${objectId}/type-values/${objectTypeValueId}`,
     payload
+  );
+  return response.data;
+};
+
+export const addOrMoveObjectInFunnel = async (
+  objectId: string,
+  stepId: string
+) => {
+  //r.Post("/steps", objStepHandler.Create)
+  const response = await axiosWithAuth().post(`${API_URL}/objects/steps`, {
+    objId: objectId,
+    stepId,
+  });
+  return response.data;
+};
+
+export const deleteObjectFromFunnel = async (objectStepId: string) => {
+  //r.Delete("/steps/{id}", objStepHandler.SoftDelete)
+  const response = await axiosWithAuth().delete(
+    `${API_URL}/objects/steps/${objectStepId}`
+  );
+  return response.data;
+};
+
+/**
+ *
+ * @param objectStepId
+ * @returns void
+ * Delete historical value, use to fix a mistake
+ */
+export const forceDeleteObjectStep = async (objectStepId: string) => {
+  const response = await axiosWithAuth().delete(
+    `${API_URL}/steps/${objectStepId}/force`
+  );
+  return response.data;
+};
+
+export const updateObjectStepSubStatus = async (
+  objectStepId: string,
+  subStatus: number
+) => {
+  const response = await axiosWithAuth().put(
+    `${API_URL}/objects/steps/${objectStepId}/sub-status`,
+    { subStatus }
   );
   return response.data;
 };

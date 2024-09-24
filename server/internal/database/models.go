@@ -41,14 +41,14 @@ type CreatorSession struct {
 }
 
 type Fact struct {
-	ID          uuid.UUID     `json:"id"`
-	Text        string        `json:"text"`
-	HappenedAt  sql.NullTime  `json:"happened_at"`
-	Location    string        `json:"location"`
-	CreatorID   uuid.NullUUID `json:"creator_id"`
-	CreatedAt   time.Time     `json:"created_at"`
-	LastUpdated time.Time     `json:"last_updated"`
-	DeletedAt   sql.NullTime  `json:"deleted_at"`
+	ID          uuid.UUID    `json:"id"`
+	Text        string       `json:"text"`
+	HappenedAt  sql.NullTime `json:"happened_at"`
+	Location    string       `json:"location"`
+	CreatorID   uuid.UUID    `json:"creator_id"`
+	CreatedAt   time.Time    `json:"created_at"`
+	LastUpdated time.Time    `json:"last_updated"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
 }
 
 type Feed struct {
@@ -96,10 +96,14 @@ type ObjFact struct {
 }
 
 type ObjStep struct {
-	ObjID       uuid.UUID `json:"obj_id"`
-	StepID      uuid.UUID `json:"step_id"`
-	CreatedAt   time.Time `json:"created_at"`
-	LastUpdated time.Time `json:"last_updated"`
+	ID          uuid.UUID    `json:"id"`
+	ObjID       uuid.UUID    `json:"obj_id"`
+	StepID      uuid.UUID    `json:"step_id"`
+	CreatorID   uuid.UUID    `json:"creator_id"`
+	SubStatus   int32        `json:"sub_status"`
+	CreatedAt   time.Time    `json:"created_at"`
+	LastUpdated time.Time    `json:"last_updated"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
 }
 
 type ObjTag struct {
@@ -173,7 +177,7 @@ type Task struct {
 	Deadline    sql.NullTime  `json:"deadline"`
 	RemindAt    sql.NullTime  `json:"remind_at"`
 	Status      string        `json:"status"`
-	CreatorID   uuid.NullUUID `json:"creator_id"`
+	CreatorID   uuid.UUID     `json:"creator_id"`
 	AssignedID  uuid.NullUUID `json:"assigned_id"`
 	ParentID    uuid.NullUUID `json:"parent_id"`
 	CreatedAt   time.Time     `json:"created_at"`

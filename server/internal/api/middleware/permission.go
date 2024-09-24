@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"os"
 	"time"
@@ -17,7 +18,9 @@ type Claims struct {
 	CreatorID string `json:"creator_id"`
 	Name      string `json:"name"`
 	OrgID     string `json:"org_id"`
+	OrgName	 string `json:"org_name"`
 	Role      string `json:"role"`
+	Profile	 json.RawMessage `json:"profile"`
 	jwt.RegisteredClaims
 }
 

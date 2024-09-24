@@ -13,6 +13,7 @@ The v0 ignore these
 - Create a task to create `obj_type_value`.`search_vector`
 - Create a task to aggregate `obj_type_value`.`search_vector`, `fact`.`text`::tsvector into one vector in `obj`. This would make search and query much more efficient.
 - Improve the text indexing function, e.g: email should only kept the handle and unpopular domain.
+- Security issue for some of the query; e.g: any user from any org can update, delete obj_step
 
 ## Front-end improvement
 

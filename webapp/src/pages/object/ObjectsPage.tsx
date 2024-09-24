@@ -59,14 +59,6 @@ const ObjectsPage: React.FC = () => {
       );
       setObjects(objects);
       setTotalCount(totalCount);
-
-      // Fetch object type values for each object
-      // const typeValuesResults = {};
-      // const newObjectTypeValues = objects.reduce((acc, obj, index) => {
-      //   acc[obj.id] = typeValuesResults[index];
-      //   return acc;
-      // }, {} as { [key: string]: ObjectTypeValue[] });
-      // setObjectTypeValues(newObjectTypeValues);
     } catch (error) {
       console.error('Error loading objects:', error);
     }
@@ -134,7 +126,7 @@ const ObjectsPage: React.FC = () => {
             <Tr>
               <Th>Name</Th>
               <Th>Description</Th>
-              <Th>Types</Th>
+              <Th>Type Values</Th>
             </Tr>
           </Thead>
           <Tbody>
@@ -145,57 +137,51 @@ const ObjectsPage: React.FC = () => {
                 </Td>
               </Tr>
             ) : objects.length > 0 ? (
-              objects.map((obj) => (
-                <Tr
-                  key={obj.id}
-                  onClick={() => handleRowClick(obj.id)}
-                  _hover={{ bg: 'gray.100', cursor: 'pointer' }}
-                >
-                  <Td>{obj.name}</Td>
-                  <Td>
-                    <Box mb={1}>{obj.description}</Box>
-                    {obj.tags.length > 0 && (
-                      <Box>
-                        {obj.tags.map((tag: Tag) => (
-                          <ChakraTag
-                            key={tag.id}
-                            title={tag.description}
-                            textColor={tag.color_schema.text}
-                            background={tag.color_schema.background}
-                            mr={1}
-                          >
-                            {tag.name}
-                          </ChakraTag>
-                        ))}
-                      </Box>
-                    )}
-                  </Td>
-                  <Td>
-                    <HStack spacing={2}>
-                      {objectTypeValues[obj.id]?.map((typeValue) => (
-                        <Tooltip
-                          key={typeValue.objectTypeId}
-                          label={
-                            <VStack align='start'>
-                              {window.Object.entries(typeValue.type_values).map(
-                                ([key, value]) => (
-                                  <Text key={key}>
-                                    {key}: {value}
-                                  </Text>
-                                )
-                              )}
-                            </VStack>
-                          }
-                        >
-                          <ChakraTag colorScheme='blue'>
-                            {typeValue.objectTypeId}
-                          </ChakraTag>
-                        </Tooltip>
-                      ))}
-                    </HStack>
-                  </Td>
-                </Tr>
-              ))
+              objects.map((obj) => {
+                let str: string[] = [];
+                obj.typeValues.map((otv) => {
+                  return window.Object.entries(otv.type_values).forEach(
+                    ([_, value]) => {
+                      if (value && value !== '') {
+                        str.push(`${value}`);
+                      }
+                    }
+                  );
+                });
+                let type_values = str.join(', ') || 'No type values';
+                type_values =
+                  type_values.length > 50
+                    ? type_values.slice(0, 50) + '...'
+                    : type_values;
+                return (
+                  <Tr
+                    key={obj.id}
+                    onClick={() => handleRowClick(obj.id)}
+                    _hover={{ bg: 'gray.100', cursor: 'pointer' }}
+                  >
+                    <Td>{obj.name}</Td>
+                    <Td>
+                      <Box mb={1}>{obj.description}</Box>
+                      {obj.tags.length > 0 && (
+                        <Box>
+                          {obj.tags.map((tag: Tag) => (
+                            <ChakraTag
+                              key={tag.id}
+                              title={tag.description}
+                              textColor={tag.color_schema.text}
+                              background={tag.color_schema.background}
+                              mr={1}
+                            >
+                              {tag.name}
+                            </ChakraTag>
+                          ))}
+                        </Box>
+                      )}
+                    </Td>
+                    <Td>{type_values}</Td>
+                  </Tr>
+                );
+              })
             ) : (
               <Tr>
                 <Td colSpan={3} textAlign='center'>

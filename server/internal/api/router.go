@@ -28,6 +28,9 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 	funnelHandler := handlers.NewFunnelHandler(db)
 	objectModel := models.NewObjectModel(db)
 	objectHandler := handlers.NewObjectHandler(objectModel, db)
+	objStepHandler := handlers.NewObjStepHandler(objectModel)
+	taskHandler := handlers.NewTaskHandler(db)
+	orgMemberHandler := handlers.NewOrgMemberHandler(db)
 
 	// Public routes
 	r.Post("/auth/signup", handlers.SignUp(db))
@@ -76,6 +79,34 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 			r.Post("/{id}/type-values", objectHandler.AddObjectTypeValue)
 			r.Put("/{id}/type-values/{typeValueId}", objectHandler.UpdateObjectTypeValue)
 			r.Delete("/{id}/type-values/{typeValueId}", objectHandler.RemoveObjectTypeValue)
+
+			// Object step routes
+			r.Post("/steps", objStepHandler.Create)
+			r.Delete("/steps/{id}", objStepHandler.SoftDelete)
+			r.Delete("/steps/{id}/force", objStepHandler.HardDelete)
+			r.Put("/steps/{id}/sub-status", objStepHandler.UpdateSubStatus)
+		})
+		
+		r.Route("/tasks", func(r chi.Router) {
+			// Only admin can access this route; later implement permission check
+			// r.Get("/", taskHandler.ListAllTasksInOrg)
+			r.Get("/", taskHandler.ListWithFilter)
+			r.Post("/", taskHandler.Create)
+			r.Get("/object/{objectID}", taskHandler.ListByObjectID)
+			r.Route("/{id}", func(r chi.Router) {
+				r.Get("/", taskHandler.GetByID)
+				r.Put("/", taskHandler.Update)
+				r.Delete("/", taskHandler.Delete)
+			})
+		})
+
+		r.Route("/org", func(r chi.Router) {
+			r.Get("/members", orgMemberHandler.ListOrgMembers)
+			r.Put("/details", orgMemberHandler.UpdateOrgDetails)
+			r.Post("/members", orgMemberHandler.AddNewMember)
+			r.Put("/members/{userID}/permission", orgMemberHandler.UpdateUserRoleAndStatus)
+			r.Put("/members/{userID}/password", orgMemberHandler.UpdateUserPassword)
+			r.Put("/members/{userID}/profile", orgMemberHandler.UpdateUserProfile)
 		})
 	})
 

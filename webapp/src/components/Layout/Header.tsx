@@ -20,6 +20,7 @@ import logo from 'src/assets/logo.png';
 
 const Header: React.FC = () => {
   const history = useHistory();
+  const details = authService.getDetails();
   const handleLogout = () => {
     authService.logout();
     history.push('/');
@@ -58,9 +59,11 @@ const Header: React.FC = () => {
             <MenuItem onClick={() => history.push('/account')}>
               Account
             </MenuItem>
-            <MenuItem onClick={() => history.push('/organisation')}>
-              Organisation
-            </MenuItem>
+            {details?.role === 'admin' && (
+              <MenuItem onClick={() => history.push('/organisation')}>
+                Organisation
+              </MenuItem>
+            )}
             <MenuItem onClick={handleLogout}>Log out</MenuItem>
           </MenuList>
         </Menu>

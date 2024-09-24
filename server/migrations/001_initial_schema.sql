@@ -106,7 +106,7 @@ CREATE TABLE fact (
     text TEXT NOT NULL,
     happened_at TIMESTAMP WITH TIME ZONE,
     location TEXT NOT NULL,
-    creator_id UUID REFERENCES creator(id) ON DELETE CASCADE,
+    creator_id UUID NOT NULL REFERENCES creator(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
@@ -119,7 +119,7 @@ CREATE TABLE task (
     deadline TIMESTAMP WITH TIME ZONE,
     remind_at TIMESTAMP WITH TIME ZONE,
     status VARCHAR(50) CHECK (status IN ('todo', 'doing', 'paused', 'completed')) NOT NULL,
-    creator_id UUID REFERENCES creator(id) ON DELETE CASCADE,
+    creator_id UUID NOT NULL REFERENCES creator(id) ON DELETE CASCADE,
     assigned_id UUID REFERENCES creator(id) ON DELETE SET NULL,
     parent_id UUID REFERENCES task(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -192,11 +192,14 @@ CREATE TABLE obj_type_value (
 );
 
 CREATE TABLE obj_step (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     obj_id UUID NOT NULL REFERENCES obj(id) ON DELETE CASCADE,
     step_id UUID NOT NULL REFERENCES step(id) ON DELETE CASCADE,
+    creator_id UUID NOT NULL REFERENCES creator(id) ON DELETE CASCADE,
+    sub_status INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (obj_id, step_id)
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE TABLE creator_list (

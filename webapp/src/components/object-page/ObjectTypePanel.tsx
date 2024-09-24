@@ -10,8 +10,8 @@ import {
 } from '@chakra-ui/react';
 import { ObjectType, ObjectTypeValue } from 'src/types/';
 import { listObjectTypes } from 'src/api/objType';
-import ObjectTypeCard from 'src/components/forms/object/ObjectTypeCard';
-import AddObjectTypeModal from 'src/components/forms/object/AddObjectTypeModal';
+import ObjectTypeCard from 'src/components/forms/object/object-type/ObjectTypeCard';
+import AddObjectTypeModal from 'src/components/forms/object/object-type/AddObjectTypeModal';
 
 interface ObjectTypePanelProps {
   objectId: string;

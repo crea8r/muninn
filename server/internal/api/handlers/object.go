@@ -158,7 +158,7 @@ func (h *ObjectHandler) GetDetails(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Object not found", http.StatusNotFound)
 		return
 	}
-
+	
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(objectDetails)
 }

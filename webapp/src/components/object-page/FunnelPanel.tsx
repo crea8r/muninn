@@ -3,51 +3,43 @@ import {
   Box,
   VStack,
   Heading,
-  Text,
   Button,
-  Select,
   useToast,
   Switch,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
   FormControl,
   FormLabel,
   useDisclosure,
+  SimpleGrid,
 } from '@chakra-ui/react';
-import { Funnel, FunnelStep, ObjectFunnel } from '../../types/';
-import {
-  fetchObjectFunnels,
-  addObjectToFunnel,
-  moveObjectInFunnel,
-  removeObjectFromFunnel,
-} from 'src/api';
+import { Funnel, FunnelStep } from 'src/types/';
 import { fetchAllFunnels } from 'src/api/funnel';
+import { StepAndFunnel } from 'src/types/Object';
+import AddObjectStepModal from '../forms/object/object-step/AddObjectStepModal';
+import ObjectFunnelCard from '../forms/object/object-step/ObjectFunnelCard';
 
 interface FunnelPanelProps {
   objectId: string;
+  onAddOrMoveObjectInFunnel: (objectId: string, stepId: string) => void;
+  onDeleteObjectFromFunnel: (objectStepId: string) => void;
+  stepsAndFunnels: StepAndFunnel[];
+  onUpdateSubStatus: (objectStepId: string, subStatus: number) => void;
 }
 
-const FunnelPanel: React.FC<FunnelPanelProps> = ({ objectId }) => {
-  const [objectFunnels, setObjectFunnels] = useState<ObjectFunnel[]>([]);
+const FunnelPanel: React.FC<FunnelPanelProps> = ({
+  objectId,
+  onAddOrMoveObjectInFunnel,
+  onDeleteObjectFromFunnel,
+  onUpdateSubStatus,
+  stepsAndFunnels,
+}) => {
   const [allFunnels, setAllFunnels] = useState<Funnel[]>([]);
-  const [selectedFunnel, setSelectedFunnel] = useState<string>('');
-  const [selectedStep, setSelectedStep] = useState<string>('');
-  const [showHidden, setShowHidden] = useState(false);
+  const [showComplete, setShowComplete] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
-
   useEffect(() => {
     const loadFunnels = async () => {
       try {
-        const [objectFunnelsData, allFunnelsData] = await Promise.all([
-          fetchObjectFunnels(objectId),
-          fetchAllFunnels(),
-        ]);
-        setObjectFunnels(objectFunnelsData);
+        const allFunnelsData = await fetchAllFunnels();
         setAllFunnels(allFunnelsData.funnels);
       } catch (error) {
         toast({
@@ -63,86 +55,30 @@ const FunnelPanel: React.FC<FunnelPanelProps> = ({ objectId }) => {
     loadFunnels();
   }, [objectId, toast]);
 
-  const handleAddToFunnel = async () => {
-    if (!selectedFunnel || !selectedStep) return;
-
+  const handleSubmit = async (stepId: string, isNew: boolean) => {
+    const successTitle = isNew
+      ? 'Object added to new funnel'
+      : 'Object moved to new step';
+    const errorTitle = isNew
+      ? 'Error adding object to new funnel'
+      : 'Error moving object to new step';
     try {
-      const newObjectFunnel = await addObjectToFunnel(
-        objectId,
-        selectedFunnel,
-        selectedStep
-      );
-      setObjectFunnels([...objectFunnels, newObjectFunnel]);
+      await onAddOrMoveObjectInFunnel(objectId, stepId);
       onClose();
       toast({
-        title: 'Object added to funnel',
+        title: successTitle,
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
     } catch (error) {
       toast({
-        title: 'Error adding object to funnel',
-        description: 'Please try again later.',
+        title: errorTitle,
         status: 'error',
         duration: 5000,
         isClosable: true,
       });
     }
-  };
-
-  const handleMoveInFunnel = async (funnelId: string, newStepId: string) => {
-    try {
-      const updatedObjectFunnel = await moveObjectInFunnel(
-        objectId,
-        funnelId,
-        newStepId
-      );
-      setObjectFunnels(
-        objectFunnels.map((of) =>
-          of.funnelId === funnelId ? updatedObjectFunnel : of
-        )
-      );
-      toast({
-        title: 'Object moved in funnel',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error moving object in funnel',
-        description: 'Please try again later.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleRemoveFromFunnel = async (funnelId: string) => {
-    try {
-      await removeObjectFromFunnel(objectId, funnelId);
-      setObjectFunnels(objectFunnels.filter((of) => of.funnelId !== funnelId));
-      toast({
-        title: 'Object removed from funnel',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error removing object from funnel',
-        description: 'Please try again later.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const isLastStep = (funnel: Funnel, stepId: string) => {
-    return funnel.steps[funnel.steps.length - 1].id === stepId;
   };
 
   return (
@@ -155,148 +91,56 @@ const FunnelPanel: React.FC<FunnelPanelProps> = ({ objectId }) => {
           </FormLabel>
           <Switch
             id='show-hidden'
-            onChange={(e) => setShowHidden(e.target.checked)}
+            onChange={(e) => setShowComplete(e.target.checked)}
           />
         </FormControl>
-        {objectFunnels.map((objectFunnel) => {
-          const funnel = allFunnels.find((f) => f.id === objectFunnel.funnelId);
-          if (!funnel) return null;
-          const currentStep = funnel.steps.find(
-            (step: FunnelStep) => step.id === objectFunnel.stepId
-          );
-          if (!currentStep) return null;
+        <SimpleGrid columns={[1, 2]} spacing={4}>
+          {stepsAndFunnels
+            .filter((sf: StepAndFunnel) => sf.deletedAt === null)
+            .map((currentObjectStepFunnel) => {
+              const funnel = allFunnels.find(
+                (f) => f.id === currentObjectStepFunnel.funnelId
+              );
+              if (!funnel) return null;
+              const currentStep = funnel.steps.find(
+                (step: FunnelStep) => step.id === currentObjectStepFunnel.stepId
+              );
+              const historySteps = stepsAndFunnels.filter(
+                (sf) => sf.funnelId === currentObjectStepFunnel.funnelId
+              );
+              if (!currentStep) return null;
 
-          if (isLastStep(funnel, currentStep.id) && !showHidden) return null;
+              return (
+                <ObjectFunnelCard
+                  key={currentObjectStepFunnel.funnelId}
+                  currentObjectStepFunnel={currentObjectStepFunnel}
+                  funnel={funnel}
+                  currentStep={currentStep}
+                  showComplete={showComplete}
+                  historySteps={historySteps}
+                  onMoveInFunnel={(stepId) => {
+                    handleSubmit(stepId, false);
+                  }}
+                  onDelete={async () => {
+                    await onDeleteObjectFromFunnel(currentObjectStepFunnel.id);
+                  }}
+                  onUpdateSubStatus={onUpdateSubStatus}
+                />
+              );
+            })}
+        </SimpleGrid>
 
-          return (
-            <Box
-              key={objectFunnel.funnelId}
-              borderWidth={1}
-              borderRadius='md'
-              p={4}
-            >
-              <Heading size='sm'>{funnel.name}</Heading>
-              <Text>Current Step: {currentStep.name}</Text>
-              {isLastStep(funnel, currentStep.id) && (
-                <Text color='green.500' fontWeight='bold'>
-                  Completed
-                </Text>
-              )}
-              <FormControl mt={2}>
-                <FormLabel>Move to</FormLabel>
-                <Select
-                  value={currentStep.id}
-                  onChange={(e) =>
-                    handleMoveInFunnel(objectFunnel.funnelId, e.target.value)
-                  }
-                >
-                  {funnel.steps.map((step: FunnelStep) => (
-                    <option key={step.id} value={step.id}>
-                      {step.name}
-                    </option>
-                  ))}
-                </Select>
-              </FormControl>
-              <Button
-                mt={2}
-                colorScheme='red'
-                size='sm'
-                onClick={() => handleRemoveFromFunnel(objectFunnel.funnelId)}
-              >
-                Remove from Funnel
-              </Button>
-            </Box>
-          );
-        })}
         <Button onClick={onOpen}>Add to New Funnel</Button>
       </VStack>
-
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Add to New Funnel</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <FormControl>
-              <FormLabel>Select Funnel</FormLabel>
-              <Select
-                placeholder='Select funnel'
-                onChange={(e) => {
-                  setSelectedFunnel(e.target.value);
-                  setSelectedStep('');
-                }}
-              >
-                {allFunnels
-                  .filter(
-                    (funnel) =>
-                      !objectFunnels.some((of) => of.funnelId === funnel.id)
-                  )
-                  .map((funnel) => (
-                    <option key={funnel.id} value={funnel.id}>
-                      {funnel.name}
-                    </option>
-                  ))}
-              </Select>
-            </FormControl>
-            {selectedFunnel && (
-              <FormControl mt={4}>
-                <FormLabel>Select Step</FormLabel>
-                <Select
-                  placeholder='Select step'
-                  onChange={(e) => setSelectedStep(e.target.value)}
-                >
-                  {allFunnels
-                    .find((funnel) => funnel.id === selectedFunnel)
-                    ?.steps.map((step: FunnelStep) => (
-                      <option key={step.id} value={step.id}>
-                        {step.name}
-                      </option>
-                    ))}
-                </Select>
-              </FormControl>
-            )}
-            {selectedStep && (
-              <Box mt={4}>
-                <Text fontWeight='bold'>Step Details:</Text>
-                <Text>
-                  {
-                    allFunnels
-                      .find((f) => f.id === selectedFunnel)
-                      ?.steps.find((s: FunnelStep) => s.id === selectedStep)
-                      ?.definition
-                  }
-                </Text>
-                <Text mt={2}>
-                  <strong>Example:</strong>{' '}
-                  {
-                    allFunnels
-                      .find((f) => f.id === selectedFunnel)
-                      ?.steps.find((s: FunnelStep) => s.id === selectedStep)
-                      ?.example
-                  }
-                </Text>
-                <Text mt={2}>
-                  <strong>Action to take:</strong>{' '}
-                  {
-                    allFunnels
-                      .find((f) => f.id === selectedFunnel)
-                      ?.steps.find((s: FunnelStep) => s.id === selectedStep)
-                      ?.action
-                  }
-                </Text>
-              </Box>
-            )}
-            <Button
-              mt={4}
-              colorScheme='blue'
-              onClick={handleAddToFunnel}
-              isDisabled={!selectedFunnel || !selectedStep}
-            >
-              Add to Funnel
-            </Button>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      <AddObjectStepModal
+        isOpen={isOpen}
+        onClose={onClose}
+        availableFunnels={allFunnels}
+        stepsAndFunnels={stepsAndFunnels}
+        onAddToFunnel={(stepId: string) => {
+          handleSubmit(stepId, true);
+        }}
+      />
     </Box>
   );
 };

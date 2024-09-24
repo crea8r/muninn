@@ -20,11 +20,6 @@ export interface NewFunnel {
   description: string;
   steps: NewFunnelStep[];
 }
-export interface ObjectFunnel {
-  funnelId: any;
-  stepId: string;
-}
-
 export interface FunnelUpdate {
   id: any;
   name: string;

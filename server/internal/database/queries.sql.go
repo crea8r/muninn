@@ -53,6 +53,31 @@ func (q *Queries) AddObjectTypeValue(ctx context.Context, arg AddObjectTypeValue
 	return i, err
 }
 
+const addObjectsToTask = `-- name: AddObjectsToTask :exec
+INSERT INTO obj_task (obj_id, task_id)
+SELECT unnest($1::uuid[]), $2
+WHERE EXISTS (
+  SELECT 1 FROM task t
+  JOIN creator c ON t.creator_id = c.id
+  WHERE t.id = $2 AND c.org_id = $3
+)
+AND NOT EXISTS (
+  SELECT 1 FROM obj_task
+  WHERE obj_id = ANY($1::uuid[]) AND task_id = $2
+)
+`
+
+type AddObjectsToTaskParams struct {
+	Column1 []uuid.UUID `json:"column_1"`
+	TaskID  uuid.UUID   `json:"task_id"`
+	OrgID   uuid.UUID   `json:"org_id"`
+}
+
+func (q *Queries) AddObjectsToTask(ctx context.Context, arg AddObjectsToTaskParams) error {
+	_, err := q.exec(ctx, q.addObjectsToTaskStmt, addObjectsToTask, pq.Array(arg.Column1), arg.TaskID, arg.OrgID)
+	return err
+}
+
 const addTagToObject = `-- name: AddTagToObject :exec
 INSERT INTO obj_tag (obj_id, tag_id)
 SELECT $1, $2
@@ -178,6 +203,124 @@ func (q *Queries) CountTags(ctx context.Context, arg CountTagsParams) (int64, er
 	return count, err
 }
 
+const countTasksByObjectID = `-- name: CountTasksByObjectID :one
+SELECT COUNT(DISTINCT t.id)
+FROM 
+    task t
+JOIN 
+    obj_task ot ON t.id = ot.task_id
+WHERE 
+    ot.obj_id = $1 
+    AND t.deleted_at IS NULL
+    AND ($2::text = '' OR (
+        t.content ILIKE '%' || $2 || '%' OR
+        EXISTS (
+            SELECT 1 FROM creator c 
+            WHERE c.id = t.creator_id AND c.username ILIKE '%' || $2 || '%'
+        ) OR
+        EXISTS (
+            SELECT 1 FROM creator a 
+            WHERE a.id = t.assigned_id AND a.username ILIKE '%' || $2 || '%'
+        )
+    ))
+`
+
+type CountTasksByObjectIDParams struct {
+	ObjID   uuid.UUID `json:"obj_id"`
+	Column2 string    `json:"column_2"`
+}
+
+func (q *Queries) CountTasksByObjectID(ctx context.Context, arg CountTasksByObjectIDParams) (int64, error) {
+	row := q.queryRow(ctx, q.countTasksByObjectIDStmt, countTasksByObjectID, arg.ObjID, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countTasksByOrgID = `-- name: CountTasksByOrgID :one
+SELECT COUNT(*)
+FROM task t
+JOIN creator c ON t.creator_id = c.id
+LEFT JOIN creator a ON t.assigned_id = a.id
+WHERE c.org_id = $1 AND t.deleted_at IS NULL
+  AND ($2::text = '' OR (
+    t.content ILIKE '%' || $2 || '%' OR
+    c.username ILIKE '%' || $2 || '%' OR
+    a.username ILIKE '%' || $2 || '%'
+  ))
+`
+
+type CountTasksByOrgIDParams struct {
+	OrgID   uuid.UUID `json:"org_id"`
+	Column2 string    `json:"column_2"`
+}
+
+func (q *Queries) CountTasksByOrgID(ctx context.Context, arg CountTasksByOrgIDParams) (int64, error) {
+	row := q.queryRow(ctx, q.countTasksByOrgIDStmt, countTasksByOrgID, arg.OrgID, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countTasksWithFilter = `-- name: CountTasksWithFilter :one
+SELECT COUNT(DISTINCT t.id)
+FROM 
+    task t
+WHERE 
+    t.deleted_at IS NULL
+    AND ((
+      CASE 
+        WHEN $1::uuid IS NOT NULL THEN 
+          t.creator_id = $1
+        ELSE 
+          TRUE
+        END
+    )
+    OR (
+      CASE 
+        WHEN $2::uuid IS NOT NULL THEN 
+          t.assigned_id = $2
+        ELSE 
+          TRUE
+      END
+    ))
+    AND (
+      CASE 
+        WHEN $3::text != '' THEN 
+          (t.content ILIKE '%' || $3 || '%')
+        ELSE 
+          TRUE
+      END
+    )
+    AND (
+      CASE 
+        WHEN $4::text != '' THEN
+          t.status = ANY(string_to_array($4::text, ','))
+        ELSE
+          TRUE
+      END
+    )
+`
+
+type CountTasksWithFilterParams struct {
+	Column1 uuid.UUID `json:"column_1"`
+	Column2 uuid.UUID `json:"column_2"`
+	Column3 string    `json:"column_3"`
+	Column4 string    `json:"column_4"`
+}
+
+func (q *Queries) CountTasksWithFilter(ctx context.Context, arg CountTasksWithFilterParams) (int64, error) {
+	row := q.queryRow(ctx, q.countTasksWithFilterStmt, countTasksWithFilter,
+		arg.Column1,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createCreator = `-- name: CreateCreator :one
 INSERT INTO creator (username, pwd, profile, role, org_id, active, created_at)
 VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
@@ -270,6 +413,64 @@ func (q *Queries) CreateFunnel(ctx context.Context, arg CreateFunnelParams) (Fun
 		&i.Description,
 		&i.CreatorID,
 		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const createObjStep = `-- name: CreateObjStep :one
+WITH new_step AS (
+    INSERT INTO obj_step (obj_id, step_id, creator_id)
+    SELECT $1, $2, $3
+    WHERE NOT EXISTS (
+        SELECT 1 FROM obj_step
+        WHERE obj_id = $1 AND step_id = $2 AND deleted_at IS NULL
+    )
+    RETURNING id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at
+),
+update_old_steps AS (
+    UPDATE obj_step
+    SET deleted_at = CURRENT_TIMESTAMP
+    WHERE obj_id = $1
+      AND step_id IN (
+        SELECT id
+        FROM step
+        WHERE funnel_id = (SELECT funnel_id FROM step WHERE id = $2)
+      )
+      AND step_id != $2
+      AND deleted_at IS NULL
+)
+SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM new_step
+`
+
+type CreateObjStepParams struct {
+	ObjID     uuid.UUID `json:"obj_id"`
+	StepID    uuid.UUID `json:"step_id"`
+	CreatorID uuid.UUID `json:"creator_id"`
+}
+
+type CreateObjStepRow struct {
+	ID          uuid.UUID    `json:"id"`
+	ObjID       uuid.UUID    `json:"obj_id"`
+	StepID      uuid.UUID    `json:"step_id"`
+	CreatorID   uuid.UUID    `json:"creator_id"`
+	SubStatus   int32        `json:"sub_status"`
+	CreatedAt   time.Time    `json:"created_at"`
+	LastUpdated time.Time    `json:"last_updated"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
+}
+
+func (q *Queries) CreateObjStep(ctx context.Context, arg CreateObjStepParams) (CreateObjStepRow, error) {
+	row := q.queryRow(ctx, q.createObjStepStmt, createObjStep, arg.ObjID, arg.StepID, arg.CreatorID)
+	var i CreateObjStepRow
+	err := row.Scan(
+		&i.ID,
+		&i.ObjID,
+		&i.StepID,
+		&i.CreatorID,
+		&i.SubStatus,
+		&i.CreatedAt,
+		&i.LastUpdated,
 		&i.DeletedAt,
 	)
 	return i, err
@@ -443,6 +644,51 @@ func (q *Queries) CreateTag(ctx context.Context, arg CreateTagParams) (Tag, erro
 	return i, err
 }
 
+const createTask = `-- name: CreateTask :one
+
+INSERT INTO task (content, deadline, remind_at, status, creator_id, assigned_id, parent_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, content, deadline, remind_at, status, creator_id, assigned_id, parent_id, created_at, last_updated, deleted_at
+`
+
+type CreateTaskParams struct {
+	Content    string        `json:"content"`
+	Deadline   sql.NullTime  `json:"deadline"`
+	RemindAt   sql.NullTime  `json:"remind_at"`
+	Status     string        `json:"status"`
+	CreatorID  uuid.UUID     `json:"creator_id"`
+	AssignedID uuid.NullUUID `json:"assigned_id"`
+	ParentID   uuid.NullUUID `json:"parent_id"`
+}
+
+// Existing queries...
+func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error) {
+	row := q.queryRow(ctx, q.createTaskStmt, createTask,
+		arg.Content,
+		arg.Deadline,
+		arg.RemindAt,
+		arg.Status,
+		arg.CreatorID,
+		arg.AssignedID,
+		arg.ParentID,
+	)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.Content,
+		&i.Deadline,
+		&i.RemindAt,
+		&i.Status,
+		&i.CreatorID,
+		&i.AssignedID,
+		&i.ParentID,
+		&i.CreatedAt,
+		&i.LastUpdated,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const deleteCreator = `-- name: DeleteCreator :exec
 UPDATE creator SET deleted_at = NOW() WHERE id = $1
 `
@@ -497,7 +743,7 @@ func (q *Queries) DeleteObjectType(ctx context.Context, id uuid.UUID) (int64, er
 const deleteStep = `-- name: DeleteStep :exec
 UPDATE step
 SET deleted_at = CURRENT_TIMESTAMP
-WHERE id = $1 AND deleted_at IS NULL
+WHERE step.id = $1 AND deleted_at IS NULL
   AND NOT EXISTS (
     SELECT 1 FROM obj_step os WHERE os.step_id = $1
   )
@@ -522,6 +768,17 @@ func (q *Queries) DeleteTag(ctx context.Context, id uuid.UUID) (int64, error) {
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const deleteTask = `-- name: DeleteTask :exec
+UPDATE task
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) DeleteTask(ctx context.Context, id uuid.UUID) error {
+	_, err := q.exec(ctx, q.deleteTaskStmt, deleteTask, id)
+	return err
 }
 
 const getCreator = `-- name: GetCreator :one
@@ -567,7 +824,8 @@ func (q *Queries) GetCreatorByID(ctx context.Context, id uuid.UUID) (Creator, er
 }
 
 const getCreatorByUsername = `-- name: GetCreatorByUsername :one
-SELECT id, username, pwd, profile, role, org_id, active, created_at, deleted_at FROM creator
+SELECT c.id, c.username, c.pwd, c.profile, c.role, c.org_id, c.active, c.created_at, c.deleted_at, o.name as orgName FROM creator c
+JOIN org o ON c.org_id = o.id
 WHERE username = $1 AND active = $2
 `
 
@@ -576,9 +834,22 @@ type GetCreatorByUsernameParams struct {
 	Active   bool   `json:"active"`
 }
 
-func (q *Queries) GetCreatorByUsername(ctx context.Context, arg GetCreatorByUsernameParams) (Creator, error) {
+type GetCreatorByUsernameRow struct {
+	ID        uuid.UUID       `json:"id"`
+	Username  string          `json:"username"`
+	Pwd       string          `json:"pwd"`
+	Profile   json.RawMessage `json:"profile"`
+	Role      string          `json:"role"`
+	OrgID     uuid.UUID       `json:"org_id"`
+	Active    bool            `json:"active"`
+	CreatedAt time.Time       `json:"created_at"`
+	DeletedAt sql.NullTime    `json:"deleted_at"`
+	Orgname   string          `json:"orgname"`
+}
+
+func (q *Queries) GetCreatorByUsername(ctx context.Context, arg GetCreatorByUsernameParams) (GetCreatorByUsernameRow, error) {
 	row := q.queryRow(ctx, q.getCreatorByUsernameStmt, getCreatorByUsername, arg.Username, arg.Active)
-	var i Creator
+	var i GetCreatorByUsernameRow
 	err := row.Scan(
 		&i.ID,
 		&i.Username,
@@ -589,6 +860,7 @@ func (q *Queries) GetCreatorByUsername(ctx context.Context, arg GetCreatorByUser
 		&i.Active,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.Orgname,
 	)
 	return i, err
 }
@@ -666,11 +938,33 @@ func (q *Queries) GetFunnel(ctx context.Context, id uuid.UUID) (GetFunnelRow, er
 	return i, err
 }
 
+const getObjStep = `-- name: GetObjStep :one
+SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM obj_step
+WHERE id = $1
+`
+
+func (q *Queries) GetObjStep(ctx context.Context, id uuid.UUID) (ObjStep, error) {
+	row := q.queryRow(ctx, q.getObjStepStmt, getObjStep, id)
+	var i ObjStep
+	err := row.Scan(
+		&i.ID,
+		&i.ObjID,
+		&i.StepID,
+		&i.CreatorID,
+		&i.SubStatus,
+		&i.CreatedAt,
+		&i.LastUpdated,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const getObjectDetails = `-- name: GetObjectDetails :one
 WITH object_data AS (
     SELECT o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at,
            c.org_id,
-           coalesce(json_agg(DISTINCT jsonb_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema)) FILTER (WHERE t.id IS NOT NULL), '[]') 
+           coalesce(
+            json_agg(DISTINCT jsonb_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema)) FILTER (WHERE t.id IS NOT NULL), '[]') 
            AS tags,
            coalesce(json_agg(DISTINCT jsonb_build_object(
                'id', otv.id,
@@ -693,7 +987,11 @@ WITH object_data AS (
                'stepId', s.id,
                'stepName', s.name,
                'funnelId', f.id,
-               'funnelName', f.name
+               'funnelName', f.name,
+               'subStatus', os.sub_status,
+               'createdAt', os.created_at,
+               'deletedAt', os.deleted_at,
+               'id', os.id
            )) FILTER (WHERE s.id IS NOT NULL), '[]')
            AS steps_and_funnels,
            coalesce(json_agg(DISTINCT jsonb_build_object(
@@ -786,19 +1084,19 @@ func (q *Queries) GetObjectTypeByID(ctx context.Context, id uuid.UUID) (ObjType,
 	return i, err
 }
 
-const getSessionByToken = `-- name: GetSessionByToken :one
-SELECT id, creator_id, jwt, expired_at, created_at FROM creator_session WHERE jwt = $1 LIMIT 1
+const getOrgDetails = `-- name: GetOrgDetails :one
+SELECT id, name, profile, created_at, deleted_at FROM org WHERE id = $1
 `
 
-func (q *Queries) GetSessionByToken(ctx context.Context, jwt string) (CreatorSession, error) {
-	row := q.queryRow(ctx, q.getSessionByTokenStmt, getSessionByToken, jwt)
-	var i CreatorSession
+func (q *Queries) GetOrgDetails(ctx context.Context, id uuid.UUID) (Org, error) {
+	row := q.queryRow(ctx, q.getOrgDetailsStmt, getOrgDetails, id)
+	var i Org
 	err := row.Scan(
 		&i.ID,
-		&i.CreatorID,
-		&i.Jwt,
-		&i.ExpiredAt,
+		&i.Name,
+		&i.Profile,
 		&i.CreatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
@@ -864,50 +1162,59 @@ func (q *Queries) GetTagByID(ctx context.Context, id uuid.UUID) (Tag, error) {
 	return i, err
 }
 
-const listCreators = `-- name: ListCreators :many
-SELECT id, username, pwd, profile, role, org_id, active, created_at, deleted_at FROM creator
-WHERE org_id = $1
-ORDER BY created_at DESC
-LIMIT $2 OFFSET $3
+const getTaskByID = `-- name: GetTaskByID :one
+SELECT t.id, t.content, t.deadline, t.remind_at, t.status, t.creator_id, t.assigned_id, t.parent_id, t.created_at, t.last_updated, t.deleted_at, c.username as creator_name, a.username as assigned_name
+FROM task t
+JOIN creator c ON t.creator_id = c.id
+LEFT JOIN creator a ON t.assigned_id = a.id
+WHERE t.id = $1 AND t.deleted_at IS NULL
 `
 
-type ListCreatorsParams struct {
-	OrgID  uuid.UUID `json:"org_id"`
-	Limit  int32     `json:"limit"`
-	Offset int32     `json:"offset"`
+type GetTaskByIDRow struct {
+	ID           uuid.UUID      `json:"id"`
+	Content      string         `json:"content"`
+	Deadline     sql.NullTime   `json:"deadline"`
+	RemindAt     sql.NullTime   `json:"remind_at"`
+	Status       string         `json:"status"`
+	CreatorID    uuid.UUID      `json:"creator_id"`
+	AssignedID   uuid.NullUUID  `json:"assigned_id"`
+	ParentID     uuid.NullUUID  `json:"parent_id"`
+	CreatedAt    time.Time      `json:"created_at"`
+	LastUpdated  time.Time      `json:"last_updated"`
+	DeletedAt    sql.NullTime   `json:"deleted_at"`
+	CreatorName  string         `json:"creator_name"`
+	AssignedName sql.NullString `json:"assigned_name"`
 }
 
-func (q *Queries) ListCreators(ctx context.Context, arg ListCreatorsParams) ([]Creator, error) {
-	rows, err := q.query(ctx, q.listCreatorsStmt, listCreators, arg.OrgID, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Creator
-	for rows.Next() {
-		var i Creator
-		if err := rows.Scan(
-			&i.ID,
-			&i.Username,
-			&i.Pwd,
-			&i.Profile,
-			&i.Role,
-			&i.OrgID,
-			&i.Active,
-			&i.CreatedAt,
-			&i.DeletedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GetTaskByID(ctx context.Context, id uuid.UUID) (GetTaskByIDRow, error) {
+	row := q.queryRow(ctx, q.getTaskByIDStmt, getTaskByID, id)
+	var i GetTaskByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Content,
+		&i.Deadline,
+		&i.RemindAt,
+		&i.Status,
+		&i.CreatorID,
+		&i.AssignedID,
+		&i.ParentID,
+		&i.CreatedAt,
+		&i.LastUpdated,
+		&i.DeletedAt,
+		&i.CreatorName,
+		&i.AssignedName,
+	)
+	return i, err
+}
+
+const hardDeleteObjStep = `-- name: HardDeleteObjStep :exec
+DELETE FROM obj_step
+WHERE id = $1
+`
+
+func (q *Queries) HardDeleteObjStep(ctx context.Context, id uuid.UUID) error {
+	_, err := q.exec(ctx, q.hardDeleteObjStepStmt, hardDeleteObjStep, id)
+	return err
 }
 
 const listFunnels = `-- name: ListFunnels :many
@@ -1142,6 +1449,88 @@ func (q *Queries) ListObjectsByOrgID(ctx context.Context, arg ListObjectsByOrgID
 	return items, nil
 }
 
+const listObjectsByTaskID = `-- name: ListObjectsByTaskID :many
+SELECT o.id, o.name, o.description
+FROM obj o
+JOIN obj_task ot ON o.id = ot.obj_id
+WHERE ot.task_id = $1
+`
+
+type ListObjectsByTaskIDRow struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+}
+
+func (q *Queries) ListObjectsByTaskID(ctx context.Context, taskID uuid.UUID) ([]ListObjectsByTaskIDRow, error) {
+	rows, err := q.query(ctx, q.listObjectsByTaskIDStmt, listObjectsByTaskID, taskID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListObjectsByTaskIDRow
+	for rows.Next() {
+		var i ListObjectsByTaskIDRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Description); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOrgMembers = `-- name: ListOrgMembers :many
+SELECT c.id, c.username, c.profile, c.role, c.active, c.created_at
+FROM creator c
+WHERE c.org_id = $1 AND c.deleted_at IS NULL
+ORDER BY c.created_at DESC
+`
+
+type ListOrgMembersRow struct {
+	ID        uuid.UUID       `json:"id"`
+	Username  string          `json:"username"`
+	Profile   json.RawMessage `json:"profile"`
+	Role      string          `json:"role"`
+	Active    bool            `json:"active"`
+	CreatedAt time.Time       `json:"created_at"`
+}
+
+func (q *Queries) ListOrgMembers(ctx context.Context, orgID uuid.UUID) ([]ListOrgMembersRow, error) {
+	rows, err := q.query(ctx, q.listOrgMembersStmt, listOrgMembers, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListOrgMembersRow
+	for rows.Next() {
+		var i ListOrgMembersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Profile,
+			&i.Role,
+			&i.Active,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStepsByFunnel = `-- name: ListStepsByFunnel :many
 SELECT s.id, s.funnel_id, s.name, s.definition, s.example, s.action, s.step_order, s.created_at, s.last_updated, s.deleted_at, 
        (SELECT COUNT(*) FROM obj_step os WHERE os.step_id = s.id) AS object_count
@@ -1258,6 +1647,346 @@ func (q *Queries) ListTags(ctx context.Context, arg ListTagsParams) ([]ListTagsR
 	return items, nil
 }
 
+const listTasksByObjectID = `-- name: ListTasksByObjectID :many
+SELECT 
+    t.id,
+    t.content,
+    t.deadline,
+    t.remind_at,
+    t.status,
+    t.creator_id,
+    c.username AS creator_name,
+    t.assigned_id,
+    a.username AS assigned_name,
+    t.parent_id,
+    t.created_at,
+    t.last_updated,
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'id', o.id,
+                'name', o.name,
+                'description', o.description
+            )
+        ) FILTER (WHERE o.id IS NOT NULL),
+        '[]'
+    ) AS objects
+FROM 
+    task t
+JOIN 
+    creator c ON t.creator_id = c.id
+LEFT JOIN 
+    creator a ON t.assigned_id = a.id
+JOIN 
+    obj_task ot ON t.id = ot.task_id
+LEFT JOIN 
+    obj o ON ot.obj_id = o.id
+WHERE 
+    o.id = $1 
+    AND t.deleted_at IS NULL
+    AND ($2::text = '' OR (
+        t.content ILIKE '%' || $2 || '%' OR
+        c.username ILIKE '%' || $2 || '%' OR
+        a.username ILIKE '%' || $2 || '%'
+    ))
+GROUP BY 
+    t.id, c.username, a.username
+ORDER BY 
+    t.created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type ListTasksByObjectIDParams struct {
+	ID      uuid.UUID `json:"id"`
+	Column2 string    `json:"column_2"`
+	Limit   int32     `json:"limit"`
+	Offset  int32     `json:"offset"`
+}
+
+type ListTasksByObjectIDRow struct {
+	ID           uuid.UUID      `json:"id"`
+	Content      string         `json:"content"`
+	Deadline     sql.NullTime   `json:"deadline"`
+	RemindAt     sql.NullTime   `json:"remind_at"`
+	Status       string         `json:"status"`
+	CreatorID    uuid.UUID      `json:"creator_id"`
+	CreatorName  string         `json:"creator_name"`
+	AssignedID   uuid.NullUUID  `json:"assigned_id"`
+	AssignedName sql.NullString `json:"assigned_name"`
+	ParentID     uuid.NullUUID  `json:"parent_id"`
+	CreatedAt    time.Time      `json:"created_at"`
+	LastUpdated  time.Time      `json:"last_updated"`
+	Objects      interface{}    `json:"objects"`
+}
+
+func (q *Queries) ListTasksByObjectID(ctx context.Context, arg ListTasksByObjectIDParams) ([]ListTasksByObjectIDRow, error) {
+	rows, err := q.query(ctx, q.listTasksByObjectIDStmt, listTasksByObjectID,
+		arg.ID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTasksByObjectIDRow
+	for rows.Next() {
+		var i ListTasksByObjectIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Content,
+			&i.Deadline,
+			&i.RemindAt,
+			&i.Status,
+			&i.CreatorID,
+			&i.CreatorName,
+			&i.AssignedID,
+			&i.AssignedName,
+			&i.ParentID,
+			&i.CreatedAt,
+			&i.LastUpdated,
+			&i.Objects,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTasksByOrgID = `-- name: ListTasksByOrgID :many
+SELECT t.id, t.content, t.deadline, t.remind_at, t.status, t.creator_id, t.assigned_id, t.parent_id, t.created_at, t.last_updated, t.deleted_at, c.username as creator_name, a.username as assigned_name
+FROM task t
+JOIN creator c ON t.creator_id = c.id
+LEFT JOIN creator a ON t.assigned_id = a.id
+WHERE c.org_id = $1 AND t.deleted_at IS NULL
+  AND ($2::text = '' OR (
+    t.content ILIKE '%' || $2 || '%' OR
+    c.username ILIKE '%' || $2 || '%' OR
+    a.username ILIKE '%' || $2 || '%'
+  ))
+ORDER BY t.created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type ListTasksByOrgIDParams struct {
+	OrgID   uuid.UUID `json:"org_id"`
+	Column2 string    `json:"column_2"`
+	Limit   int32     `json:"limit"`
+	Offset  int32     `json:"offset"`
+}
+
+type ListTasksByOrgIDRow struct {
+	ID           uuid.UUID      `json:"id"`
+	Content      string         `json:"content"`
+	Deadline     sql.NullTime   `json:"deadline"`
+	RemindAt     sql.NullTime   `json:"remind_at"`
+	Status       string         `json:"status"`
+	CreatorID    uuid.UUID      `json:"creator_id"`
+	AssignedID   uuid.NullUUID  `json:"assigned_id"`
+	ParentID     uuid.NullUUID  `json:"parent_id"`
+	CreatedAt    time.Time      `json:"created_at"`
+	LastUpdated  time.Time      `json:"last_updated"`
+	DeletedAt    sql.NullTime   `json:"deleted_at"`
+	CreatorName  string         `json:"creator_name"`
+	AssignedName sql.NullString `json:"assigned_name"`
+}
+
+func (q *Queries) ListTasksByOrgID(ctx context.Context, arg ListTasksByOrgIDParams) ([]ListTasksByOrgIDRow, error) {
+	rows, err := q.query(ctx, q.listTasksByOrgIDStmt, listTasksByOrgID,
+		arg.OrgID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTasksByOrgIDRow
+	for rows.Next() {
+		var i ListTasksByOrgIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Content,
+			&i.Deadline,
+			&i.RemindAt,
+			&i.Status,
+			&i.CreatorID,
+			&i.AssignedID,
+			&i.ParentID,
+			&i.CreatedAt,
+			&i.LastUpdated,
+			&i.DeletedAt,
+			&i.CreatorName,
+			&i.AssignedName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTasksWithFilter = `-- name: ListTasksWithFilter :many
+
+SELECT 
+    t.id,
+    t.content,
+    t.deadline,
+    t.remind_at,
+    t.status,
+    t.creator_id,
+    c.username AS creator_name,
+    t.assigned_id,
+    a.username AS assigned_name,
+    t.parent_id,
+    t.created_at,
+    t.last_updated,
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'id', o.id,
+                'name', o.name,
+                'description', o.description
+            )
+        ) FILTER (WHERE o.id IS NOT NULL),
+        '[]'
+    ) AS objects
+FROM 
+    task t
+JOIN 
+    creator c ON t.creator_id = c.id
+LEFT JOIN 
+    creator a ON t.assigned_id = a.id
+LEFT JOIN 
+    obj_task ot ON t.id = ot.task_id
+LEFT JOIN 
+    obj o ON ot.obj_id = o.id
+WHERE 
+    t.deleted_at IS NULL
+    AND ((
+      CASE 
+        WHEN $1::uuid IS NOT NULL THEN 
+          t.creator_id = $1
+        ELSE 
+          TRUE
+      END
+    )
+    OR (
+      CASE 
+        WHEN $2::uuid IS NOT NULL THEN 
+          t.assigned_id = $2
+        ELSE 
+          TRUE
+      END
+    ))
+    AND (
+      CASE 
+        WHEN $3::text != '' THEN 
+          (t.content ILIKE '%' || $3 || '%')
+        ELSE 
+          TRUE
+      END
+    )
+    AND (
+      CASE 
+        WHEN $4::text != '' THEN
+          t.status = ANY(string_to_array($4::text, ','))
+        ELSE
+          TRUE
+      END
+    )
+GROUP BY 
+    t.id, c.username, a.username
+ORDER BY 
+    t.created_at DESC
+LIMIT $5 OFFSET $6
+`
+
+type ListTasksWithFilterParams struct {
+	Column1 uuid.UUID `json:"column_1"`
+	Column2 uuid.UUID `json:"column_2"`
+	Column3 string    `json:"column_3"`
+	Column4 string    `json:"column_4"`
+	Limit   int32     `json:"limit"`
+	Offset  int32     `json:"offset"`
+}
+
+type ListTasksWithFilterRow struct {
+	ID           uuid.UUID      `json:"id"`
+	Content      string         `json:"content"`
+	Deadline     sql.NullTime   `json:"deadline"`
+	RemindAt     sql.NullTime   `json:"remind_at"`
+	Status       string         `json:"status"`
+	CreatorID    uuid.UUID      `json:"creator_id"`
+	CreatorName  string         `json:"creator_name"`
+	AssignedID   uuid.NullUUID  `json:"assigned_id"`
+	AssignedName sql.NullString `json:"assigned_name"`
+	ParentID     uuid.NullUUID  `json:"parent_id"`
+	CreatedAt    time.Time      `json:"created_at"`
+	LastUpdated  time.Time      `json:"last_updated"`
+	Objects      interface{}    `json:"objects"`
+}
+
+// Add this new query to your existing queries.sql file
+func (q *Queries) ListTasksWithFilter(ctx context.Context, arg ListTasksWithFilterParams) ([]ListTasksWithFilterRow, error) {
+	rows, err := q.query(ctx, q.listTasksWithFilterStmt, listTasksWithFilter,
+		arg.Column1,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTasksWithFilterRow
+	for rows.Next() {
+		var i ListTasksWithFilterRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Content,
+			&i.Deadline,
+			&i.RemindAt,
+			&i.Status,
+			&i.CreatorID,
+			&i.CreatorName,
+			&i.AssignedID,
+			&i.AssignedName,
+			&i.ParentID,
+			&i.CreatedAt,
+			&i.LastUpdated,
+			&i.Objects,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markFeedAsSeen = `-- name: MarkFeedAsSeen :exec
 UPDATE feed
 SET seen = true
@@ -1289,6 +2018,21 @@ func (q *Queries) RemoveObjectTypeValue(ctx context.Context, arg RemoveObjectTyp
 	return err
 }
 
+const removeObjectsFromTask = `-- name: RemoveObjectsFromTask :exec
+DELETE FROM obj_task
+WHERE task_id = $1 AND obj_id = ANY($2::uuid[])
+`
+
+type RemoveObjectsFromTaskParams struct {
+	TaskID  uuid.UUID   `json:"task_id"`
+	Column2 []uuid.UUID `json:"column_2"`
+}
+
+func (q *Queries) RemoveObjectsFromTask(ctx context.Context, arg RemoveObjectsFromTaskParams) error {
+	_, err := q.exec(ctx, q.removeObjectsFromTaskStmt, removeObjectsFromTask, arg.TaskID, pq.Array(arg.Column2))
+	return err
+}
+
 const removeTagFromObject = `-- name: RemoveTagFromObject :exec
 DELETE FROM obj_tag
 WHERE obj_id = $1 AND tag_id = $2
@@ -1310,40 +2054,15 @@ func (q *Queries) RemoveTagFromObject(ctx context.Context, arg RemoveTagFromObje
 	return err
 }
 
-const updateCreator = `-- name: UpdateCreator :one
-UPDATE creator
-SET username = $2, profile = $3, role = $4
-WHERE id = $1
-RETURNING id, username, pwd, profile, role, org_id, active, created_at, deleted_at
+const softDeleteObjStep = `-- name: SoftDeleteObjStep :exec
+UPDATE obj_step
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND deleted_at IS NULL
 `
 
-type UpdateCreatorParams struct {
-	ID       uuid.UUID       `json:"id"`
-	Username string          `json:"username"`
-	Profile  json.RawMessage `json:"profile"`
-	Role     string          `json:"role"`
-}
-
-func (q *Queries) UpdateCreator(ctx context.Context, arg UpdateCreatorParams) (Creator, error) {
-	row := q.queryRow(ctx, q.updateCreatorStmt, updateCreator,
-		arg.ID,
-		arg.Username,
-		arg.Profile,
-		arg.Role,
-	)
-	var i Creator
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Pwd,
-		&i.Profile,
-		&i.Role,
-		&i.OrgID,
-		&i.Active,
-		&i.CreatedAt,
-		&i.DeletedAt,
-	)
-	return i, err
+func (q *Queries) SoftDeleteObjStep(ctx context.Context, id uuid.UUID) error {
+	_, err := q.exec(ctx, q.softDeleteObjStepStmt, softDeleteObjStep, id)
+	return err
 }
 
 const updateFunnel = `-- name: UpdateFunnel :one
@@ -1386,6 +2105,22 @@ type UpdateObjStepParams struct {
 
 func (q *Queries) UpdateObjStep(ctx context.Context, arg UpdateObjStepParams) error {
 	_, err := q.exec(ctx, q.updateObjStepStmt, updateObjStep, arg.StepID, arg.StepID_2)
+	return err
+}
+
+const updateObjStepSubStatus = `-- name: UpdateObjStepSubStatus :exec
+UPDATE obj_step
+SET sub_status = $2
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+type UpdateObjStepSubStatusParams struct {
+	ID        uuid.UUID `json:"id"`
+	SubStatus int32     `json:"sub_status"`
+}
+
+func (q *Queries) UpdateObjStepSubStatus(ctx context.Context, arg UpdateObjStepSubStatusParams) error {
+	_, err := q.exec(ctx, q.updateObjStepSubStatusStmt, updateObjStepSubStatus, arg.ID, arg.SubStatus)
 	return err
 }
 
@@ -1492,6 +2227,32 @@ func (q *Queries) UpdateObjectTypeValue(ctx context.Context, arg UpdateObjectTyp
 	return i, err
 }
 
+const updateOrgDetails = `-- name: UpdateOrgDetails :one
+UPDATE org
+SET name = $2, profile = $3
+WHERE id = $1
+RETURNING id, name, profile, created_at, deleted_at
+`
+
+type UpdateOrgDetailsParams struct {
+	ID      uuid.UUID       `json:"id"`
+	Name    string          `json:"name"`
+	Profile json.RawMessage `json:"profile"`
+}
+
+func (q *Queries) UpdateOrgDetails(ctx context.Context, arg UpdateOrgDetailsParams) (Org, error) {
+	row := q.queryRow(ctx, q.updateOrgDetailsStmt, updateOrgDetails, arg.ID, arg.Name, arg.Profile)
+	var i Org
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Profile,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const updateStep = `-- name: UpdateStep :one
 UPDATE step
 SET name = $2, definition = $3, example = $4, action = $5, step_order = $6, last_updated = CURRENT_TIMESTAMP
@@ -1555,6 +2316,137 @@ func (q *Queries) UpdateTag(ctx context.Context, arg UpdateTagParams) (Tag, erro
 		&i.Description,
 		&i.ColorSchema,
 		&i.OrgID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateTask = `-- name: UpdateTask :one
+UPDATE task
+SET content = $2,
+    deadline = $3,
+    remind_at = $4,
+    status = $5,
+    assigned_id = $6,
+    parent_id = $7,
+    last_updated = CURRENT_TIMESTAMP
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, content, deadline, remind_at, status, creator_id, assigned_id, parent_id, created_at, last_updated, deleted_at
+`
+
+type UpdateTaskParams struct {
+	ID         uuid.UUID     `json:"id"`
+	Content    string        `json:"content"`
+	Deadline   sql.NullTime  `json:"deadline"`
+	RemindAt   sql.NullTime  `json:"remind_at"`
+	Status     string        `json:"status"`
+	AssignedID uuid.NullUUID `json:"assigned_id"`
+	ParentID   uuid.NullUUID `json:"parent_id"`
+}
+
+func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (Task, error) {
+	row := q.queryRow(ctx, q.updateTaskStmt, updateTask,
+		arg.ID,
+		arg.Content,
+		arg.Deadline,
+		arg.RemindAt,
+		arg.Status,
+		arg.AssignedID,
+		arg.ParentID,
+	)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.Content,
+		&i.Deadline,
+		&i.RemindAt,
+		&i.Status,
+		&i.CreatorID,
+		&i.AssignedID,
+		&i.ParentID,
+		&i.CreatedAt,
+		&i.LastUpdated,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateUserPassword = `-- name: UpdateUserPassword :exec
+UPDATE creator
+SET pwd = $2
+WHERE id = $1
+`
+
+type UpdateUserPasswordParams struct {
+	ID  uuid.UUID `json:"id"`
+	Pwd string    `json:"pwd"`
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
+	_, err := q.exec(ctx, q.updateUserPasswordStmt, updateUserPassword, arg.ID, arg.Pwd)
+	return err
+}
+
+const updateUserProfile = `-- name: UpdateUserProfile :one
+UPDATE creator
+SET profile = $2
+WHERE id = $1
+RETURNING id, username, pwd, profile, role, org_id, active, created_at, deleted_at
+`
+
+type UpdateUserProfileParams struct {
+	ID      uuid.UUID       `json:"id"`
+	Profile json.RawMessage `json:"profile"`
+}
+
+func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (Creator, error) {
+	row := q.queryRow(ctx, q.updateUserProfileStmt, updateUserProfile, arg.ID, arg.Profile)
+	var i Creator
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Pwd,
+		&i.Profile,
+		&i.Role,
+		&i.OrgID,
+		&i.Active,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateUserRoleAndStatus = `-- name: UpdateUserRoleAndStatus :one
+UPDATE creator
+SET role = $2, active = $3
+WHERE id = $1 AND org_id = $4
+RETURNING id, username, pwd, profile, role, org_id, active, created_at, deleted_at
+`
+
+type UpdateUserRoleAndStatusParams struct {
+	ID     uuid.UUID `json:"id"`
+	Role   string    `json:"role"`
+	Active bool      `json:"active"`
+	OrgID  uuid.UUID `json:"org_id"`
+}
+
+func (q *Queries) UpdateUserRoleAndStatus(ctx context.Context, arg UpdateUserRoleAndStatusParams) (Creator, error) {
+	row := q.queryRow(ctx, q.updateUserRoleAndStatusStmt, updateUserRoleAndStatus,
+		arg.ID,
+		arg.Role,
+		arg.Active,
+		arg.OrgID,
+	)
+	var i Creator
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Pwd,
+		&i.Profile,
+		&i.Role,
+		&i.OrgID,
+		&i.Active,
 		&i.CreatedAt,
 		&i.DeletedAt,
 	)

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ChakraProvider, Flex, CSSReset, extendTheme } from '@chakra-ui/react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { Header, Sidebar, MainContent } from './components/layout/';
@@ -23,6 +23,7 @@ import {
 import NoPermissionPage from './pages/NoPermissionPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import './styles/tailwind.css';
+import authService from './services/authService';
 
 const theme = extendTheme({
   styles: {
@@ -45,6 +46,14 @@ const theme = extendTheme({
 });
 
 const App: React.FC = () => {
+  const details = authService.getDetails();
+  useEffect(() => {
+    if (details) {
+      document.title = details.orgName;
+    } else {
+      document.title = 'Muninn, shape your contacts your ways';
+    }
+  }, [details]);
   return (
     <ChakraProvider theme={theme}>
       <CSSReset />

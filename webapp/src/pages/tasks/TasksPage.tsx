@@ -18,14 +18,20 @@ import {
 import { SearchIcon } from '@chakra-ui/icons';
 import BreadcrumbComponent from '../../components/Breadcrumb';
 import { TaskForm } from '../../components/forms';
-import { Task, NewTask, TaskStatus } from '../../types/Task';
+import { Task, NewTask, TaskStatus, UpdateTask } from '../../types/Task';
 import { RichTextViewer } from '../../components/rich-text';
+import { createTask, listTasks } from 'src/api';
+import authService from 'src/services/authService';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 20;
 
 interface TasksResponse {
   tasks: Task[];
   totalCount: number;
+  page: number;
+  pageSize: number;
 }
 
 const TasksPage: React.FC = () => {
@@ -37,20 +43,25 @@ const TasksPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
   const [isLoading, setIsLoading] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [forceUpdate, setForceUpdate] = useState(0);
 
   useEffect(() => {
     fetchTasks();
-  }, [currentPage, searchQuery, statusFilter]);
+  }, [forceUpdate, currentPage, searchQuery, statusFilter]);
 
   const fetchTasks = async () => {
+    const status = statusFilter === 'all' ? '' : statusFilter.toString();
+    const options = {
+      page: currentPage,
+      pageSize: ITEMS_PER_PAGE,
+      query: searchQuery,
+      status,
+      creatorId: authService.getCreatorId() || '',
+      assignedId: authService.getCreatorId() || '',
+    };
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      const response: TasksResponse = await mockFetchTasks(
-        currentPage,
-        searchQuery,
-        statusFilter
-      );
+      const response: TasksResponse = await listTasks(options);
       setTasks(response.tasks);
       setTotalTasks(response.totalCount);
     } catch (error) {
@@ -61,60 +72,16 @@ const TasksPage: React.FC = () => {
     }
   };
 
-  // Mock API call - replace this with your actual API call
-  const mockFetchTasks = async (
-    page: number,
-    query: string,
-    status: TaskStatus | 'all'
-  ): Promise<TasksResponse> => {
-    // Simulating API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const allTasks: Task[] = Array.from({ length: 100 }, (_, i) => ({
-      id: i + 1,
-      content: `Task ${
-        i + 1
-      } description goes here. This is a sample task content that would be displayed using the Rich Text Viewer.`,
-      status: Object.values(TaskStatus)[i % 4],
-      dueDate: new Date(Date.now() + 86400000 * (i + 1))
-        .toISOString()
-        .split('T')[0],
-      assignedTo: `user${i + 1}@example.com`,
-    }));
-
-    const filteredTasks = allTasks.filter((task) => {
-      const matchesSearch =
-        task.content.toLowerCase().includes(query.toLowerCase()) ||
-        task.assignedTo.toLowerCase().includes(query.toLowerCase());
-      const matchesStatus = status === 'all' || task.status === status;
-      return matchesSearch && matchesStatus;
-    });
-
-    const paginatedTasks = filteredTasks.slice(
-      (page - 1) * ITEMS_PER_PAGE,
-      page * ITEMS_PER_PAGE
-    );
-
-    return {
-      tasks: paginatedTasks,
-      totalCount: filteredTasks.length,
-    };
-  };
-
-  const handleSaveTask = async (updatedTask: NewTask | Task) => {
-    // TODO: Replace with actual API call to save task
-    if ('id' in updatedTask) {
-      setTasks(
-        tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
-      );
+  const handleSaveTask = async (task: NewTask | UpdateTask) => {
+    if (!selectedTask) {
+      // create new
+      task.creatorId = authService.getCreatorId() || '';
+      await createTask(task as NewTask);
+      setForceUpdate(forceUpdate + 1);
     } else {
-      const newTask: Task = { ...updatedTask, id: Date.now() };
-      setTasks([...tasks, newTask]);
-      setTotalTasks(totalTasks + 1);
+      console.log('Updating task:', task);
+      console.log('contructing toAdd and toRemove object ids');
     }
-    onClose();
-    setSelectedTask(null);
-    await fetchTasks(); // Refresh the current page
   };
 
   const handleEditTask = (task: Task) => {
@@ -148,6 +115,7 @@ const TasksPage: React.FC = () => {
   };
 
   const totalPages = Math.ceil(totalTasks / ITEMS_PER_PAGE);
+  dayjs.extend(relativeTime);
 
   return (
     <Box height='100%' display='flex' flexDirection='column'>
@@ -196,31 +164,39 @@ const TasksPage: React.FC = () => {
           </Flex>
         ) : (
           <VStack spacing={4} align='stretch'>
-            {tasks.map((task) => (
-              <Box
-                key={task.id}
-                p={4}
-                bg='white'
-                borderRadius='md'
-                boxShadow='sm'
-                onClick={() => handleEditTask(task)}
-                cursor='pointer'
-                _hover={{ boxShadow: 'md' }}
-              >
-                <HStack justify='space-between' mb={2}>
-                  <Badge colorScheme={getStatusColor(task.status)}>
-                    {task.status}
-                  </Badge>
-                  <Text fontSize='sm' color='gray.500'>
-                    Due: {task.dueDate}
+            {tasks.length > 0 ? (
+              tasks.map((task) => (
+                <Box
+                  key={task.id}
+                  p={4}
+                  bg='white'
+                  borderRadius='md'
+                  boxShadow='sm'
+                  onClick={() => handleEditTask(task)}
+                  cursor='pointer'
+                  _hover={{ boxShadow: 'md' }}
+                >
+                  <HStack justify='space-between' mb={2}>
+                    <Badge colorScheme={getStatusColor(task.status)}>
+                      {task.status}
+                    </Badge>
+                    {task.deadline && (
+                      <Text fontSize='sm' color='gray.500'>
+                        Due: {dayjs(task.deadline).fromNow()}
+                      </Text>
+                    )}
+                  </HStack>
+                  <RichTextViewer content={task.content} />
+                  <Text fontSize='sm' color='gray.500' mt={2}>
+                    Assigned to: {task.assignedName || 'Unassigned'}
                   </Text>
-                </HStack>
-                <RichTextViewer content={task.content} />
-                <Text fontSize='sm' color='gray.500' mt={2}>
-                  Assigned to: {task.assignedTo}
-                </Text>
-              </Box>
-            ))}
+                </Box>
+              ))
+            ) : (
+              <Flex justify='center' align='center' height='100%'>
+                <Box>No tasks found</Box>
+              </Flex>
+            )}
           </VStack>
         )}
       </Box>
@@ -272,7 +248,7 @@ const TasksPage: React.FC = () => {
           setSelectedTask(null);
         }}
         onSave={handleSaveTask}
-        task={selectedTask || undefined}
+        intialTask={selectedTask || undefined}
       />
     </Box>
   );

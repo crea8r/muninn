@@ -1,11 +1,12 @@
 package models
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"time"
+
+	"github.com/crea8r/muninn/server/internal/utils"
 )
 
 type Creator struct {
@@ -17,7 +18,7 @@ type Creator struct {
 	OrgID     string         `json:"org_id"`
 	Active    bool           `json:"active"`
 	CreatedAt time.Time      `json:"created_at"`
-	DeletedAt sql.NullTime   `json:"deleted_at"`
+	DeletedAt utils.NullTime   `json:"deleted_at"`
 }
 
 type Profile json.RawMessage

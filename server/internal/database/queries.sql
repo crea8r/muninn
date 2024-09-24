@@ -2,31 +2,17 @@
 SELECT * FROM creator WHERE id = $1 LIMIT 1;
 
 -- name: GetCreatorByUsername :one
-SELECT * FROM creator
+SELECT c.*, o.name as orgName FROM creator c
+JOIN org o ON c.org_id = o.id
 WHERE username = $1 AND active = $2;
-
--- name: ListCreators :many
-SELECT * FROM creator
-WHERE org_id = $1
-ORDER BY created_at DESC
-LIMIT $2 OFFSET $3;
 
 -- name: CreateCreator :one
 INSERT INTO creator (username, pwd, profile, role, org_id, active, created_at)
 VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
 RETURNING *;
 
--- name: UpdateCreator :one
-UPDATE creator
-SET username = $2, profile = $3, role = $4
-WHERE id = $1
-RETURNING *;
-
 -- name: DeleteCreator :exec
 UPDATE creator SET deleted_at = NOW() WHERE id = $1;
-
--- name: GetSessionByToken :one
-SELECT * FROM creator_session WHERE jwt = $1 LIMIT 1;
 
 -- name: GetCreatorByID :one
 SELECT * FROM creator WHERE id = $1 LIMIT 1;
@@ -214,7 +200,7 @@ RETURNING *;
 -- name: DeleteStep :exec
 UPDATE step
 SET deleted_at = CURRENT_TIMESTAMP
-WHERE id = $1 AND deleted_at IS NULL
+WHERE step.id = $1 AND deleted_at IS NULL
   AND NOT EXISTS (
     SELECT 1 FROM obj_step os WHERE os.step_id = $1
   );
@@ -318,7 +304,8 @@ WHERE c.org_id = $1 AND o.deleted_at IS NULL
 WITH object_data AS (
     SELECT o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at,
            c.org_id,
-           coalesce(json_agg(DISTINCT jsonb_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema)) FILTER (WHERE t.id IS NOT NULL), '[]') 
+           coalesce(
+            json_agg(DISTINCT jsonb_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema)) FILTER (WHERE t.id IS NOT NULL), '[]') 
            AS tags,
            coalesce(json_agg(DISTINCT jsonb_build_object(
                'id', otv.id,
@@ -341,7 +328,11 @@ WITH object_data AS (
                'stepId', s.id,
                'stepName', s.name,
                'funnelId', f.id,
-               'funnelName', f.name
+               'funnelName', f.name,
+               'subStatus', os.sub_status,
+               'createdAt', os.created_at,
+               'deletedAt', os.deleted_at,
+               'id', os.id
            )) FILTER (WHERE s.id IS NOT NULL), '[]')
            AS steps_and_funnels,
            coalesce(json_agg(DISTINCT jsonb_build_object(
@@ -416,4 +407,342 @@ WHERE obj_type_value.id = $1
     JOIN creator c ON o.creator_id = c.id
     WHERE o.id = obj_type_value.obj_id AND c.org_id = $2
   )
+RETURNING *;
+
+-- name: CreateObjStep :one
+WITH new_step AS (
+    INSERT INTO obj_step (obj_id, step_id, creator_id)
+    SELECT $1, $2, $3
+    WHERE NOT EXISTS (
+        SELECT 1 FROM obj_step
+        WHERE obj_id = $1 AND step_id = $2 AND deleted_at IS NULL
+    )
+    RETURNING *
+),
+update_old_steps AS (
+    UPDATE obj_step
+    SET deleted_at = CURRENT_TIMESTAMP
+    WHERE obj_id = $1
+      AND step_id IN (
+        SELECT id
+        FROM step
+        WHERE funnel_id = (SELECT funnel_id FROM step WHERE id = $2)
+      )
+      AND step_id != $2
+      AND deleted_at IS NULL
+)
+SELECT * FROM new_step;
+
+-- name: SoftDeleteObjStep :exec
+UPDATE obj_step
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: HardDeleteObjStep :exec
+DELETE FROM obj_step
+WHERE id = $1;
+
+-- name: GetObjStep :one
+SELECT * FROM obj_step
+WHERE id = $1;
+
+-- name: UpdateObjStepSubStatus :exec
+UPDATE obj_step
+SET sub_status = $2
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- Existing queries...
+
+-- name: CreateTask :one
+INSERT INTO task (content, deadline, remind_at, status, creator_id, assigned_id, parent_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING *;
+
+-- name: UpdateTask :one
+UPDATE task
+SET content = $2,
+    deadline = $3,
+    remind_at = $4,
+    status = $5,
+    assigned_id = $6,
+    parent_id = $7,
+    last_updated = CURRENT_TIMESTAMP
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
+-- name: DeleteTask :exec
+UPDATE task
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: ListTasksByOrgID :many
+SELECT t.*, c.username as creator_name, a.username as assigned_name
+FROM task t
+JOIN creator c ON t.creator_id = c.id
+LEFT JOIN creator a ON t.assigned_id = a.id
+WHERE c.org_id = $1 AND t.deleted_at IS NULL
+  AND ($2::text = '' OR (
+    t.content ILIKE '%' || $2 || '%' OR
+    c.username ILIKE '%' || $2 || '%' OR
+    a.username ILIKE '%' || $2 || '%'
+  ))
+ORDER BY t.created_at DESC
+LIMIT $3 OFFSET $4;
+
+-- name: CountTasksByOrgID :one
+SELECT COUNT(*)
+FROM task t
+JOIN creator c ON t.creator_id = c.id
+LEFT JOIN creator a ON t.assigned_id = a.id
+WHERE c.org_id = $1 AND t.deleted_at IS NULL
+  AND ($2::text = '' OR (
+    t.content ILIKE '%' || $2 || '%' OR
+    c.username ILIKE '%' || $2 || '%' OR
+    a.username ILIKE '%' || $2 || '%'
+  ));
+
+-- name: GetTaskByID :one
+SELECT t.*, c.username as creator_name, a.username as assigned_name
+FROM task t
+JOIN creator c ON t.creator_id = c.id
+LEFT JOIN creator a ON t.assigned_id = a.id
+WHERE t.id = $1 AND t.deleted_at IS NULL;
+
+-- name: AddObjectsToTask :exec
+INSERT INTO obj_task (obj_id, task_id)
+SELECT unnest($1::uuid[]), $2
+WHERE EXISTS (
+  SELECT 1 FROM task t
+  JOIN creator c ON t.creator_id = c.id
+  WHERE t.id = $2 AND c.org_id = $3
+)
+AND NOT EXISTS (
+  SELECT 1 FROM obj_task
+  WHERE obj_id = ANY($1::uuid[]) AND task_id = $2
+);
+
+-- name: RemoveObjectsFromTask :exec
+DELETE FROM obj_task
+WHERE task_id = $1 AND obj_id = ANY($2::uuid[]);
+
+-- name: ListObjectsByTaskID :many
+SELECT o.id, o.name, o.description
+FROM obj o
+JOIN obj_task ot ON o.id = ot.obj_id
+WHERE ot.task_id = $1;
+
+-- name: ListTasksByObjectID :many
+SELECT 
+    t.id,
+    t.content,
+    t.deadline,
+    t.remind_at,
+    t.status,
+    t.creator_id,
+    c.username AS creator_name,
+    t.assigned_id,
+    a.username AS assigned_name,
+    t.parent_id,
+    t.created_at,
+    t.last_updated,
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'id', o.id,
+                'name', o.name,
+                'description', o.description
+            )
+        ) FILTER (WHERE o.id IS NOT NULL),
+        '[]'
+    ) AS objects
+FROM 
+    task t
+JOIN 
+    creator c ON t.creator_id = c.id
+LEFT JOIN 
+    creator a ON t.assigned_id = a.id
+JOIN 
+    obj_task ot ON t.id = ot.task_id
+LEFT JOIN 
+    obj o ON ot.obj_id = o.id
+WHERE 
+    o.id = $1 
+    AND t.deleted_at IS NULL
+    AND ($2::text = '' OR (
+        t.content ILIKE '%' || $2 || '%' OR
+        c.username ILIKE '%' || $2 || '%' OR
+        a.username ILIKE '%' || $2 || '%'
+    ))
+GROUP BY 
+    t.id, c.username, a.username
+ORDER BY 
+    t.created_at DESC
+LIMIT $3 OFFSET $4;
+
+-- name: CountTasksByObjectID :one
+SELECT COUNT(DISTINCT t.id)
+FROM 
+    task t
+JOIN 
+    obj_task ot ON t.id = ot.task_id
+WHERE 
+    ot.obj_id = $1 
+    AND t.deleted_at IS NULL
+    AND ($2::text = '' OR (
+        t.content ILIKE '%' || $2 || '%' OR
+        EXISTS (
+            SELECT 1 FROM creator c 
+            WHERE c.id = t.creator_id AND c.username ILIKE '%' || $2 || '%'
+        ) OR
+        EXISTS (
+            SELECT 1 FROM creator a 
+            WHERE a.id = t.assigned_id AND a.username ILIKE '%' || $2 || '%'
+        )
+    ));
+
+-- Add this new query to your existing queries.sql file
+
+-- name: ListTasksWithFilter :many
+SELECT 
+    t.id,
+    t.content,
+    t.deadline,
+    t.remind_at,
+    t.status,
+    t.creator_id,
+    c.username AS creator_name,
+    t.assigned_id,
+    a.username AS assigned_name,
+    t.parent_id,
+    t.created_at,
+    t.last_updated,
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'id', o.id,
+                'name', o.name,
+                'description', o.description
+            )
+        ) FILTER (WHERE o.id IS NOT NULL),
+        '[]'
+    ) AS objects
+FROM 
+    task t
+JOIN 
+    creator c ON t.creator_id = c.id
+LEFT JOIN 
+    creator a ON t.assigned_id = a.id
+LEFT JOIN 
+    obj_task ot ON t.id = ot.task_id
+LEFT JOIN 
+    obj o ON ot.obj_id = o.id
+WHERE 
+    t.deleted_at IS NULL
+    AND ((
+      CASE 
+        WHEN $1::uuid IS NOT NULL THEN 
+          t.creator_id = $1
+        ELSE 
+          TRUE
+      END
+    )
+    OR (
+      CASE 
+        WHEN $2::uuid IS NOT NULL THEN 
+          t.assigned_id = $2
+        ELSE 
+          TRUE
+      END
+    ))
+    AND (
+      CASE 
+        WHEN $3::text != '' THEN 
+          (t.content ILIKE '%' || $3 || '%')
+        ELSE 
+          TRUE
+      END
+    )
+    AND (
+      CASE 
+        WHEN $4::text != '' THEN
+          t.status = ANY(string_to_array($4::text, ','))
+        ELSE
+          TRUE
+      END
+    )
+GROUP BY 
+    t.id, c.username, a.username
+ORDER BY 
+    t.created_at DESC
+LIMIT $5 OFFSET $6;
+
+-- name: CountTasksWithFilter :one
+SELECT COUNT(DISTINCT t.id)
+FROM 
+    task t
+WHERE 
+    t.deleted_at IS NULL
+    AND ((
+      CASE 
+        WHEN $1::uuid IS NOT NULL THEN 
+          t.creator_id = $1
+        ELSE 
+          TRUE
+        END
+    )
+    OR (
+      CASE 
+        WHEN $2::uuid IS NOT NULL THEN 
+          t.assigned_id = $2
+        ELSE 
+          TRUE
+      END
+    ))
+    AND (
+      CASE 
+        WHEN $3::text != '' THEN 
+          (t.content ILIKE '%' || $3 || '%')
+        ELSE 
+          TRUE
+      END
+    )
+    AND (
+      CASE 
+        WHEN $4::text != '' THEN
+          t.status = ANY(string_to_array($4::text, ','))
+        ELSE
+          TRUE
+      END
+    );
+
+-- name: ListOrgMembers :many
+SELECT c.id, c.username, c.profile, c.role, c.active, c.created_at
+FROM creator c
+WHERE c.org_id = $1 AND c.deleted_at IS NULL
+ORDER BY c.created_at DESC;
+
+-- name: GetOrgDetails :one
+SELECT * FROM org WHERE id = $1;
+
+-- name: UpdateOrgDetails :one
+UPDATE org
+SET name = $2, profile = $3
+WHERE id = $1
+RETURNING *;
+
+-- name: UpdateUserRoleAndStatus :one
+UPDATE creator
+SET role = $2, active = $3
+WHERE id = $1 AND org_id = $4
+RETURNING *;
+
+-- name: UpdateUserPassword :exec
+UPDATE creator
+SET pwd = $2
+WHERE id = $1;
+
+-- name: UpdateUserProfile :one
+UPDATE creator
+SET profile = $2
+WHERE id = $1
 RETURNING *;

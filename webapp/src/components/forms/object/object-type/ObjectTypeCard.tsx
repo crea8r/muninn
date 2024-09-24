@@ -14,12 +14,10 @@ import {
   ModalFooter,
   VStack,
   HStack,
-  FormControl,
-  FormLabel,
-  Input,
   useToast,
 } from '@chakra-ui/react';
 import { ObjectType, ObjectTypeValue } from 'src/types/';
+import { MasterFormElement } from 'src/components/rich-object-form/MasterFormElement';
 
 interface ObjectTypeCardProps {
   objectTypeValue: ObjectTypeValue;
@@ -75,7 +73,6 @@ const ObjectTypeCard: React.FC<ObjectTypeCardProps> = ({
   const handleReset = () => {
     setEditedValues(objectTypeValue.type_values);
   };
-
   return (
     <>
       <Box
@@ -103,21 +100,15 @@ const ObjectTypeCard: React.FC<ObjectTypeCardProps> = ({
           <ModalBody>
             <VStack spacing={4} align='stretch'>
               {Object.entries(editedValues).map(([key, value]) => (
-                <FormControl key={key}>
-                  <FormLabel>{key}</FormLabel>
-                  <Input
-                    value={value as string}
-                    onChange={(e) =>
-                      setEditedValues({
-                        ...editedValues,
-                        [key]: e.target.value,
-                      })
-                    }
-                  />
-                  <Text fontSize='sm' color='gray.500'>
-                    {objectType?.fields[key]}
-                  </Text>
-                </FormControl>
+                <MasterFormElement
+                  key={key}
+                  field={key}
+                  value={value}
+                  onChange={(value) =>
+                    setEditedValues({ ...editedValues, [key]: value })
+                  }
+                  dataType={objectType?.fields[key]}
+                />
               ))}
             </VStack>
           </ModalBody>

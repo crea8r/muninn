@@ -21,6 +21,17 @@ export type UpdateObject = Omit<
   'createdAt' | 'updatedAt' | 'tags' | 'typeValues'
 >;
 
+export interface StepAndFunnel {
+  id: string;
+  stepId: string;
+  stepName: string;
+  funnelId: string;
+  funnelName: string;
+  deletedAt: any;
+  createdAt: string;
+  subStatus: number;
+}
+
 export interface ObjectDetail {
   id: any;
   name: string;
@@ -31,6 +42,7 @@ export interface ObjectDetail {
   updatedAt: string;
   types: ObjectType[];
   typeValues: ObjectTypeValue[];
+  stepsAndFunnels: StepAndFunnel[];
 }
 
 export interface ObjectType {

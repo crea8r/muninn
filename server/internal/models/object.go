@@ -2,12 +2,12 @@ package models
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/crea8r/muninn/server/internal/database"
+	"github.com/crea8r/muninn/server/internal/utils"
 	"github.com/google/uuid"
 )
 
@@ -18,7 +18,7 @@ type Object struct {
 	IDString    string            `json:"idString"`
 	CreatorID   uuid.UUID         `json:"creatorId"`
 	CreatedAt   time.Time         `json:"createdAt"`
-	DeletedAt   sql.NullTime      `json:"-"`
+	DeletedAt   utils.NullTime      `json:"-"`
 	Tags        []database.Tag             `json:"tags"`
 	TypeValues  []ObjectTypeValue `json:"typeValues"`
 }
@@ -50,23 +50,27 @@ type ObjectDetail struct {
 type Task struct {
 	ID        uuid.UUID      `json:"id"`
 	Content   string         `json:"content"`
-	Deadline  sql.NullTime   `json:"deadline"`
+	Deadline  utils.NullTime   `json:"deadline"`
 	Status    string         `json:"status"`
 	CreatedAt time.Time      `json:"createdAt"`
-	AssignedID uuid.NullUUID `json:"assignedId"`
+	AssignedID utils.NullUUID `json:"assignedId"`
 }
 
 type StepAndFunnel struct {
+	ID 			uuid.UUID `json:"id"`
 	StepID    uuid.UUID `json:"stepId"`
 	StepName  string    `json:"stepName"`
 	FunnelID  uuid.UUID `json:"funnelId"`
 	FunnelName string   `json:"funnelName"`
+	SubStatus int32 		`json:"subStatus"`
+	DeletedAt utils.NullTime `json:"deletedAt"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type Fact struct {
 	ID         uuid.UUID    `json:"id"`
 	Text       string       `json:"text"`
-	HappenedAt sql.NullTime `json:"happenedAt"`
+	HappenedAt utils.NullTime `json:"happenedAt"`
 	Location   string       `json:"location"`
 	CreatedAt  time.Time    `json:"createdAt"`
 }
@@ -215,13 +219,14 @@ func (m *ObjectModel) GetDetails(ctx context.Context, id, orgID uuid.UUID) (*Obj
 	if err != nil {
 		return nil, err
 	}
-
+	
 	stepsAndFunnelsBytes, ok := data.StepsAndFunnels.([]byte)
 	if !ok {
 		return nil, fmt.Errorf("expected []byte for StepsAndFunnels, got %T", data.StepsAndFunnels)
 	}
 	err = json.Unmarshal(stepsAndFunnelsBytes, &stepsAndFunnels)
 	if err != nil {
+		fmt.Println("Error: ",err)
 		return nil, err
 	}
 
@@ -316,4 +321,69 @@ func (m *ObjectModel) UpdateObjectTypeValue(ctx context.Context, typeValueID, or
 		ObjectTypeID: result.TypeID,
 		TypeValues:       parsedValues,
 	}, nil
+}
+
+type ObjStep struct {
+	ID        uuid.UUID
+	ObjID     uuid.UUID
+	StepID    uuid.UUID
+	CreatorID uuid.UUID
+	CreatedAt time.Time
+	DeletedAt utils.NullTime
+}
+
+func (m *ObjectModel) CreateObjStep(ctx context.Context, objID, stepID, creatorID uuid.UUID) (*ObjStep, error) {
+	fmt.Println("creating obj step, objID:", objID, "stepID:", stepID, "creatorID:", creatorID)
+	row, err := m.DB.CreateObjStep(ctx, database.CreateObjStepParams{
+		ObjID:     objID,
+		StepID:    stepID,
+		CreatorID: creatorID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &ObjStep{
+		ID:        row.ID,
+		ObjID:     row.ObjID,
+		StepID:    row.StepID,
+		CreatorID: row.CreatorID,
+		CreatedAt: row.CreatedAt,
+		DeletedAt: utils.NullTime{
+			NullTime: row.DeletedAt,
+		},
+	}, nil
+}
+
+func (m *ObjectModel) SoftDeleteObjStep(ctx context.Context, id uuid.UUID) error {
+	return m.DB.SoftDeleteObjStep(ctx, id)
+}
+
+func (m *ObjectModel) HardDeleteObjStep(ctx context.Context, id uuid.UUID) error {
+	return m.DB.HardDeleteObjStep(ctx, id)
+}
+
+func (m *ObjectModel) GetObjStep(ctx context.Context, id uuid.UUID) (*ObjStep, error) {
+	row, err := m.DB.GetObjStep(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ObjStep{
+		ID:        row.ID,
+		ObjID:     row.ObjID,
+		StepID:    row.StepID,
+		CreatorID: row.CreatorID,
+		CreatedAt: row.CreatedAt,
+		DeletedAt: utils.NullTime{
+			NullTime: row.DeletedAt,
+		},
+	}, nil
+}
+
+func (m *ObjectModel) UpdateObjStepSubStatus(ctx context.Context, id uuid.UUID, subStatus int32) error {
+	return m.DB.UpdateObjStepSubStatus(ctx, database.UpdateObjStepSubStatusParams{
+		ID:         id,
+		SubStatus:  subStatus,
+	})
 }

@@ -103,7 +103,7 @@ const ActionSuggestion: React.FC<ActionSuggestionProps> = ({
 
       <VStack spacing={2}>
         {suggestions.map((action, index) => (
-          <HStack align='center'>
+          <HStack align='center' key={action}>
             <Text mb={2}>{action}</Text>
             <Flex>
               <Flex>

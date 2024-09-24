@@ -1,46 +1,61 @@
 import React from 'react';
-import { Box, VStack, Text, Heading } from '@chakra-ui/react';
-import { Fact } from '../../types/';
+import { Box, VStack, Text, Heading, Badge } from '@chakra-ui/react';
+import { Fact, StepAndFunnel } from '../../types/';
 import { RichTextViewer } from '../rich-text/';
 
 interface ActivityFeedProps {
   facts: Fact[];
+  stepsAndFunnels: StepAndFunnel[];
 }
+type ActivityItem = {
+  text: string;
+  location: string;
+  happened_at: string;
+};
 
-const ActivityFeed: React.FC<ActivityFeedProps> = ({ facts }) => {
-  const groupFactsByDate = (facts: Fact[]) => {
-    const grouped: { [date: string]: Fact[] } = {};
-    facts.forEach((fact) => {
-      const date = new Date(fact.happened_at).toLocaleDateString();
+const ActivityFeed: React.FC<ActivityFeedProps> = ({
+  facts,
+  stepsAndFunnels,
+}) => {
+  const groupItemsByDate = (items: ActivityItem[]) => {
+    const grouped: { [date: string]: ActivityItem[] } = {};
+    items.forEach((item) => {
+      const date = new Date(item.happened_at).toLocaleDateString();
       if (!grouped[date]) {
         grouped[date] = [];
       }
-      grouped[date].push(fact);
+      grouped[date].push(item);
     });
     return grouped;
   };
-
-  const groupedFacts = groupFactsByDate(facts);
+  const stepHistoryItems = stepsAndFunnels.map((stepAndFunnel) => {
+    return {
+      text: `In *${stepAndFunnel.funnelName}* moved to step *${stepAndFunnel.stepName}*`,
+      location: '',
+      happened_at: stepAndFunnel.createdAt,
+    };
+  });
+  const groupedFacts = groupItemsByDate([...facts, ...stepHistoryItems]);
 
   return (
     <Box>
       <VStack align='stretch' spacing={6}>
-        {Object.entries(groupedFacts).map(([date, dateFacts]) => (
+        {Object.entries(groupedFacts).map(([date, dateItems]) => (
           <Box key={date}>
             <Heading size='sm' mb={2}>
               {date}
             </Heading>
             <VStack align='stretch' spacing={4}>
-              {dateFacts.map((fact) => (
-                <Box key={fact.id} borderWidth={1} borderRadius='md' p={4}>
-                  <RichTextViewer content={fact.text} />
-                  {fact.location && (
+              {dateItems.map((item, i) => (
+                <Box key={'items-' + i} borderWidth={1} borderRadius='md' p={4}>
+                  <RichTextViewer content={item.text} />
+                  {item.location && (
                     <Text fontSize='sm' color='gray.500' mt={2}>
-                      Location: {fact.location}
+                      Location: {item.location}
                     </Text>
                   )}
                   <Text fontSize='sm' color='gray.500' mt={1}>
-                    {new Date(fact.happened_at).toLocaleTimeString()}
+                    {new Date(item.happened_at).toLocaleTimeString()}
                   </Text>
                 </Box>
               ))}
