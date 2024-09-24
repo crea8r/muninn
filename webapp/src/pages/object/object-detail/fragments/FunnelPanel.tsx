@@ -14,8 +14,8 @@ import {
 import { Funnel, FunnelStep } from 'src/types/';
 import { fetchAllFunnels } from 'src/api/funnel';
 import { StepAndFunnel } from 'src/types/Object';
-import AddObjectStepModal from '../forms/object/object-step/AddObjectStepModal';
-import ObjectFunnelCard from '../forms/object/object-step/ObjectFunnelCard';
+import AddObjectStepModal from 'src/components/forms/object/object-step/AddObjectStepModal';
+import ObjectFunnelCard from 'src/components/forms/object/object-step/ObjectFunnelCard';
 
 interface FunnelPanelProps {
   objectId: string;

@@ -12,9 +12,9 @@ import {
   Select,
   useToast,
 } from '@chakra-ui/react';
-import { Task } from '../../types/';
+import { Task } from 'src/types/';
 import { listTasks, createTask, updateTask } from 'src/api';
-import { TaskForm } from '../forms/';
+import { TaskForm } from 'src/components/forms/';
 import ActionSuggestion from './ActionSuggestion';
 
 interface TaskPanelProps {

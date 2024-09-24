@@ -17,6 +17,7 @@ import {
 import { TaskStatus, Task, NewTask, UpdateTask } from 'src/types/';
 import { RichTextEditor } from 'src/components/rich-text';
 import dayjs from 'dayjs';
+import { useGlobalContext } from 'src/contexts/GlobalContext';
 
 interface TaskFormProps {
   isOpen: boolean;
@@ -57,6 +58,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   onSave,
   intialTask,
 }) => {
+  const { globalData } = useGlobalContext();
   const [formData, setFormData] = useState<NewTask | UpdateTask>(
     converTaskToNewOrUpdateTask(intialTask)
   );
@@ -158,12 +160,19 @@ const TaskForm: React.FC<TaskFormProps> = ({
             </FormControl>
             <FormControl>
               <FormLabel>Assigned To</FormLabel>
-              <Input
-                name='assignedTo'
-                value={formData.assignedId}
+              <Select
+                name='assignedId'
+                value={formData.assignedId || ''}
                 onChange={handleInputChange}
                 placeholder='Enter username or email'
-              />
+              >
+                {globalData &&
+                  globalData.members.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.username} ({member.profile.email})
+                    </option>
+                  ))}
+              </Select>
             </FormControl>
             <FormControl>
               <FormLabel>Task Description</FormLabel>

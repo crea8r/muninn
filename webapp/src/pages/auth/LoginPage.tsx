@@ -14,6 +14,7 @@ import {
 import { Link as RouterLink, useHistory } from 'react-router-dom';
 import authService from 'src/services/authService';
 import { login } from 'src/api/auth';
+import { useGlobalContext } from 'src/contexts/GlobalContext';
 
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -21,11 +22,12 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const history = useHistory();
   const toast = useToast();
+  const { refreshGlobalData } = useGlobalContext();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
+    refreshGlobalData();
     try {
       const response = await login(username, password);
       authService.login(response.token);
@@ -35,6 +37,7 @@ const LoginPage: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
+
       history.push('/feed');
     } catch (error: any) {
       toast({

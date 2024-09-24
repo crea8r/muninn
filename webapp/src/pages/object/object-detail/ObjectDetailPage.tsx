@@ -27,7 +27,7 @@ import {
   TaskPanel,
   FunnelPanel,
   ActivityFeed,
-} from 'src/components/object-page';
+} from 'src/pages/object/object-detail/fragments';
 import { FactForm, ObjectForm } from 'src/components/forms';
 import { Fact, NewFact, UpdateObject } from 'src/types/';
 import { fetchObjectDetails, updateObject, addFact } from 'src/api';
