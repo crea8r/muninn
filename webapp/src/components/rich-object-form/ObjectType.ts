@@ -28,7 +28,7 @@ export const ObjectTypeElement: any = {
   long_text: ElString,
   phone: ElString,
   email: ElString,
-  datetime: ElDateTime,
+  datetime: ElString,
 };
 
 export type MasterFormElementProps = {

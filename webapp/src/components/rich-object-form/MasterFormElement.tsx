@@ -1,6 +1,7 @@
 import { FormControl, FormLabel, Input, Text } from '@chakra-ui/react';
 import { ObjectTypeElement, MasterFormElementProps } from './ObjectType';
 import React from 'react';
+import { ElString } from './elements/ElString';
 
 const createDynamicComponent = (
   component: React.ComponentType<any>,
@@ -20,8 +21,7 @@ export const MasterFormElement = ({
   } else if (typeof dataType === 'object') {
     ElementType = dataType.type;
   }
-  const Elm = ObjectTypeElement[ElementType];
-
+  const Elm = ObjectTypeElement[ElementType] || ElString; // fallback to string if this field is deleted
   const dynamicElm = createDynamicComponent(Elm, {
     field,
     value,
