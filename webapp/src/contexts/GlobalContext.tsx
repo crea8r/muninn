@@ -6,9 +6,10 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import { listOrgMembers } from 'src/api/orgMember';
 import { OrgMember } from 'src/types/Org';
 import authService from 'src/services/authService';
+import { personalSummarize, listOrgMembers } from 'src/api';
+import { PersonalSummarize } from 'src/types/Summarize';
 
 interface GlobalData {
   members: OrgMember[];
@@ -28,31 +29,30 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [globalData, setGlobalData] = useState<GlobalData | null>(null);
 
-  const refreshGlobalData = useCallback(async () => {
+  const refreshGlobalData = async () => {
     try {
       if (authService.isAuthenticated()) {
+        const pS: PersonalSummarize = await personalSummarize();
         const members = await listOrgMembers();
         setGlobalData({
           members,
-          unseenFeedsCount: 0,
-          tasksCount: 0,
+          unseenFeedsCount: pS.unseen,
+          tasksCount: pS.ongoingTask,
         });
       }
     } catch (error) {
       console.error('Failed to fetch global data:', error);
     }
-  }, []);
-  const value = useMemo(
-    () => ({ globalData, refreshGlobalData }),
-    [globalData, refreshGlobalData]
-  );
+  };
 
   useEffect(() => {
     refreshGlobalData();
-  }, [refreshGlobalData]);
+  }, []);
 
   return (
-    <GlobalContext.Provider value={value}>{children}</GlobalContext.Provider>
+    <GlobalContext.Provider value={{ globalData, refreshGlobalData }}>
+      {children}
+    </GlobalContext.Provider>
   );
 };
 

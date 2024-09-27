@@ -4,131 +4,87 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/crea8r/muninn/server/internal/database"
+	"github.com/google/uuid"
 )
 
-type responseWriter struct {
-    http.ResponseWriter
-    body *bytes.Buffer
+type ResponseWriter struct {
+	http.ResponseWriter
+	status int
+	body   *bytes.Buffer
 }
 
-func (rw *responseWriter) Write(b []byte) (int, error) {
-    rw.body.Write(b)
-    return rw.ResponseWriter.Write(b)
+func NewResponseWriter(w http.ResponseWriter) *ResponseWriter {
+	return &ResponseWriter{ResponseWriter: w, body: &bytes.Buffer{}}
 }
 
-func Feed(queries *database.Queries) func(http.Handler) http.Handler {
-    return func(next http.Handler) http.Handler {
-        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            // Only record feed for specific actions
-            if !shouldRecordFeed(r) {
-                next.ServeHTTP(w, r)
-                return
-            }
-
-            creator := r.Context().Value("creator").(database.Creator)
-
-            // Create a new response writer to capture the response
-            buf := &bytes.Buffer{}
-            rw := &responseWriter{ResponseWriter: w, body: buf}
-
-            // Call the next handler
-            next.ServeHTTP(rw, r)
-
-            // After the handler has been called, create the feed entry
-            feedContent := generateFeedContent(r, rw)
-
-            contentJSON, err := json.Marshal(feedContent)
-            if err != nil {
-                log.Printf("Error marshalling feed content: %v", err)
-                return
-            }
-
-            _, err = queries.CreateFeed(context.Background(), database.CreateFeedParams{
-                CreatorID: creator.ID,
-                Content:   contentJSON,
-                Seen:      false,
-            })
-
-            if err != nil {
-                log.Printf("Error creating feed: %v", err)
-            }
-        })
-    }
+func (rw *ResponseWriter) WriteHeader(statusCode int) {
+	rw.status = statusCode
+	rw.ResponseWriter.WriteHeader(statusCode)
 }
 
-func shouldRecordFeed(r *http.Request) bool {
-    // Define which routes and methods should be recorded in the feed
-    recordableRoutes := map[string][]string{
-        "/api/objects": {"POST", "PUT", "DELETE"},
-        "/api/funnels": {"POST", "PUT", "DELETE"},
-        "/api/creators": {"POST", "PUT", "DELETE"},
-    }
-
-    for route, methods := range recordableRoutes {
-        if strings.HasPrefix(r.URL.Path, route) {
-            for _, method := range methods {
-                if r.Method == method {
-                    return true
-                }
-            }
-        }
-    }
-
-    return false
+func (rw *ResponseWriter) Write(b []byte) (int, error) {
+	rw.body.Write(b)
+	return rw.ResponseWriter.Write(b)
 }
 
-func generateFeedContent(r *http.Request, rw *responseWriter) map[string]interface{} {
-    var responseBody map[string]interface{}
-    err := json.Unmarshal(rw.body.Bytes(), &responseBody)
-    if err != nil {
-        log.Printf("Error unmarshalling response body: %v", err)
-    }
+func (rw *ResponseWriter) Status() int {
+	if rw.status == 0 {
+		return http.StatusOK
+	}
+	return rw.status
+}
+// Design principles?
+// TODO: one action can lead to creation of multiple feed entries, 
+// balancing the need to create feed entries for all relevant users vs. spamming the feed
+// e.g: there is gauage for feed value, if the value is high, then create feed entries for all relevant users
+// e.g: 
+// creation of a task can lead to creation of feed for creator, assigned and related users 
+//  -> user want to see their related tasks
+// create & update of a funnel, obj_type can lead to creation of feed for everyone in the organisation 
+//  -> user want to see the detail of obj_type,
+// create & update & adding facts of an object can lead to creation of feed for everyone in the organisation
+//  -> user want to see the detail of object
+func CreateFeedEntry(queries *database.Queries, r *http.Request, rw *ResponseWriter) {
+	claims := r.Context().Value(UserClaimsKey).(*Claims)
+	creatorID := claims.CreatorID
 
-    action := getActionFromMethod(r.Method)
-    resourceType := getResourceTypeFromPath(r.URL.Path)
-    resourceName := getResourceNameFromResponse(responseBody)
+	feedContent := generateFeedContent(r, rw)
 
-    return map[string]interface{}{
-        "text": fmt.Sprintf("%s %s: %s", action, resourceType, resourceName),
-        "url":  r.URL.Path,
-        "details": map[string]interface{}{
-            "method":   r.Method,
-            "path":     r.URL.Path,
-            "response": responseBody,
-        },
-    }
+	contentJSON, err := json.Marshal(feedContent)
+	if err != nil {
+		log.Printf("Error marshalling feed content: %v", err)
+		return
+	}
+
+	_, err = queries.CreateFeed(context.Background(), database.CreateFeedParams{
+		CreatorID: uuid.MustParse(creatorID),
+		Content:   contentJSON,
+		Seen:      false,
+	})
+
+	if err != nil {
+		log.Printf("Error creating feed: %v", err)
+	}
 }
 
-func getActionFromMethod(method string) string {
-    switch method {
-    case "POST":
-        return "Created"
-    case "PUT":
-        return "Updated"
-    case "DELETE":
-        return "Deleted"
-    default:
-        return "Acted on"
-    }
-}
+func generateFeedContent(r *http.Request, rw *ResponseWriter) map[string]interface{} {
+	var responseBody map[string]interface{}
+	err := json.Unmarshal(rw.body.Bytes(), &responseBody)
+	if err != nil {
+		log.Printf("Error unmarshalling response body: %v", err)
+	}
 
-func getResourceTypeFromPath(path string) string {
-    parts := strings.Split(path, "/")
-    if len(parts) > 2 {
-        return strings.Title(parts[2])
-    }
-    return "Resource"
-}
 
-func getResourceNameFromResponse(response map[string]interface{}) string {
-    if name, ok := response["name"].(string); ok {
-        return name
-    }
-    return "Unknown"
+	return map[string]interface{}{
+		"url":  r.URL.Path,
+		"details": map[string]interface{}{
+			"method":   r.Method,
+			"path":     r.URL.Path,
+			"response": responseBody,
+		},
+	}
 }

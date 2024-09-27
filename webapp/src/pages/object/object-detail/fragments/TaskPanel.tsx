@@ -11,39 +11,24 @@ import {
   Input,
   Select,
   useToast,
+  Alert,
+  AlertIcon,
 } from '@chakra-ui/react';
-import { Task } from 'src/types/';
+import { Task, TaskStatus } from 'src/types/';
 import { listTasks, createTask, updateTask } from 'src/api';
 import { TaskForm } from 'src/components/forms/';
 import ActionSuggestion from './ActionSuggestion';
+import { RichTextViewer } from 'src/components/rich-text';
+import TaskItem from 'src/components/TaskItem';
 
 interface TaskPanelProps {
   objectId: string;
+  tasks: Task[];
 }
 
-const TaskPanel: React.FC<TaskPanelProps> = ({ objectId }) => {
-  const [tasks, setTasks] = useState<Task[]>([]);
+const TaskPanel: React.FC<TaskPanelProps> = ({ objectId, tasks }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
-
-  useEffect(() => {
-    const loadTasks = async () => {
-      try {
-        // const fetchedTasks = await listTasks(objectId);
-        // setTasks(fetchedTasks);
-      } catch (error) {
-        toast({
-          title: 'Error loading tasks',
-          description: 'Please try again later.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
-    };
-
-    loadTasks();
-  }, [objectId, toast]);
 
   const handleAddTask = async (newTask: Task) => {
     try {
@@ -112,42 +97,26 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ objectId }) => {
   return (
     <Box>
       <VStack align='stretch' spacing={4}>
-        <Heading size='md'>Tasks</Heading>
-        <ActionSuggestion
+        {/* <ActionSuggestion
           objectId={objectId}
           onActionTaken={(data: any) => {
             console.log('data:', data);
           }}
-        />
-        {tasks.map((task) => (
-          <Box key={task.id} borderWidth={1} borderRadius='md' p={4}>
-            <Text fontWeight='bold'>{task.content}</Text>
-            <FormControl mt={2}>
-              <FormLabel>Status</FormLabel>
-              <Select
-                value={task.status}
-                onChange={(e) =>
-                  handleUpdateTaskStatus(task.id, e.target.value)
-                }
-              >
-                <option value='todo'>To Do</option>
-                <option value='doing'>Doing</option>
-                <option value='paused'>Paused</option>
-                <option value='completed'>Completed</option>
-              </Select>
-            </FormControl>
-            <FormControl mt={2}>
-              <FormLabel>Assigned To</FormLabel>
-              <Input
-                value={task.assignedName}
-                onChange={(e) =>
-                  handleReassignTask(task.id, parseInt(e.target.value))
-                }
-              />
-            </FormControl>
-          </Box>
-        ))}
-        <Button onClick={onOpen}>Add New Task</Button>
+        /> */}
+        {tasks.filter((task) => task.status !== TaskStatus.COMPLETED).length >
+        0 ? (
+          tasks
+            .filter((task) => task.status !== TaskStatus.COMPLETED)
+            .map((task) => (
+              <TaskItem key={task.id} task={task} handleClick={() => {}} />
+            ))
+        ) : (
+          <Alert status='success'>
+            <AlertIcon />
+            All tasks completed!
+          </Alert>
+        )}
+        {/* <Button onClick={onOpen}>Add New Task</Button> */}
       </VStack>
 
       <TaskForm

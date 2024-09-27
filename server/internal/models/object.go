@@ -333,7 +333,6 @@ type ObjStep struct {
 }
 
 func (m *ObjectModel) CreateObjStep(ctx context.Context, objID, stepID, creatorID uuid.UUID) (*ObjStep, error) {
-	fmt.Println("creating obj step, objID:", objID, "stepID:", stepID, "creatorID:", creatorID)
 	row, err := m.DB.CreateObjStep(ctx, database.CreateObjStepParams{
 		ObjID:     objID,
 		StepID:    stepID,
@@ -363,21 +362,34 @@ func (m *ObjectModel) HardDeleteObjStep(ctx context.Context, id uuid.UUID) error
 	return m.DB.HardDeleteObjStep(ctx, id)
 }
 
-func (m *ObjectModel) GetObjStep(ctx context.Context, id uuid.UUID) (*ObjStep, error) {
+type ObjStepResponse struct {
+	ID        uuid.UUID `json:"id"`
+	ObjID     uuid.UUID `json:"objId"`
+	StepID    uuid.UUID `json:"stepId"`
+	CreatorID uuid.UUID `json:"creatorId"`
+	CreatedAt time.Time 	`json:"createdAt"`
+	StepName  string `json:"stepName"`
+	FunnelName string `json:"funnelName"`
+}
+
+func (m *ObjectModel) GetObjStep(ctx context.Context, id uuid.UUID) (*ObjStepResponse, error) {
 	row, err := m.DB.GetObjStep(ctx, id)
 	if err != nil {
 		return nil, err
 	}
+	stepDetail, err := m.DB.GetStep(ctx, row.ID)
+	if err != nil {
+		return nil, err
+	}
 
-	return &ObjStep{
+	return &ObjStepResponse{
 		ID:        row.ID,
 		ObjID:     row.ObjID,
 		StepID:    row.StepID,
 		CreatorID: row.CreatorID,
 		CreatedAt: row.CreatedAt,
-		DeletedAt: utils.NullTime{
-			NullTime: row.DeletedAt,
-		},
+		StepName: stepDetail.Name,
+		FunnelName: stepDetail.FunnelName,
 	}, nil
 }
 

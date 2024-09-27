@@ -20,10 +20,11 @@ import BreadcrumbComponent from '../../components/Breadcrumb';
 import { TaskForm } from '../../components/forms';
 import { Task, NewTask, TaskStatus, UpdateTask } from '../../types/Task';
 import { RichTextViewer } from '../../components/rich-text';
-import { createTask, listTasks } from 'src/api';
+import { createTask, listTasks, updateTask } from 'src/api';
 import authService from 'src/services/authService';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import TaskItem from 'src/components/TaskItem';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -54,7 +55,7 @@ const TasksPage: React.FC = () => {
     const options = {
       page: currentPage,
       pageSize: ITEMS_PER_PAGE,
-      query: searchQuery,
+      search: searchQuery,
       status,
       creatorId: authService.getCreatorId() || '',
       assignedId: authService.getCreatorId() || '',
@@ -79,8 +80,8 @@ const TasksPage: React.FC = () => {
       await createTask(task as NewTask);
       setForceUpdate(forceUpdate + 1);
     } else {
-      console.log('Updating task:', task);
-      console.log('contructing toAdd and toRemove object ids');
+      await updateTask(selectedTask.id, task as UpdateTask);
+      setForceUpdate(forceUpdate + 1);
     }
   };
 
@@ -99,19 +100,6 @@ const TasksPage: React.FC = () => {
   ) => {
     setStatusFilter(e.target.value as TaskStatus | 'all');
     setCurrentPage(1); // Reset to first page on new filter
-  };
-
-  const getStatusColor = (status: TaskStatus) => {
-    switch (status) {
-      case TaskStatus.TODO:
-        return 'gray';
-      case TaskStatus.DOING:
-        return 'blue';
-      case TaskStatus.PAUSED:
-        return 'orange';
-      case TaskStatus.COMPLETED:
-        return 'green';
-    }
   };
 
   const totalPages = Math.ceil(totalTasks / ITEMS_PER_PAGE);
@@ -165,33 +153,15 @@ const TasksPage: React.FC = () => {
         ) : (
           <VStack spacing={4} align='stretch'>
             {tasks.length > 0 ? (
-              tasks.map((task) => (
-                <Box
-                  key={task.id}
-                  p={4}
-                  bg='white'
-                  borderRadius='md'
-                  boxShadow='sm'
-                  onClick={() => handleEditTask(task)}
-                  cursor='pointer'
-                  _hover={{ boxShadow: 'md' }}
-                >
-                  <HStack justify='space-between' mb={2}>
-                    <Badge colorScheme={getStatusColor(task.status)}>
-                      {task.status}
-                    </Badge>
-                    {task.deadline && (
-                      <Text fontSize='sm' color='gray.500'>
-                        Due: {dayjs(task.deadline).fromNow()}
-                      </Text>
-                    )}
-                  </HStack>
-                  <RichTextViewer content={task.content} />
-                  <Text fontSize='sm' color='gray.500' mt={2}>
-                    Assigned to: {task.assignedName || 'Unassigned'}
-                  </Text>
-                </Box>
-              ))
+              tasks.map((task) => {
+                return (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    handleClick={handleEditTask}
+                  />
+                );
+              })
             ) : (
               <Flex justify='center' align='center' height='100%'>
                 <Box>No tasks found</Box>
@@ -248,7 +218,7 @@ const TasksPage: React.FC = () => {
           setSelectedTask(null);
         }}
         onSave={handleSaveTask}
-        intialTask={selectedTask || undefined}
+        initialTask={selectedTask || undefined}
       />
     </Box>
   );

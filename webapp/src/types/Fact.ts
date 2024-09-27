@@ -1,9 +1,10 @@
 export interface Fact {
   id: any;
   text: string;
-  happened_at: string;
+  happenedAt: string;
   location: string;
-  object_id: any;
+  creatorId: string;
+  creatorName?: string;
+  createdAt: string;
+  relatedObjects: any[];
 }
-
-export type NewFact = Omit<Fact, 'id'>;

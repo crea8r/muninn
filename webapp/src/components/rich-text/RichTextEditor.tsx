@@ -1,182 +1,428 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import debounce from 'lodash/debounce';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from 'react';
+import {
+  Editor,
+  EditorState,
+  RichUtils,
+  CompositeDecorator,
+  convertToRaw,
+  convertFromRaw,
+  DraftHandleValue,
+  ContentState,
+  Modifier,
+  SelectionState,
+  ContentBlock,
+  getDefaultKeyBinding,
+} from 'draft-js';
+import 'draft-js/dist/Draft.css';
+import { useSpotLight } from 'src/contexts/SpotLightContext';
+import {
+  Badge,
+  Box,
+  Button,
+  HStack,
+  IconButton,
+  Spacer,
+  Tooltip,
+  Wrap,
+  WrapItem,
+} from '@chakra-ui/react';
+import { FaList, FaListOl } from 'react-icons/fa';
+import { SpotLightFilter } from '../SpotLight';
+import { randomId } from 'src/utils';
+import { keyBy } from 'lodash';
 
-interface RelatedObject {
-  object_id: string;
-  name: string;
-  object_url: string;
+interface WYSIWYGEditorProps {
+  initialValue: any;
+  onChange: (content: string, relatedItems: any[]) => void;
+  filters?: SpotLightFilter[];
 }
 
-interface InitialValue {
-  content: string;
-  related: RelatedObject[];
-}
+export type MentionItemType = {
+  type: SpotLightFilter;
+  payload: {
+    id: string;
+    name?: string;
+    username?: string;
+    description?: string;
+    content?: string;
+  };
+};
 
-interface RichTextEditorProps {
-  initialValue: string | InitialValue;
-  onSave: (content: {
-    content: string;
-    related: {
-      added: RelatedObject[];
-      removed: RelatedObject[];
-    };
-  }) => void;
-}
+export const convertToMentionItem = function (item: any): MentionItemType {
+  return {
+    type: item.type,
+    payload: {
+      id: item.payload.id,
+      name: item.payload.name,
+      username: item.payload.username,
+      description: item.payload.description,
+      content: item.payload.content,
+    },
+  };
+};
 
-const RichTextEditor: React.FC<RichTextEditorProps> = ({
+const WYSIWYGEditor: React.FC<WYSIWYGEditorProps> = ({
   initialValue,
-  onSave,
+  onChange,
+  filters = [
+    SpotLightFilter.CREATOR,
+    SpotLightFilter.OBJECT,
+    SpotLightFilter.FACT,
+    SpotLightFilter.TASK,
+  ],
 }) => {
-  const [content, setContent] = useState('');
-  const [relatedObjects, setRelatedObjects] = useState<RelatedObject[]>([]);
-  const [suggestions, setSuggestions] = useState<RelatedObject[]>([]);
+  const editorRef = useRef<Editor>(null);
+  const [relatedItems, setRelatedItems] = useState<any[]>([]);
+  const { openSpotLight } = useSpotLight();
+
+  // Create a persistent decorator
+  const decorator = useMemo(() => {
+    return new CompositeDecorator([
+      {
+        strategy: findLinkEntities,
+        component: Link,
+      },
+      {
+        strategy: findMentionEntities,
+        component: Mention,
+      },
+    ]);
+  }, []);
+
+  const [editorState, setEditorState] = useState(() =>
+    EditorState.createEmpty(decorator)
+  );
 
   useEffect(() => {
-    if (typeof initialValue === 'string') {
-      setContent(initialValue);
-    } else {
-      setContent(initialValue.content);
-      setRelatedObjects(initialValue.related);
-    }
-  }, [initialValue]);
-
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value);
-    const lastWord = e.target.value.split(' ').pop() || '';
-    if (lastWord.startsWith('@')) {
-      debouncedFetchSuggestions(lastWord.slice(1));
-    } else {
-      setSuggestions([]);
-    }
-  };
-
-  const fetchSuggestions = async (query: string) => {
-    // In a real application, this would be an API call
-    const mockObjects: RelatedObject[] = [
-      {
-        object_id: '1',
-        name: 'John Doe',
-        object_url: 'https://example.com/john',
-      },
-      {
-        object_id: '2',
-        name: 'Jane Smith',
-        object_url: 'https://example.com/jane',
-      },
-      {
-        object_id: '3',
-        name: 'Alice Johnson',
-        object_url: 'https://example.com/alice',
-      },
-    ];
-
-    const filteredObjects = mockObjects.filter((obj) =>
-      obj.name.toLowerCase().includes(query.toLowerCase())
+    editorRef.current?.editorContainer?.style.setProperty(
+      'min-height',
+      '100px'
     );
+    const initialEditorState = parseInitialValue(initialValue);
+    setEditorState(initialEditorState);
+  }, [initialValue, decorator]);
 
-    setSuggestions(filteredObjects);
+  const parseInitialValue = (value: any): EditorState => {
+    let contentState;
+    if (typeof value === 'string') {
+      try {
+        const parsedValue = JSON.parse(value);
+        contentState = convertFromRaw(parsedValue);
+      } catch {
+        contentState = ContentState.createFromText(value);
+      }
+    } else if (typeof value === 'object') {
+      contentState = convertFromRaw(value);
+    } else {
+      contentState = ContentState.createFromText('');
+    }
+    const editorState = EditorState.createWithContent(contentState, decorator);
+    setRelatedItems(getRelatedItemsFromEditorState(editorState));
+    return editorState;
   };
 
-  const debouncedFetchSuggestions = useCallback(
-    debounce(fetchSuggestions, 300),
+  const handleEditorChange = (newEditorState: EditorState) => {
+    setEditorState(newEditorState);
+    const newRelatedItems = getRelatedItemsFromEditorState(newEditorState);
+    setRelatedItems(newRelatedItems);
+  };
+
+  const handleBlur = () => {
+    const content = JSON.stringify(
+      convertToRaw(editorState.getCurrentContent())
+    );
+    onChange(content, relatedItems);
+  };
+  const handleSpotLightSelect = useCallback(
+    (item: any) => {
+      if (item) {
+        const currentContent = editorState.getCurrentContent();
+        const selection = editorState.getSelection();
+
+        const contentWithEntity = currentContent.createEntity(
+          'MENTION',
+          'IMMUTABLE',
+          { mention: convertToMentionItem(item) }
+        );
+        const entityKey = contentWithEntity.getLastCreatedEntityKey();
+
+        const mentionText = `@${item.payload.name || item.payload.username}`;
+        let contentWithMention = Modifier.insertText(
+          contentWithEntity,
+          selection,
+          mentionText,
+          undefined,
+          entityKey
+        );
+
+        contentWithMention = Modifier.insertText(
+          contentWithMention,
+          contentWithMention.getSelectionAfter(),
+          ' '
+        );
+
+        const blockKey = selection.getAnchorKey();
+        const newOffset = selection.getAnchorOffset() + mentionText.length + 1;
+        const newSelection = SelectionState.createEmpty(blockKey).merge({
+          anchorOffset: newOffset,
+          focusOffset: newOffset,
+        });
+
+        const newEditorState = EditorState.push(
+          editorState,
+          contentWithMention,
+          'insert-characters'
+        );
+
+        const finalEditorState = EditorState.forceSelection(
+          newEditorState,
+          newSelection
+        );
+
+        setEditorState(finalEditorState);
+        setRelatedItems((prevItems) => [
+          ...prevItems,
+          convertToMentionItem(item),
+        ]);
+
+        setTimeout(() => {
+          if (editorRef.current) {
+            editorRef.current.focus();
+          }
+        }, 0);
+      }
+    },
+    [editorState, setEditorState, setRelatedItems]
+  );
+
+  const handleBeforeInput = useCallback(
+    (chars: string, editorState: EditorState): DraftHandleValue => {
+      if (chars === '@') {
+        openSpotLight(filters, () => handleSpotLightSelect);
+        return 'handled';
+      }
+      return 'not-handled';
+    },
+    [openSpotLight, handleSpotLightSelect]
+  );
+
+  const getRelatedItemsFromEditorState = (state: EditorState): any[] => {
+    const contentState = state.getCurrentContent();
+    const blockMap = contentState.getBlockMap();
+    const relatedItems: any[] = [];
+    const seenEntityKeys = new Set();
+
+    blockMap.forEach((contentBlock: ContentBlock | undefined) => {
+      contentBlock?.findEntityRanges(
+        (character) => {
+          const entityKey = character.getEntity();
+          if (entityKey === null) {
+            return false;
+          }
+          const entity = contentState.getEntity(entityKey);
+          return entity.getType() === 'MENTION';
+        },
+        (start, end) => {
+          const entityKey = contentBlock.getEntityAt(start);
+          if (entityKey && !seenEntityKeys.has(entityKey)) {
+            seenEntityKeys.add(entityKey);
+            const entity = contentState.getEntity(entityKey);
+            const mention = entity.getData().mention;
+            if (mention && mention.payload && mention.payload.id) {
+              const existingItem = relatedItems.find(
+                (item) => item.payload.id === mention.payload.id
+              );
+              if (!existingItem) {
+                relatedItems.push(mention);
+              }
+            }
+          }
+        }
+      );
+    });
+
+    return relatedItems;
+  };
+  const keyBindingFn = (e: React.KeyboardEvent): string | null => {
+    // if (e.key === '@') {
+    //   return 'mention';
+    // }
+    return getDefaultKeyBinding(e);
+  };
+  const handleReturn = useCallback(
+    (e: React.KeyboardEvent, editorState: EditorState): DraftHandleValue => {
+      const newEditorState = RichUtils.insertSoftNewline(editorState);
+      if (newEditorState !== editorState) {
+        handleEditorChange(newEditorState);
+        return 'handled';
+      }
+      return 'not-handled';
+    },
     []
   );
 
-  const handleSuggestionClick = (object: RelatedObject) => {
-    const words = content.split(' ');
-    words[words.length - 1] = `[@${object.name}](${object.object_url})`;
-    setContent(words.join(' '));
-    setSuggestions([]);
-    setRelatedObjects((prev) => [...prev, object]);
+  const handleKeyCommand = useCallback(
+    (command: string, editorState: EditorState): DraftHandleValue => {
+      const newState = RichUtils.handleKeyCommand(editorState, command);
+      if (newState) {
+        handleEditorChange(newState);
+        return 'handled';
+      }
+      return 'not-handled';
+    },
+    []
+  );
+
+  const toggleInlineStyle = (inlineStyle: string) => {
+    handleEditorChange(RichUtils.toggleInlineStyle(editorState, inlineStyle));
   };
 
-  const handleSave = () => {
-    const mentionRegex = /\[@([^\]]+)\]\(([^)]+)\)/g;
-    const mentions = Array.from(content.matchAll(mentionRegex));
-    const currentRelated = mentions.map((match) => ({
-      object_id: match[2].split('/').pop() || '',
-      name: match[1],
-      object_url: match[2],
-    }));
+  const toggleBlockType = (blockType: string) => {
+    handleEditorChange(RichUtils.toggleBlockType(editorState, blockType));
+  };
 
-    const added = currentRelated.filter(
-      (curr) =>
-        !relatedObjects.some((prev) => prev.object_id === curr.object_id)
-    );
-    const removed = relatedObjects.filter(
-      (prev) =>
-        !currentRelated.some((curr) => curr.object_id === prev.object_id)
-    );
-
-    onSave({
-      content,
-      related: { added, removed },
-    });
+  const handleStyleButtonClick = (
+    e: React.MouseEvent,
+    styleFunction: () => void
+  ) => {
+    e.preventDefault();
+    styleFunction();
+    setTimeout(() => {
+      if (editorRef.current) {
+        editorRef.current.focus();
+      }
+    }, 0);
   };
 
   return (
-    <div style={{ position: 'relative' }}>
-      <textarea
-        value={content}
-        onChange={handleContentChange}
-        style={{
-          width: '100%',
-          minHeight: '200px',
-          padding: '10px',
-          border: '1px solid #023047',
-          borderRadius: '4px',
-          marginBottom: '10px',
-        }}
-        placeholder='Type your content here. Use @ to mention objects.'
-      />
-      {suggestions.length > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            backgroundColor: 'white',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            zIndex: 1000,
-          }}
+    <Box mt={2} mb={2}>
+      <HStack spacing={1} background='gray.100' px={2} py={1} mb={1}>
+        <Button
+          size={'sm'}
+          onMouseDown={(e) =>
+            handleStyleButtonClick(e, () => toggleInlineStyle('BOLD'))
+          }
         >
-          {suggestions.map((object) => (
-            <div
-              key={object.object_id}
-              onClick={() => handleSuggestionClick(object)}
-              style={{
-                padding: '8px',
-                cursor: 'pointer',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#8ecae6';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'white';
-              }}
+          B
+        </Button>
+        <Button
+          size={'sm'}
+          onMouseDown={(e) =>
+            handleStyleButtonClick(e, () => toggleInlineStyle('ITALIC'))
+          }
+        >
+          I
+        </Button>
+        <IconButton
+          icon={<FaListOl />}
+          size='sm'
+          onMouseDown={(e) =>
+            handleStyleButtonClick(e, () =>
+              toggleBlockType('ordered-list-item')
+            )
+          }
+          aria-label={'Ordered List'}
+        />
+        <IconButton
+          icon={<FaList />}
+          size='sm'
+          onMouseDown={(e) =>
+            handleStyleButtonClick(e, () =>
+              toggleBlockType('unordered-list-item')
+            )
+          }
+          aria-label={'Unordered List'}
+        />
+      </HStack>
+      <Box border={'solid #ccc 1px'} p={1}>
+        <Editor
+          ref={editorRef}
+          editorState={editorState}
+          onChange={handleEditorChange}
+          handleKeyCommand={handleKeyCommand}
+          keyBindingFn={keyBindingFn}
+          handleBeforeInput={handleBeforeInput}
+          handleReturn={handleReturn}
+          onBlur={handleBlur}
+          placeholder='Enter @ to mention other contacts'
+        />
+      </Box>
+      <Wrap spacing={2} mt={2}>
+        {relatedItems.map((item) => (
+          <WrapItem key={item.payload.id}>
+            <Tooltip
+              label={`${item.payload.username || item.payload.name}, ${
+                item.type
+              }`}
             >
-              {object.name}
-            </div>
-          ))}
-        </div>
-      )}
-      <button
-        onClick={handleSave}
-        style={{
-          backgroundColor: '#219ebc',
-          color: 'white',
-          border: 'none',
-          padding: '8px 16px',
-          borderRadius: '4px',
-          cursor: 'pointer',
-        }}
-      >
-        Save
-      </button>
-    </div>
+              <Badge colorScheme='blue'>
+                {item.payload.name || item.payload.username}
+              </Badge>
+            </Tooltip>
+          </WrapItem>
+        ))}
+      </Wrap>
+    </Box>
   );
 };
 
-export default RichTextEditor;
+const findLinkEntities = (
+  contentBlock: any,
+  callback: any,
+  contentState: any
+) => {
+  contentBlock.findEntityRanges((character: any) => {
+    const entityKey = character.getEntity();
+    return (
+      entityKey !== null &&
+      contentState.getEntity(entityKey).getType() === 'LINK'
+    );
+  }, callback);
+};
+
+const Link = (props: any) => {
+  const { url } = props.contentState.getEntity(props.entityKey).getData();
+  return (
+    <a href={url} style={{ color: '#3b5998', textDecoration: 'underline' }}>
+      {props.children}
+    </a>
+  );
+};
+
+const findMentionEntities = (
+  contentBlock: any,
+  callback: any,
+  contentState: any
+) => {
+  contentBlock.findEntityRanges((character: any) => {
+    const entityKey = character.getEntity();
+    return (
+      entityKey !== null &&
+      contentState.getEntity(entityKey).getType() === 'MENTION'
+    );
+  }, callback);
+};
+
+const Mention = (props: any) => {
+  const { mention } = props.contentState.getEntity(props.entityKey).getData();
+  return (
+    <span
+      style={{
+        backgroundColor: 'yellow',
+        padding: '1px 3px',
+        borderRadius: '2px',
+        fontWeight: 'bold',
+      }}
+    >
+      {props.children}
+    </span>
+  );
+};
+
+export default WYSIWYGEditor;

@@ -13,22 +13,35 @@ import {
   VStack,
   Box,
   useToast,
+  HStack,
+  Button,
+  Spacer,
 } from '@chakra-ui/react';
 import { TaskStatus, Task, NewTask, UpdateTask } from 'src/types/';
 import { RichTextEditor } from 'src/components/rich-text';
 import dayjs from 'dayjs';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
+import { SpotLightFilter } from '../SpotLight';
 
 interface TaskFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (task: NewTask | UpdateTask) => void;
-  intialTask?: Task;
+  initialTask?: Task;
+}
+
+interface EditingTaskType {
+  id?: string;
+  content: string;
+  status: TaskStatus;
+  deadline?: string;
+  assignedId?: string;
+  objectIds: string[];
 }
 
 const converTaskToNewOrUpdateTask = (
   task: Task | undefined
-): NewTask | UpdateTask => {
+): EditingTaskType => {
   if (!task) {
     // new task
     return {
@@ -56,17 +69,17 @@ const TaskForm: React.FC<TaskFormProps> = ({
   isOpen,
   onClose,
   onSave,
-  intialTask,
+  initialTask,
 }) => {
   const { globalData } = useGlobalContext();
-  const [formData, setFormData] = useState<NewTask | UpdateTask>(
-    converTaskToNewOrUpdateTask(intialTask)
+  const [formData, setFormData] = useState<EditingTaskType>(
+    converTaskToNewOrUpdateTask(initialTask)
   );
   const toast = useToast();
   useEffect(() => {
-    const convertedTask = converTaskToNewOrUpdateTask(intialTask);
+    const convertedTask = converTaskToNewOrUpdateTask(initialTask);
     setFormData(convertedTask);
-  }, [intialTask, isOpen]);
+  }, [initialTask, isOpen]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -96,7 +109,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
       : undefined;
     try {
       await onSave(
-        intialTask ? { ...updatedTask, id: intialTask.id } : updatedTask
+        initialTask ? { ...updatedTask, id: initialTask.id } : updatedTask
       );
       toast({
         title: 'Task saved successfully',
@@ -116,13 +129,26 @@ const TaskForm: React.FC<TaskFormProps> = ({
     }
   };
 
-  const handleSave = (textContent: any) => {
-    const updatedTask = {
+  const handleSave = () => {
+    const relatedObjectIds = formData.objectIds || [];
+    const exisitingObjectIds = initialTask?.objects?.map((obj) => obj.id) || [];
+    const toAddObjectIds = relatedObjectIds.filter(
+      (id: string) => !exisitingObjectIds.includes(id)
+    );
+    const toRemoveObjectIds = exisitingObjectIds.filter(
+      (id: string) => !relatedObjectIds.includes(id)
+    );
+    const content =
+      typeof formData.content === 'object'
+        ? JSON.stringify(formData.content)
+        : formData.content;
+    const toSubmitTask = {
       ...formData,
-      content: textContent.content,
-      objectIds: textContent.relatedObjects || [],
+      content,
+      toAddObjectIds: toAddObjectIds,
+      toRemoveObjectIds: toRemoveObjectIds,
     };
-    handleCreateOrUpdateTask(updatedTask);
+    handleCreateOrUpdateTask(toSubmitTask);
   };
 
   return (
@@ -130,7 +156,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
-          {intialTask ? 'Edit Task' : 'Create New Task'}
+          {initialTask ? 'Edit Task' : 'Create New Task'}
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={6}>
@@ -178,11 +204,34 @@ const TaskForm: React.FC<TaskFormProps> = ({
               <FormLabel>Task Description</FormLabel>
               <RichTextEditor
                 initialValue={formData.content}
-                onSave={handleSave}
+                filters={[SpotLightFilter.OBJECT]}
+                onChange={(content: string, relatedItems: any) => {
+                  try {
+                    const jsonContent = JSON.parse(content);
+                    setFormData((prev) => ({
+                      ...prev,
+                      content: jsonContent,
+                    }));
+                  } catch (e) {
+                    setFormData((prev) => ({ ...prev, content: content }));
+                  }
+                  let objIds = relatedItems
+                    ? relatedItems.map((item: any) => item.payload.id)
+                    : [];
+                  setFormData((prev) => ({ ...prev, objectIds: objIds }));
+                }}
               />
             </FormControl>
           </VStack>
-          <Box height={4} />
+          <HStack height={4} mt={3}>
+            <Button colorScheme='gray' onClick={onClose}>
+              Reset
+            </Button>
+            <Spacer />
+            <Button colorScheme='blue' onClick={handleSave}>
+              Submit
+            </Button>
+          </HStack>
         </ModalBody>
       </ModalContent>
     </Modal>

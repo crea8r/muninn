@@ -2,25 +2,24 @@ import React from 'react';
 import { Box, VStack, Text, Heading, Badge } from '@chakra-ui/react';
 import { Fact, StepAndFunnel } from 'src/types/';
 import { RichTextViewer } from 'src/components/rich-text';
+import dayjs from 'dayjs';
+import FactItem from 'src/components/FactItem';
+import { randomId } from 'src/utils';
 
 interface ActivityFeedProps {
   facts: Fact[];
   stepsAndFunnels: StepAndFunnel[];
 }
-type ActivityItem = {
-  text: string;
-  location: string;
-  happened_at: string;
-};
 
 const ActivityFeed: React.FC<ActivityFeedProps> = ({
   facts,
   stepsAndFunnels,
 }) => {
-  const groupItemsByDate = (items: ActivityItem[]) => {
-    const grouped: { [date: string]: ActivityItem[] } = {};
+  const groupItemsByDate = (items: Fact[]) => {
+    const grouped: { [date: string]: Fact[] } = {};
     items.forEach((item) => {
-      const date = new Date(item.happened_at).toLocaleDateString();
+      console.log(item);
+      const date = dayjs(item.happenedAt).toDate().toLocaleDateString();
       if (!grouped[date]) {
         grouped[date] = [];
       }
@@ -28,14 +27,24 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
     });
     return grouped;
   };
+  const factHistoryItems = facts.map((fact) => {
+    return fact;
+  });
   const stepHistoryItems = stepsAndFunnels.map((stepAndFunnel) => {
     return {
+      id: randomId(4),
       text: `In *${stepAndFunnel.funnelName}* moved to step *${stepAndFunnel.stepName}*`,
       location: '',
-      happened_at: stepAndFunnel.createdAt,
+      happenedAt: stepAndFunnel.createdAt,
+      creatorId: '',
+      createdAt: '',
+      relatedObjects: [],
     };
   });
-  const groupedFacts = groupItemsByDate([...facts, ...stepHistoryItems]);
+  const groupedFacts = groupItemsByDate([
+    ...factHistoryItems,
+    ...stepHistoryItems,
+  ]);
 
   return (
     <Box>
@@ -47,17 +56,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
             </Heading>
             <VStack align='stretch' spacing={4}>
               {dateItems.map((item, i) => (
-                <Box key={'items-' + i} borderWidth={1} borderRadius='md' p={4}>
-                  <RichTextViewer content={item.text} />
-                  {item.location && (
-                    <Text fontSize='sm' color='gray.500' mt={2}>
-                      Location: {item.location}
-                    </Text>
-                  )}
-                  <Text fontSize='sm' color='gray.500' mt={1}>
-                    {new Date(item.happened_at).toLocaleTimeString()}
-                  </Text>
-                </Box>
+                <FactItem key={i} fact={item} handleClick={() => {}} />
               ))}
             </VStack>
           </Box>

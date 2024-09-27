@@ -33,11 +33,7 @@ import {
   Divider,
 } from '@chakra-ui/react';
 import BreadcrumbComponent from 'src/components/Breadcrumb';
-import {
-  addNewOrgMember,
-  listOrgMembers,
-  updateUserPassword,
-} from 'src/api/orgMember';
+import { addNewOrgMember, listOrgMembers, updateUserPassword } from 'src/api';
 import authService from 'src/services/authService';
 import { OrgMember, OrgMemberProfile } from 'src/types/Org';
 import { ChevronDownIcon, CopyIcon } from '@chakra-ui/icons';

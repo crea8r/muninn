@@ -1,60 +1,65 @@
 import React from 'react';
-
-interface RelatedObject {
-  object_id: string;
-  name: string;
-  object_url: string;
-}
+import {
+  EditorState,
+  convertFromRaw,
+  CompositeDecorator,
+  ContentState,
+  Editor,
+  ContentBlock,
+} from 'draft-js';
+import { Box } from '@chakra-ui/react';
+import MentionSuggestion from './MentionSuggestion';
 
 interface RichTextViewerProps {
-  content: string | { content: string; related: RelatedObject[] };
+  content: string;
 }
 
 const RichTextViewer: React.FC<RichTextViewerProps> = ({ content }) => {
-  const renderContent = (text: string) => {
-    const parts = text.split(/(\[@[^\]]+\]\([^)]+\))/g);
-    return parts.map((part, index) => {
-      const match = part.match(/\[@([^\]]+)\]\(([^)]+)\)/);
-      if (match) {
-        const [, name, url] = match;
-        return (
-          <a
-            key={index}
-            href={url}
-            target='_blank'
-            rel='noopener noreferrer'
-            style={{
-              color: '#219ebc',
-              backgroundColor: '#8ecae6',
-              padding: '2px 4px',
-              borderRadius: '3px',
-              textDecoration: 'none',
-            }}
-          >
-            @{name}
-          </a>
-        );
-      }
-      return <React.Fragment key={index}>{part}</React.Fragment>;
-    });
+  const createDecorator = () => {
+    return new CompositeDecorator([
+      {
+        strategy: findMentionEntities,
+        component: MentionSuggestion,
+      },
+    ]);
   };
 
-  const contentToRender =
-    typeof content === 'string' ? content : content.content;
+  const getEditorState = (content: string): EditorState => {
+    let tmp;
+    try {
+      tmp = JSON.parse(content);
+      tmp = JSON.parse(tmp);
+    } catch (e) {}
+    try {
+      const contentState = convertFromRaw(tmp);
+      return EditorState.createWithContent(contentState, createDecorator());
+    } catch (e) {
+      const contentState = ContentState.createFromText(content);
+      return EditorState.createWithContent(contentState, createDecorator());
+    }
+  };
+
+  const editorState = getEditorState(content);
 
   return (
-    <div
-      style={{
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
-        padding: '10px',
-        border: '1px solid #023047',
-        borderRadius: '4px',
-      }}
-    >
-      {renderContent(contentToRender)}
-    </div>
+    <Box>
+      <Editor editorState={editorState} readOnly={true} onChange={() => {}} />
+    </Box>
   );
 };
+
+function findMentionEntities(
+  contentBlock: ContentBlock,
+  callback: (start: number, end: number) => void,
+  contentState: ContentState
+) {
+  contentBlock.findEntityRanges((character) => {
+    const entityKey = character.getEntity();
+    return (
+      entityKey !== null &&
+      contentState.getEntity(entityKey).getType() === 'MENTION'
+    );
+  }, callback);
+}
 
 export default RichTextViewer;

@@ -53,6 +53,31 @@ func (q *Queries) AddObjectTypeValue(ctx context.Context, arg AddObjectTypeValue
 	return i, err
 }
 
+const addObjectsToFact = `-- name: AddObjectsToFact :exec
+INSERT INTO obj_fact (obj_id, fact_id)
+SELECT unnest($1::uuid[]), $2
+WHERE EXISTS (
+  SELECT 1 FROM fact f
+  JOIN creator c ON f.creator_id = c.id
+  WHERE f.id = $2 AND c.org_id = $3
+)
+AND NOT EXISTS (
+  SELECT 1 FROM obj_fact
+  WHERE obj_id = ANY($1::uuid[]) AND fact_id = $2
+)
+`
+
+type AddObjectsToFactParams struct {
+	Column1 []uuid.UUID `json:"column_1"`
+	FactID  uuid.UUID   `json:"fact_id"`
+	OrgID   uuid.UUID   `json:"org_id"`
+}
+
+func (q *Queries) AddObjectsToFact(ctx context.Context, arg AddObjectsToFactParams) error {
+	_, err := q.exec(ctx, q.addObjectsToFactStmt, addObjectsToFact, pq.Array(arg.Column1), arg.FactID, arg.OrgID)
+	return err
+}
+
 const addObjectsToTask = `-- name: AddObjectsToTask :exec
 INSERT INTO obj_task (obj_id, task_id)
 SELECT unnest($1::uuid[]), $2
@@ -97,6 +122,30 @@ type AddTagToObjectParams struct {
 func (q *Queries) AddTagToObject(ctx context.Context, arg AddTagToObjectParams) error {
 	_, err := q.exec(ctx, q.addTagToObjectStmt, addTagToObject, arg.ObjID, arg.TagID, arg.OrgID)
 	return err
+}
+
+const countFactsByOrgID = `-- name: CountFactsByOrgID :one
+SELECT COUNT(DISTINCT f.id)
+FROM 
+    fact f
+JOIN 
+    creator c ON f.creator_id = c.id
+WHERE 
+    c.org_id = $1 
+    AND f.deleted_at IS NULL
+    AND ($2::text = '' OR f.text ILIKE '%' || $2 || '%')
+`
+
+type CountFactsByOrgIDParams struct {
+	OrgID   uuid.UUID `json:"org_id"`
+	Column2 string    `json:"column_2"`
+}
+
+func (q *Queries) CountFactsByOrgID(ctx context.Context, arg CountFactsByOrgIDParams) (int64, error) {
+	row := q.queryRow(ctx, q.countFactsByOrgIDStmt, countFactsByOrgID, arg.OrgID, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const countFunnels = `-- name: CountFunnels :one
@@ -181,6 +230,18 @@ func (q *Queries) CountObjectsByOrgID(ctx context.Context, arg CountObjectsByOrg
 	var count int64
 	err := row.Scan(&count)
 	return count, err
+}
+
+const countOngoingTask = `-- name: CountOngoingTask :one
+SELECT COUNT(*) c FROM task
+WHERE assigned_id = $1 OR creator_id = $1 AND status in ('todo', 'doing')
+`
+
+func (q *Queries) CountOngoingTask(ctx context.Context, assignedID uuid.NullUUID) (int64, error) {
+	row := q.queryRow(ctx, q.countOngoingTaskStmt, countOngoingTask, assignedID)
+	var c int64
+	err := row.Scan(&c)
+	return c, err
 }
 
 const countTags = `-- name: CountTags :one
@@ -321,6 +382,18 @@ func (q *Queries) CountTasksWithFilter(ctx context.Context, arg CountTasksWithFi
 	return count, err
 }
 
+const countUnseenFeed = `-- name: CountUnseenFeed :one
+SELECT COUNT(*) c FROM feed
+WHERE creator_id = $1 AND seen = false
+`
+
+func (q *Queries) CountUnseenFeed(ctx context.Context, creatorID uuid.UUID) (int64, error) {
+	row := q.queryRow(ctx, q.countUnseenFeedStmt, countUnseenFeed, creatorID)
+	var c int64
+	err := row.Scan(&c)
+	return c, err
+}
+
 const createCreator = `-- name: CreateCreator :one
 INSERT INTO creator (username, pwd, profile, role, org_id, active, created_at)
 VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
@@ -355,6 +428,42 @@ func (q *Queries) CreateCreator(ctx context.Context, arg CreateCreatorParams) (C
 		&i.OrgID,
 		&i.Active,
 		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const createFact = `-- name: CreateFact :one
+
+INSERT INTO fact (text, happened_at, location, creator_id)
+VALUES ($1, $2, $3, $4)
+RETURNING id, text, happened_at, location, creator_id, created_at, last_updated, deleted_at
+`
+
+type CreateFactParams struct {
+	Text       string       `json:"text"`
+	HappenedAt sql.NullTime `json:"happened_at"`
+	Location   string       `json:"location"`
+	CreatorID  uuid.UUID    `json:"creator_id"`
+}
+
+// Add these new queries to your existing queries.sql file
+func (q *Queries) CreateFact(ctx context.Context, arg CreateFactParams) (Fact, error) {
+	row := q.queryRow(ctx, q.createFactStmt, createFact,
+		arg.Text,
+		arg.HappenedAt,
+		arg.Location,
+		arg.CreatorID,
+	)
+	var i Fact
+	err := row.Scan(
+		&i.ID,
+		&i.Text,
+		&i.HappenedAt,
+		&i.Location,
+		&i.CreatorID,
+		&i.CreatedAt,
+		&i.LastUpdated,
 		&i.DeletedAt,
 	)
 	return i, err
@@ -698,6 +807,17 @@ func (q *Queries) DeleteCreator(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const deleteFact = `-- name: DeleteFact :exec
+UPDATE fact
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) DeleteFact(ctx context.Context, id uuid.UUID) error {
+	_, err := q.exec(ctx, q.deleteFactStmt, deleteFact, id)
+	return err
+}
+
 const deleteFunnel = `-- name: DeleteFunnel :exec
 UPDATE funnel
 SET deleted_at = CURRENT_TIMESTAMP
@@ -865,10 +985,47 @@ func (q *Queries) GetCreatorByUsername(ctx context.Context, arg GetCreatorByUser
 	return i, err
 }
 
+const getFactByID = `-- name: GetFactByID :one
+SELECT f.id, f.text, f.happened_at, f.location, f.creator_id, f.created_at, f.last_updated, f.deleted_at, c.username as creator_name
+FROM fact f
+JOIN creator c ON f.creator_id = c.id
+WHERE f.id = $1 AND f.deleted_at IS NULL
+`
+
+type GetFactByIDRow struct {
+	ID          uuid.UUID    `json:"id"`
+	Text        string       `json:"text"`
+	HappenedAt  sql.NullTime `json:"happened_at"`
+	Location    string       `json:"location"`
+	CreatorID   uuid.UUID    `json:"creator_id"`
+	CreatedAt   time.Time    `json:"created_at"`
+	LastUpdated time.Time    `json:"last_updated"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
+	CreatorName string       `json:"creator_name"`
+}
+
+func (q *Queries) GetFactByID(ctx context.Context, id uuid.UUID) (GetFactByIDRow, error) {
+	row := q.queryRow(ctx, q.getFactByIDStmt, getFactByID, id)
+	var i GetFactByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Text,
+		&i.HappenedAt,
+		&i.Location,
+		&i.CreatorID,
+		&i.CreatedAt,
+		&i.LastUpdated,
+		&i.DeletedAt,
+		&i.CreatorName,
+	)
+	return i, err
+}
+
 const getFeed = `-- name: GetFeed :many
 SELECT id, creator_id, content, seen, created_at, deleted_at FROM feed
 WHERE creator_id = $1 AND seen = false
 ORDER BY created_at DESC
+LIMIT 10
 `
 
 func (q *Queries) GetFeed(ctx context.Context, creatorID uuid.UUID) ([]Feed, error) {
@@ -1102,9 +1259,10 @@ func (q *Queries) GetOrgDetails(ctx context.Context, id uuid.UUID) (Org, error) 
 }
 
 const getStep = `-- name: GetStep :one
-SELECT s.id, s.funnel_id, s.name, s.definition, s.example, s.action, s.step_order, s.created_at, s.last_updated, s.deleted_at, 
+SELECT s.id, s.funnel_id, s.name, s.definition, s.example, s.action, s.step_order, s.created_at, s.last_updated, s.deleted_at, f.name AS funnel_name, 
        (SELECT COUNT(*) FROM obj_step os WHERE os.step_id = s.id) AS object_count
 FROM step s
+JOIN funnel f ON s.funnel_id = f.id
 WHERE s.id = $1 AND s.deleted_at IS NULL
 `
 
@@ -1119,6 +1277,7 @@ type GetStepRow struct {
 	CreatedAt   time.Time    `json:"created_at"`
 	LastUpdated time.Time    `json:"last_updated"`
 	DeletedAt   sql.NullTime `json:"deleted_at"`
+	FunnelName  string       `json:"funnel_name"`
 	ObjectCount int64        `json:"object_count"`
 }
 
@@ -1136,6 +1295,7 @@ func (q *Queries) GetStep(ctx context.Context, id uuid.UUID) (GetStepRow, error)
 		&i.CreatedAt,
 		&i.LastUpdated,
 		&i.DeletedAt,
+		&i.FunnelName,
 		&i.ObjectCount,
 	)
 	return i, err
@@ -1215,6 +1375,99 @@ WHERE id = $1
 func (q *Queries) HardDeleteObjStep(ctx context.Context, id uuid.UUID) error {
 	_, err := q.exec(ctx, q.hardDeleteObjStepStmt, hardDeleteObjStep, id)
 	return err
+}
+
+const listFactsByOrgID = `-- name: ListFactsByOrgID :many
+SELECT 
+    f.id,
+    f.text,
+    f.happened_at,
+    f.location,
+    f.creator_id,
+    c.username AS creator_name,
+    f.created_at,
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'id', o.id,
+                'name', o.name,
+                'description', o.description
+            )
+        ) FILTER (WHERE o.id IS NOT NULL),
+        '[]'
+    ) AS related_objects
+FROM 
+    fact f
+JOIN 
+    creator c ON f.creator_id = c.id
+LEFT JOIN 
+    obj_fact of ON f.id = of.fact_id
+LEFT JOIN 
+    obj o ON of.obj_id = o.id
+WHERE 
+    c.org_id = $1 
+    AND f.deleted_at IS NULL
+    AND ($2::text = '' OR f.text ILIKE '%' || $2 || '%')
+GROUP BY 
+    f.id, c.username
+ORDER BY 
+    f.happened_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type ListFactsByOrgIDParams struct {
+	OrgID   uuid.UUID `json:"org_id"`
+	Column2 string    `json:"column_2"`
+	Limit   int32     `json:"limit"`
+	Offset  int32     `json:"offset"`
+}
+
+type ListFactsByOrgIDRow struct {
+	ID             uuid.UUID    `json:"id"`
+	Text           string       `json:"text"`
+	HappenedAt     sql.NullTime `json:"happened_at"`
+	Location       string       `json:"location"`
+	CreatorID      uuid.UUID    `json:"creator_id"`
+	CreatorName    string       `json:"creator_name"`
+	CreatedAt      time.Time    `json:"created_at"`
+	RelatedObjects interface{}  `json:"related_objects"`
+}
+
+func (q *Queries) ListFactsByOrgID(ctx context.Context, arg ListFactsByOrgIDParams) ([]ListFactsByOrgIDRow, error) {
+	rows, err := q.query(ctx, q.listFactsByOrgIDStmt, listFactsByOrgID,
+		arg.OrgID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListFactsByOrgIDRow
+	for rows.Next() {
+		var i ListFactsByOrgIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Text,
+			&i.HappenedAt,
+			&i.Location,
+			&i.CreatorID,
+			&i.CreatorName,
+			&i.CreatedAt,
+			&i.RelatedObjects,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listFunnels = `-- name: ListFunnels :many
@@ -1368,7 +1621,7 @@ WITH object_data AS (
            array_agg(DISTINCT t.id) AS tag_ids,
            array_agg(DISTINCT otv.id) AS type_value_ids,
            string_agg(DISTINCT otv.search_vector::text, ' ')::tsvector AS type_search,
-           string_agg(DISTINCT f.text, ' ')::tsvector AS fact_search
+           string_agg(DISTINCT f.text::text, ' ')::text AS fact_search
     FROM obj o
     JOIN creator c ON o.creator_id = c.id
     LEFT JOIN obj_tag ot ON o.id = ot.obj_id
@@ -1486,11 +1739,25 @@ func (q *Queries) ListObjectsByTaskID(ctx context.Context, taskID uuid.UUID) ([]
 }
 
 const listOrgMembers = `-- name: ListOrgMembers :many
-SELECT c.id, c.username, c.profile, c.role, c.active, c.created_at
-FROM creator c
-WHERE c.org_id = $1 AND c.deleted_at IS NULL
-ORDER BY c.created_at DESC
+WITH filtered_creators AS (
+    SELECT c.id, c.username, c.profile, c.role, c.active, c.created_at,
+           to_tsvector('english', c.username) || 
+           to_tsvector('english', coalesce(c.profile::text, '')) as document
+    FROM creator c
+    WHERE c.org_id = $1 AND c.deleted_at IS NULL
+)
+SELECT id, username, profile, role, active, created_at
+FROM filtered_creators
+WHERE $2::text = '' OR 
+      document @@ plainto_tsquery('english', $2::text) OR
+      profile::text ILIKE '%' || $2::text || '%'
+ORDER BY created_at DESC
 `
+
+type ListOrgMembersParams struct {
+	OrgID   uuid.UUID `json:"org_id"`
+	Column2 string    `json:"column_2"`
+}
 
 type ListOrgMembersRow struct {
 	ID        uuid.UUID       `json:"id"`
@@ -1501,8 +1768,8 @@ type ListOrgMembersRow struct {
 	CreatedAt time.Time       `json:"created_at"`
 }
 
-func (q *Queries) ListOrgMembers(ctx context.Context, orgID uuid.UUID) ([]ListOrgMembersRow, error) {
-	rows, err := q.query(ctx, q.listOrgMembersStmt, listOrgMembers, orgID)
+func (q *Queries) ListOrgMembers(ctx context.Context, arg ListOrgMembersParams) ([]ListOrgMembersRow, error) {
+	rows, err := q.query(ctx, q.listOrgMembersStmt, listOrgMembers, arg.OrgID, arg.Column2)
 	if err != nil {
 		return nil, err
 	}
@@ -1772,7 +2039,7 @@ WHERE c.org_id = $1 AND t.deleted_at IS NULL
     c.username ILIKE '%' || $2 || '%' OR
     a.username ILIKE '%' || $2 || '%'
   ))
-ORDER BY t.created_at DESC
+ORDER BY t.last_updated DESC
 LIMIT $3 OFFSET $4
 `
 
@@ -1913,7 +2180,7 @@ WHERE
 GROUP BY 
     t.id, c.username, a.username
 ORDER BY 
-    t.created_at DESC
+    t.last_updated DESC
 LIMIT $5 OFFSET $6
 `
 
@@ -2018,6 +2285,21 @@ func (q *Queries) RemoveObjectTypeValue(ctx context.Context, arg RemoveObjectTyp
 	return err
 }
 
+const removeObjectsFromFact = `-- name: RemoveObjectsFromFact :exec
+DELETE FROM obj_fact
+WHERE fact_id = $1 AND obj_id = ANY($2::uuid[])
+`
+
+type RemoveObjectsFromFactParams struct {
+	FactID  uuid.UUID   `json:"fact_id"`
+	Column2 []uuid.UUID `json:"column_2"`
+}
+
+func (q *Queries) RemoveObjectsFromFact(ctx context.Context, arg RemoveObjectsFromFactParams) error {
+	_, err := q.exec(ctx, q.removeObjectsFromFactStmt, removeObjectsFromFact, arg.FactID, pq.Array(arg.Column2))
+	return err
+}
+
 const removeObjectsFromTask = `-- name: RemoveObjectsFromTask :exec
 DELETE FROM obj_task
 WHERE task_id = $1 AND obj_id = ANY($2::uuid[])
@@ -2063,6 +2345,41 @@ WHERE id = $1 AND deleted_at IS NULL
 func (q *Queries) SoftDeleteObjStep(ctx context.Context, id uuid.UUID) error {
 	_, err := q.exec(ctx, q.softDeleteObjStepStmt, softDeleteObjStep, id)
 	return err
+}
+
+const updateFact = `-- name: UpdateFact :one
+UPDATE fact
+SET text = $2, happened_at = $3, location = $4
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, text, happened_at, location, creator_id, created_at, last_updated, deleted_at
+`
+
+type UpdateFactParams struct {
+	ID         uuid.UUID    `json:"id"`
+	Text       string       `json:"text"`
+	HappenedAt sql.NullTime `json:"happened_at"`
+	Location   string       `json:"location"`
+}
+
+func (q *Queries) UpdateFact(ctx context.Context, arg UpdateFactParams) (Fact, error) {
+	row := q.queryRow(ctx, q.updateFactStmt, updateFact,
+		arg.ID,
+		arg.Text,
+		arg.HappenedAt,
+		arg.Location,
+	)
+	var i Fact
+	err := row.Scan(
+		&i.ID,
+		&i.Text,
+		&i.HappenedAt,
+		&i.Location,
+		&i.CreatorID,
+		&i.CreatedAt,
+		&i.LastUpdated,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const updateFunnel = `-- name: UpdateFunnel :one

@@ -17,13 +17,30 @@ import { useHistory } from 'react-router-dom';
 import authService from 'src/services/authService';
 // import logo.png from src/assets/logo.png;
 import logo from 'src/assets/logo.png';
+import { useSpotLight } from 'src/contexts/SpotLightContext';
+import { SpotLightFilter } from '../SpotLight';
 
 const Header: React.FC = () => {
   const history = useHistory();
   const details = authService.getDetails();
+  const { openSpotLight } = useSpotLight();
+
   const handleLogout = () => {
     authService.logout();
     history.push('/');
+  };
+  const handleOpenSearch = () => {
+    openSpotLight(
+      [
+        SpotLightFilter.OBJECT,
+        SpotLightFilter.FACT,
+        SpotLightFilter.CREATOR,
+        SpotLightFilter.TASK,
+      ],
+      (payload: any) => {
+        console.log('Selected', payload);
+      }
+    );
   };
   return (
     <Box as='header' bg='white' boxShadow='sm' py={4}>
@@ -44,7 +61,7 @@ const Header: React.FC = () => {
           </Box>
         </HStack>
         <Flex alignItems='center' flex={1}>
-          <InputGroup maxW='500px' mx='auto'>
+          <InputGroup maxW='500px' mx='auto' onClick={handleOpenSearch}>
             <InputLeftElement pointerEvents='none'>
               <SearchIcon color='gray.300' />
             </InputLeftElement>

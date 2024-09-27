@@ -1,5 +1,7 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Enable trigram extension for fuzzy search
+CREATE EXTENSION pg_trgm;
 
 -- Drop existing tables if they exist
 DROP TABLE IF EXISTS obj_fact CASCADE;
@@ -228,6 +230,10 @@ CREATE INDEX idx_obj_name ON obj(name);
 CREATE INDEX idx_obj_id_string ON obj(id_string);
 CREATE INDEX idx_task_status ON task(status);
 CREATE INDEX idx_fact_happened_at ON fact(happened_at);
+
+-- Indexes for full-text search
+CREATE INDEX idx_creator_username_trgm ON creator USING gin (username gin_trgm_ops);
+CREATE INDEX idx_creator_profile ON creator USING gin (profile jsonb_path_ops);
 
 -- Create a function to flatten JSON
 CREATE OR REPLACE FUNCTION jsonb_to_text(jsonb_data jsonb)

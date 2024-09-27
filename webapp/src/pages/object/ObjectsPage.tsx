@@ -90,11 +90,11 @@ const ObjectsPage: React.FC = () => {
       <Box p={4}>
         <HStack justify='space-between' mb={6}>
           <Heading as='h1' size='xl' color='var(--color-primary)'>
-            All Objects
+            All Contacts
           </Heading>
           <HStack>
             <Button colorScheme='green' onClick={onOpen}>
-              Import Objects
+              Import CSV
             </Button>
             <Button
               colorScheme='blue'
@@ -103,7 +103,7 @@ const ObjectsPage: React.FC = () => {
                 setIsCreatingObject(true);
               }}
             >
-              New Object
+              New Contact
             </Button>
           </HStack>
         </HStack>
@@ -197,7 +197,7 @@ const ObjectsPage: React.FC = () => {
         <Box>
           Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
           {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of {totalCount}{' '}
-          objects
+          contact
         </Box>
         <HStack>
           <Button

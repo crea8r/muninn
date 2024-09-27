@@ -21,12 +21,7 @@ import {
   FiChevronRight,
   FiCheckSquare,
 } from 'react-icons/fi';
-
-// Mock API for unseen feed and to-do tasks
-const mockAPI = {
-  getUnseenFeedCount: () => Promise.resolve(5),
-  getTodoTaskCount: () => Promise.resolve(3),
-};
+import { useGlobalContext } from 'src/contexts/GlobalContext';
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -121,6 +116,7 @@ const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(!isMobile);
   const [unseenFeedCount, setUnseenFeedCount] = useState(0);
   const [todoTaskCount, setTodoTaskCount] = useState(0);
+  const { globalData } = useGlobalContext();
 
   useEffect(() => {
     setIsOpen(!isMobile);
@@ -128,13 +124,13 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     const fetchCounts = async () => {
-      const feedCount = await mockAPI.getUnseenFeedCount();
-      const taskCount = await mockAPI.getTodoTaskCount();
+      const feedCount = globalData?.unseenFeedsCount || 0;
+      const taskCount = globalData?.tasksCount || 0;
       setUnseenFeedCount(feedCount);
       setTodoTaskCount(taskCount);
     };
     fetchCounts();
-  }, []);
+  }, [globalData]);
 
   const isActive = (path: string) => {
     if (path === '/') {

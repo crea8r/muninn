@@ -26,11 +26,13 @@ import {
   Badge,
   IconButton,
   Spacer,
+  Alert,
+  AlertIcon,
 } from '@chakra-ui/react';
 import { Funnel, FunnelStep, StepAndFunnel } from 'src/types/';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { substatus } from 'src/utils';
+import { shortenText, substatus } from 'src/utils';
 import { DeleteIcon } from '@chakra-ui/icons';
 
 interface ObjectFunnelCardProps {
@@ -200,14 +202,20 @@ const ObjectFunnelCard: React.FC<ObjectFunnelCardProps> = ({
         onClick={onOpen}
         cursor='pointer'
       >
-        <Heading size='sm' mb={2}>
-          {funnel.name}
-        </Heading>
-        <Text>
-          Last update: {dayjs(currentObjectStepFunnel.createdAt).fromNow()}
-        </Text>
-        <Text>Current Step: {currentStep.name}</Text>
-        <Badge colorScheme={subStatusBadgeColor}>{subStatusText}</Badge>
+        <HStack alignItems={'center'} w={'100%'} mb={2}>
+          <Text size='sm' fontWeight={'bold'}>
+            {funnel.name}
+          </Text>
+          <Spacer />
+          <Text size={'sm'}>
+            {dayjs(currentObjectStepFunnel.createdAt).fromNow()}
+          </Text>
+        </HStack>
+        <HStack alignItems={'center'} w={'100%'}>
+          <Text>Current Step: {currentStep.name}</Text>
+          <Badge colorScheme={subStatusBadgeColor}>{subStatusText}</Badge>
+        </HStack>
+
         {isLastStep && (
           <Text color='green.500' fontWeight='bold'>
             Completed
@@ -215,6 +223,18 @@ const ObjectFunnelCard: React.FC<ObjectFunnelCardProps> = ({
         )}
         {!isLastStep && nextStep && subStatus !== 2 && (
           <Text>Next Step: {nextStep.name}</Text>
+        )}
+        {funnel.steps.find((step) => step.step_order === currentStep.step_order)
+          ?.action && (
+          <Alert status='warning' mt={2}>
+            <AlertIcon />
+            {shortenText(
+              funnel.steps.find(
+                (step) => step.step_order === currentStep.step_order
+              )?.action || '',
+              50
+            )}
+          </Alert>
         )}
       </Box>
 

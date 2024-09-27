@@ -166,7 +166,7 @@ const ObjectTypesPage: React.FC = () => {
       <BreadcrumbComponent />
       <HStack justify='space-between' mb={6}>
         <Heading as='h1' size='xl' color='var(--color-primary)'>
-          Object Types
+          Data Types
         </Heading>
         <Button
           colorScheme='blue'
@@ -176,7 +176,7 @@ const ObjectTypesPage: React.FC = () => {
             onOpen();
           }}
         >
-          New Object Type
+          New Data Type
         </Button>
       </HStack>
 

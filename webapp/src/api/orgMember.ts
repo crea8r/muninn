@@ -1,11 +1,12 @@
-import { Object, NewObject, UpdateObject } from 'src/types/';
 import { axiosWithAuth } from './utils';
 import { OrgMemberProfile, OrgProfile } from 'src/types/Org';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-export const listOrgMembers = async () => {
-  const { data } = await axiosWithAuth().get(`${API_URL}/org/members`);
+export const listOrgMembers = async (search?: string) => {
+  const { data } = await axiosWithAuth().get(`${API_URL}/org/members`, {
+    params: { search: search || '' },
+  });
   return data;
 };
 

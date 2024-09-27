@@ -1,4 +1,4 @@
-import { Fact, NewFact } from './Fact';
+import { Fact } from './Fact';
 import {
   Funnel,
   NewFunnel,
@@ -16,11 +16,11 @@ import {
 } from './Object';
 import { TaskStatus, Task, NewTask, UpdateTask } from './Task';
 import { Tag } from './Tag';
+import { OrgMember } from './Org';
 
 export { TaskStatus };
 export type {
   Fact,
-  NewFact,
   Funnel,
   NewFunnel,
   FunnelStep,
@@ -36,4 +36,5 @@ export type {
   FunnelUpdate,
   UpdateObject,
   StepAndFunnel,
+  OrgMember,
 };

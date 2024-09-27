@@ -27,7 +27,6 @@ const LoginPage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    refreshGlobalData();
     try {
       const response = await login(username, password);
       authService.login(response.token);
@@ -37,7 +36,7 @@ const LoginPage: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
-
+      await refreshGlobalData();
       history.push('/feed');
     } catch (error: any) {
       toast({

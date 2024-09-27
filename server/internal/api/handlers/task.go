@@ -257,7 +257,7 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := r.Context().Value(middleware.UserClaimsKey).(middleware.Claims)
+	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
 	OrgID := uuid.MustParse(claims.OrgID)
 
 	// Check if assigned_id is in the same organization
@@ -528,17 +528,12 @@ func (h *TaskHandler) ListWithFilter(w http.ResponseWriter, r *http.Request) {
 	var assignedUUID uuid.UUID
 	if assignedId != "" {
 		parsed, err := uuid.Parse(assignedId)
-		fmt.Println("try to parse assignedId: ", assignedId);
 		if err != nil {
 			http.Error(w, "Invalid assignedId", http.StatusBadRequest)
 			return
 		}
 		assignedUUID = parsed
 	}
-	fmt.Println("Creator: ", creatorUUID);
-	fmt.Println("Assigned: ", assignedUUID);
-	fmt.Println("query: ", query);
-	fmt.Println("status: ", status);
 	tasks, err := h.db.ListTasksWithFilter(r.Context(), database.ListTasksWithFilterParams{
 		Column1: creatorUUID,
 		Column2: assignedUUID,

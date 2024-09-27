@@ -14,3 +14,19 @@ export const generateRandomPassword = () => {
 export const normalise = (str: string) => {
   return str.replace(/\s/g, '').toLowerCase();
 };
+
+export const shortenText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '...';
+};
+
+export const randomId = (len: number) => {
+  // random ID with text and numbers
+  let text = '';
+  const possible =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < len; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+};

@@ -1,4 +1,10 @@
-import { normalizeToTagStyle, normalise, generateRandomPassword } from './text';
+import {
+  normalizeToTagStyle,
+  normalise,
+  generateRandomPassword,
+  shortenText,
+  randomId,
+} from './text';
 import { getRandomBrightColor, getRandomDarkColor } from './color';
 import { substatus } from './substatus';
 
@@ -9,4 +15,6 @@ export {
   substatus,
   normalise,
   generateRandomPassword,
+  shortenText,
+  randomId,
 };

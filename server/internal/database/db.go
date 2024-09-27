@@ -27,11 +27,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.addObjectTypeValueStmt, err = db.PrepareContext(ctx, addObjectTypeValue); err != nil {
 		return nil, fmt.Errorf("error preparing query AddObjectTypeValue: %w", err)
 	}
+	if q.addObjectsToFactStmt, err = db.PrepareContext(ctx, addObjectsToFact); err != nil {
+		return nil, fmt.Errorf("error preparing query AddObjectsToFact: %w", err)
+	}
 	if q.addObjectsToTaskStmt, err = db.PrepareContext(ctx, addObjectsToTask); err != nil {
 		return nil, fmt.Errorf("error preparing query AddObjectsToTask: %w", err)
 	}
 	if q.addTagToObjectStmt, err = db.PrepareContext(ctx, addTagToObject); err != nil {
 		return nil, fmt.Errorf("error preparing query AddTagToObject: %w", err)
+	}
+	if q.countFactsByOrgIDStmt, err = db.PrepareContext(ctx, countFactsByOrgID); err != nil {
+		return nil, fmt.Errorf("error preparing query CountFactsByOrgID: %w", err)
 	}
 	if q.countFunnelsStmt, err = db.PrepareContext(ctx, countFunnels); err != nil {
 		return nil, fmt.Errorf("error preparing query CountFunnels: %w", err)
@@ -41,6 +47,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.countObjectsByOrgIDStmt, err = db.PrepareContext(ctx, countObjectsByOrgID); err != nil {
 		return nil, fmt.Errorf("error preparing query CountObjectsByOrgID: %w", err)
+	}
+	if q.countOngoingTaskStmt, err = db.PrepareContext(ctx, countOngoingTask); err != nil {
+		return nil, fmt.Errorf("error preparing query CountOngoingTask: %w", err)
 	}
 	if q.countTagsStmt, err = db.PrepareContext(ctx, countTags); err != nil {
 		return nil, fmt.Errorf("error preparing query CountTags: %w", err)
@@ -54,8 +63,14 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.countTasksWithFilterStmt, err = db.PrepareContext(ctx, countTasksWithFilter); err != nil {
 		return nil, fmt.Errorf("error preparing query CountTasksWithFilter: %w", err)
 	}
+	if q.countUnseenFeedStmt, err = db.PrepareContext(ctx, countUnseenFeed); err != nil {
+		return nil, fmt.Errorf("error preparing query CountUnseenFeed: %w", err)
+	}
 	if q.createCreatorStmt, err = db.PrepareContext(ctx, createCreator); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateCreator: %w", err)
+	}
+	if q.createFactStmt, err = db.PrepareContext(ctx, createFact); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateFact: %w", err)
 	}
 	if q.createFeedStmt, err = db.PrepareContext(ctx, createFeed); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateFeed: %w", err)
@@ -87,6 +102,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.deleteCreatorStmt, err = db.PrepareContext(ctx, deleteCreator); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteCreator: %w", err)
 	}
+	if q.deleteFactStmt, err = db.PrepareContext(ctx, deleteFact); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteFact: %w", err)
+	}
 	if q.deleteFunnelStmt, err = db.PrepareContext(ctx, deleteFunnel); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteFunnel: %w", err)
 	}
@@ -113,6 +131,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.getCreatorByUsernameStmt, err = db.PrepareContext(ctx, getCreatorByUsername); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCreatorByUsername: %w", err)
+	}
+	if q.getFactByIDStmt, err = db.PrepareContext(ctx, getFactByID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetFactByID: %w", err)
 	}
 	if q.getFeedStmt, err = db.PrepareContext(ctx, getFeed); err != nil {
 		return nil, fmt.Errorf("error preparing query GetFeed: %w", err)
@@ -143,6 +164,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.hardDeleteObjStepStmt, err = db.PrepareContext(ctx, hardDeleteObjStep); err != nil {
 		return nil, fmt.Errorf("error preparing query HardDeleteObjStep: %w", err)
+	}
+	if q.listFactsByOrgIDStmt, err = db.PrepareContext(ctx, listFactsByOrgID); err != nil {
+		return nil, fmt.Errorf("error preparing query ListFactsByOrgID: %w", err)
 	}
 	if q.listFunnelsStmt, err = db.PrepareContext(ctx, listFunnels); err != nil {
 		return nil, fmt.Errorf("error preparing query ListFunnels: %w", err)
@@ -180,6 +204,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.removeObjectTypeValueStmt, err = db.PrepareContext(ctx, removeObjectTypeValue); err != nil {
 		return nil, fmt.Errorf("error preparing query RemoveObjectTypeValue: %w", err)
 	}
+	if q.removeObjectsFromFactStmt, err = db.PrepareContext(ctx, removeObjectsFromFact); err != nil {
+		return nil, fmt.Errorf("error preparing query RemoveObjectsFromFact: %w", err)
+	}
 	if q.removeObjectsFromTaskStmt, err = db.PrepareContext(ctx, removeObjectsFromTask); err != nil {
 		return nil, fmt.Errorf("error preparing query RemoveObjectsFromTask: %w", err)
 	}
@@ -188,6 +215,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.softDeleteObjStepStmt, err = db.PrepareContext(ctx, softDeleteObjStep); err != nil {
 		return nil, fmt.Errorf("error preparing query SoftDeleteObjStep: %w", err)
+	}
+	if q.updateFactStmt, err = db.PrepareContext(ctx, updateFact); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateFact: %w", err)
 	}
 	if q.updateFunnelStmt, err = db.PrepareContext(ctx, updateFunnel); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateFunnel: %w", err)
@@ -238,6 +268,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing addObjectTypeValueStmt: %w", cerr)
 		}
 	}
+	if q.addObjectsToFactStmt != nil {
+		if cerr := q.addObjectsToFactStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing addObjectsToFactStmt: %w", cerr)
+		}
+	}
 	if q.addObjectsToTaskStmt != nil {
 		if cerr := q.addObjectsToTaskStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing addObjectsToTaskStmt: %w", cerr)
@@ -246,6 +281,11 @@ func (q *Queries) Close() error {
 	if q.addTagToObjectStmt != nil {
 		if cerr := q.addTagToObjectStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing addTagToObjectStmt: %w", cerr)
+		}
+	}
+	if q.countFactsByOrgIDStmt != nil {
+		if cerr := q.countFactsByOrgIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countFactsByOrgIDStmt: %w", cerr)
 		}
 	}
 	if q.countFunnelsStmt != nil {
@@ -261,6 +301,11 @@ func (q *Queries) Close() error {
 	if q.countObjectsByOrgIDStmt != nil {
 		if cerr := q.countObjectsByOrgIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing countObjectsByOrgIDStmt: %w", cerr)
+		}
+	}
+	if q.countOngoingTaskStmt != nil {
+		if cerr := q.countOngoingTaskStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countOngoingTaskStmt: %w", cerr)
 		}
 	}
 	if q.countTagsStmt != nil {
@@ -283,9 +328,19 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing countTasksWithFilterStmt: %w", cerr)
 		}
 	}
+	if q.countUnseenFeedStmt != nil {
+		if cerr := q.countUnseenFeedStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countUnseenFeedStmt: %w", cerr)
+		}
+	}
 	if q.createCreatorStmt != nil {
 		if cerr := q.createCreatorStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createCreatorStmt: %w", cerr)
+		}
+	}
+	if q.createFactStmt != nil {
+		if cerr := q.createFactStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createFactStmt: %w", cerr)
 		}
 	}
 	if q.createFeedStmt != nil {
@@ -338,6 +393,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing deleteCreatorStmt: %w", cerr)
 		}
 	}
+	if q.deleteFactStmt != nil {
+		if cerr := q.deleteFactStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteFactStmt: %w", cerr)
+		}
+	}
 	if q.deleteFunnelStmt != nil {
 		if cerr := q.deleteFunnelStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deleteFunnelStmt: %w", cerr)
@@ -381,6 +441,11 @@ func (q *Queries) Close() error {
 	if q.getCreatorByUsernameStmt != nil {
 		if cerr := q.getCreatorByUsernameStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getCreatorByUsernameStmt: %w", cerr)
+		}
+	}
+	if q.getFactByIDStmt != nil {
+		if cerr := q.getFactByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getFactByIDStmt: %w", cerr)
 		}
 	}
 	if q.getFeedStmt != nil {
@@ -431,6 +496,11 @@ func (q *Queries) Close() error {
 	if q.hardDeleteObjStepStmt != nil {
 		if cerr := q.hardDeleteObjStepStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing hardDeleteObjStepStmt: %w", cerr)
+		}
+	}
+	if q.listFactsByOrgIDStmt != nil {
+		if cerr := q.listFactsByOrgIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listFactsByOrgIDStmt: %w", cerr)
 		}
 	}
 	if q.listFunnelsStmt != nil {
@@ -493,6 +563,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing removeObjectTypeValueStmt: %w", cerr)
 		}
 	}
+	if q.removeObjectsFromFactStmt != nil {
+		if cerr := q.removeObjectsFromFactStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing removeObjectsFromFactStmt: %w", cerr)
+		}
+	}
 	if q.removeObjectsFromTaskStmt != nil {
 		if cerr := q.removeObjectsFromTaskStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing removeObjectsFromTaskStmt: %w", cerr)
@@ -506,6 +581,11 @@ func (q *Queries) Close() error {
 	if q.softDeleteObjStepStmt != nil {
 		if cerr := q.softDeleteObjStepStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing softDeleteObjStepStmt: %w", cerr)
+		}
+	}
+	if q.updateFactStmt != nil {
+		if cerr := q.updateFactStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateFactStmt: %w", cerr)
 		}
 	}
 	if q.updateFunnelStmt != nil {
@@ -613,16 +693,21 @@ type Queries struct {
 	db                          DBTX
 	tx                          *sql.Tx
 	addObjectTypeValueStmt      *sql.Stmt
+	addObjectsToFactStmt        *sql.Stmt
 	addObjectsToTaskStmt        *sql.Stmt
 	addTagToObjectStmt          *sql.Stmt
+	countFactsByOrgIDStmt       *sql.Stmt
 	countFunnelsStmt            *sql.Stmt
 	countObjectTypesStmt        *sql.Stmt
 	countObjectsByOrgIDStmt     *sql.Stmt
+	countOngoingTaskStmt        *sql.Stmt
 	countTagsStmt               *sql.Stmt
 	countTasksByObjectIDStmt    *sql.Stmt
 	countTasksByOrgIDStmt       *sql.Stmt
 	countTasksWithFilterStmt    *sql.Stmt
+	countUnseenFeedStmt         *sql.Stmt
 	createCreatorStmt           *sql.Stmt
+	createFactStmt              *sql.Stmt
 	createFeedStmt              *sql.Stmt
 	createFunnelStmt            *sql.Stmt
 	createObjStepStmt           *sql.Stmt
@@ -633,6 +718,7 @@ type Queries struct {
 	createTagStmt               *sql.Stmt
 	createTaskStmt              *sql.Stmt
 	deleteCreatorStmt           *sql.Stmt
+	deleteFactStmt              *sql.Stmt
 	deleteFunnelStmt            *sql.Stmt
 	deleteObjectStmt            *sql.Stmt
 	deleteObjectTypeStmt        *sql.Stmt
@@ -642,6 +728,7 @@ type Queries struct {
 	getCreatorStmt              *sql.Stmt
 	getCreatorByIDStmt          *sql.Stmt
 	getCreatorByUsernameStmt    *sql.Stmt
+	getFactByIDStmt             *sql.Stmt
 	getFeedStmt                 *sql.Stmt
 	getFunnelStmt               *sql.Stmt
 	getObjStepStmt              *sql.Stmt
@@ -652,6 +739,7 @@ type Queries struct {
 	getTagByIDStmt              *sql.Stmt
 	getTaskByIDStmt             *sql.Stmt
 	hardDeleteObjStepStmt       *sql.Stmt
+	listFactsByOrgIDStmt        *sql.Stmt
 	listFunnelsStmt             *sql.Stmt
 	listObjectTypesStmt         *sql.Stmt
 	listObjectsByOrgIDStmt      *sql.Stmt
@@ -664,9 +752,11 @@ type Queries struct {
 	listTasksWithFilterStmt     *sql.Stmt
 	markFeedAsSeenStmt          *sql.Stmt
 	removeObjectTypeValueStmt   *sql.Stmt
+	removeObjectsFromFactStmt   *sql.Stmt
 	removeObjectsFromTaskStmt   *sql.Stmt
 	removeTagFromObjectStmt     *sql.Stmt
 	softDeleteObjStepStmt       *sql.Stmt
+	updateFactStmt              *sql.Stmt
 	updateFunnelStmt            *sql.Stmt
 	updateObjStepStmt           *sql.Stmt
 	updateObjStepSubStatusStmt  *sql.Stmt
@@ -687,16 +777,21 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		db:                          tx,
 		tx:                          tx,
 		addObjectTypeValueStmt:      q.addObjectTypeValueStmt,
+		addObjectsToFactStmt:        q.addObjectsToFactStmt,
 		addObjectsToTaskStmt:        q.addObjectsToTaskStmt,
 		addTagToObjectStmt:          q.addTagToObjectStmt,
+		countFactsByOrgIDStmt:       q.countFactsByOrgIDStmt,
 		countFunnelsStmt:            q.countFunnelsStmt,
 		countObjectTypesStmt:        q.countObjectTypesStmt,
 		countObjectsByOrgIDStmt:     q.countObjectsByOrgIDStmt,
+		countOngoingTaskStmt:        q.countOngoingTaskStmt,
 		countTagsStmt:               q.countTagsStmt,
 		countTasksByObjectIDStmt:    q.countTasksByObjectIDStmt,
 		countTasksByOrgIDStmt:       q.countTasksByOrgIDStmt,
 		countTasksWithFilterStmt:    q.countTasksWithFilterStmt,
+		countUnseenFeedStmt:         q.countUnseenFeedStmt,
 		createCreatorStmt:           q.createCreatorStmt,
+		createFactStmt:              q.createFactStmt,
 		createFeedStmt:              q.createFeedStmt,
 		createFunnelStmt:            q.createFunnelStmt,
 		createObjStepStmt:           q.createObjStepStmt,
@@ -707,6 +802,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		createTagStmt:               q.createTagStmt,
 		createTaskStmt:              q.createTaskStmt,
 		deleteCreatorStmt:           q.deleteCreatorStmt,
+		deleteFactStmt:              q.deleteFactStmt,
 		deleteFunnelStmt:            q.deleteFunnelStmt,
 		deleteObjectStmt:            q.deleteObjectStmt,
 		deleteObjectTypeStmt:        q.deleteObjectTypeStmt,
@@ -716,6 +812,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getCreatorStmt:              q.getCreatorStmt,
 		getCreatorByIDStmt:          q.getCreatorByIDStmt,
 		getCreatorByUsernameStmt:    q.getCreatorByUsernameStmt,
+		getFactByIDStmt:             q.getFactByIDStmt,
 		getFeedStmt:                 q.getFeedStmt,
 		getFunnelStmt:               q.getFunnelStmt,
 		getObjStepStmt:              q.getObjStepStmt,
@@ -726,6 +823,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getTagByIDStmt:              q.getTagByIDStmt,
 		getTaskByIDStmt:             q.getTaskByIDStmt,
 		hardDeleteObjStepStmt:       q.hardDeleteObjStepStmt,
+		listFactsByOrgIDStmt:        q.listFactsByOrgIDStmt,
 		listFunnelsStmt:             q.listFunnelsStmt,
 		listObjectTypesStmt:         q.listObjectTypesStmt,
 		listObjectsByOrgIDStmt:      q.listObjectsByOrgIDStmt,
@@ -738,9 +836,11 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		listTasksWithFilterStmt:     q.listTasksWithFilterStmt,
 		markFeedAsSeenStmt:          q.markFeedAsSeenStmt,
 		removeObjectTypeValueStmt:   q.removeObjectTypeValueStmt,
+		removeObjectsFromFactStmt:   q.removeObjectsFromFactStmt,
 		removeObjectsFromTaskStmt:   q.removeObjectsFromTaskStmt,
 		removeTagFromObjectStmt:     q.removeTagFromObjectStmt,
 		softDeleteObjStepStmt:       q.softDeleteObjStepStmt,
+		updateFactStmt:              q.updateFactStmt,
 		updateFunnelStmt:            q.updateFunnelStmt,
 		updateObjStepStmt:           q.updateObjStepStmt,
 		updateObjStepSubStatusStmt:  q.updateObjStepSubStatusStmt,

@@ -19,7 +19,16 @@ import {
   listTasks,
   getTaskById,
 } from './task';
-import { addFact } from './fact';
+import { createFact, listFact, updateFact } from './fact';
+import {
+  listOrgMembers,
+  addNewOrgMember,
+  updateOrgDetails,
+  updateUserPassword,
+  updateUserProfile,
+  updateUserRoleAndStatus,
+} from './orgMember';
+import { personalSummarize } from './summarize';
 
 export const importCSV = async (csvData: any, selectedObjectTypes: any) => {};
 
@@ -32,7 +41,6 @@ export {
   deleteObjectFromFunnel,
   forceDeleteObjectStep,
   updateObjectStepSubStatus,
-  addFact,
   removeObjectTypeValue,
   updateObjectTypeValue,
   addTagToObject,
@@ -43,4 +51,17 @@ export {
   deleteTask,
   listTasks,
   getTaskById,
+  // org member
+  listOrgMembers,
+  addNewOrgMember,
+  updateOrgDetails,
+  updateUserPassword,
+  updateUserProfile,
+  updateUserRoleAndStatus,
+  // summarize
+  personalSummarize,
+  // fact
+  createFact,
+  updateFact,
+  listFact,
 };

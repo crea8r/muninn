@@ -108,7 +108,7 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
-          {initialData ? 'Edit Object Type' : 'Create Object Type'}
+          {initialData ? 'Edit Data Type' : 'Create Data Type'}
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody>

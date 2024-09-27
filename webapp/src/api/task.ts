@@ -33,7 +33,7 @@ export const deleteTask = async (taskId: string): Promise<void> => {
 export interface ListTasksOptions {
   page: number;
   pageSize: number;
-  query: string;
+  search: string;
   status: string;
   creatorId: string;
   assignedId: string;
@@ -42,13 +42,13 @@ export interface ListTasksOptions {
 export const listTasks = async ({
   page = 1,
   pageSize = 20,
-  query = '',
+  search = '',
   status = '',
   creatorId = '',
   assignedId = '',
 }: ListTasksOptions): Promise<ListTasksResponse> => {
   const response = await axiosWithAuth().get(`${API_URL}/tasks`, {
-    params: { page, pageSize, query, status, creatorId, assignedId },
+    params: { page, pageSize, query: search, status, creatorId, assignedId },
   });
   return response.data;
 };

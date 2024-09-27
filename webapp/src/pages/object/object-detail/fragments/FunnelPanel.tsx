@@ -10,12 +10,17 @@ import {
   FormLabel,
   useDisclosure,
   SimpleGrid,
+  HStack,
+  Spacer,
+  Text,
+  IconButton,
 } from '@chakra-ui/react';
 import { Funnel, FunnelStep } from 'src/types/';
 import { fetchAllFunnels } from 'src/api/funnel';
 import { StepAndFunnel } from 'src/types/Object';
 import AddObjectStepModal from 'src/components/forms/object/object-step/AddObjectStepModal';
 import ObjectFunnelCard from 'src/components/forms/object/object-step/ObjectFunnelCard';
+import { FaPlus } from 'react-icons/fa';
 
 interface FunnelPanelProps {
   objectId: string;
@@ -82,18 +87,26 @@ const FunnelPanel: React.FC<FunnelPanelProps> = ({
   };
 
   return (
-    <Box>
-      <VStack align='stretch' spacing={4}>
-        <Heading size='md'>Funnels</Heading>
-        <FormControl display='flex' alignItems='center'>
-          <FormLabel htmlFor='show-hidden' mb='0'>
-            Show completed funnels
-          </FormLabel>
-          <Switch
-            id='show-hidden'
-            onChange={(e) => setShowComplete(e.target.checked)}
-          />
-        </FormControl>
+    <>
+      <VStack width={'100%'} align='stretch' spacing={4}>
+        <HStack width={'100%'} alignItems={'center'}>
+          <Button size={'sm'} aria-label='Add funnel' onClick={onOpen}>
+            <FaPlus />
+            <Text ml={1}>Funnel</Text>
+          </Button>
+          <Spacer />
+          <FormControl display='flex' alignItems='center'>
+            <FormLabel htmlFor='show-hidden' mb='0'>
+              Completed Funnels
+            </FormLabel>
+            <Switch
+              size={'sm'}
+              id='show-hidden'
+              onChange={(e) => setShowComplete(e.target.checked)}
+            />
+          </FormControl>
+        </HStack>
+
         <SimpleGrid columns={[1, 2]} spacing={4}>
           {stepsAndFunnels
             .filter((sf: StepAndFunnel) => sf.deletedAt === null)
@@ -129,8 +142,6 @@ const FunnelPanel: React.FC<FunnelPanelProps> = ({
               );
             })}
         </SimpleGrid>
-
-        <Button onClick={onOpen}>Add to New Funnel</Button>
       </VStack>
       <AddObjectStepModal
         isOpen={isOpen}
@@ -141,7 +152,7 @@ const FunnelPanel: React.FC<FunnelPanelProps> = ({
           handleSubmit(stepId, true);
         }}
       />
-    </Box>
+    </>
   );
 };
 

@@ -17,6 +17,15 @@ import {
   HStack,
   IconButton,
   useMediaQuery,
+  Badge,
+  Button,
+  Modal,
+  ModalHeader,
+  ModalContent,
+  ModalBody,
+  useDisclosure,
+  ModalOverlay,
+  Spacer,
 } from '@chakra-ui/react';
 import { ChevronRightIcon, EditIcon } from '@chakra-ui/icons';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
@@ -29,8 +38,13 @@ import {
   ActivityFeed,
 } from 'src/pages/object/object-detail/fragments';
 import { FactForm, ObjectForm } from 'src/components/forms';
-import { Fact, NewFact, UpdateObject } from 'src/types/';
-import { fetchObjectDetails, updateObject, addFact } from 'src/api';
+import { Fact, Task, TaskStatus, UpdateObject } from 'src/types/';
+import {
+  fetchObjectDetails,
+  updateObject,
+  createFact,
+  updateFact,
+} from 'src/api';
 import { useParams } from 'react-router-dom';
 import {
   addObjectTypeValue,
@@ -43,16 +57,24 @@ import {
   updateObjectStepSubStatus,
 } from 'src/api';
 import { ObjectDetail } from 'src/types/Object';
+import { FaPlus } from 'react-icons/fa';
+import { FactToCreate, FactToUpdate } from 'src/api/fact';
 
 const ObjectDetailPage: React.FC = () => {
   const { objectId } = useParams<{ objectId: string }>();
   const [object, setObject] = useState<ObjectDetail | null>(null);
   const [facts, setFacts] = useState<Fact[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const toast = useToast();
   const [showEditObject, setShowEditObject] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [isLargerThan1280] = useMediaQuery('(min-width: 1280px)');
+  const {
+    isOpen: isOpenNewActivityDialog,
+    onOpen: onOpenNewActivityDialog,
+    onClose: onCloseNewActivityDialog,
+  } = useDisclosure();
 
   useEffect(() => {
     setIsRightPanelOpen(isLargerThan1280);
@@ -64,6 +86,7 @@ const ObjectDetailPage: React.FC = () => {
         const details = await fetchObjectDetails(objectId);
         setObject(details);
         setFacts(details.facts);
+        setTasks(details.tasks);
       } catch (error) {
         toast({
           title: 'Error loading object details',
@@ -93,25 +116,14 @@ const ObjectDetailPage: React.FC = () => {
     setForceUpdate(forceUpdate + 1);
   };
 
-  const handleAddFact = async (newFact: NewFact) => {
-    try {
-      const addedFact = await addFact(newFact);
-      setFacts([addedFact, ...facts]);
-      toast({
-        title: 'Fact added',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error adding fact',
-        description: 'Please try again later.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+  const handleAddFact = async (toSubmitFact: FactToUpdate | FactToCreate) => {
+    if ('id' in toSubmitFact) {
+      await updateFact(toSubmitFact);
+    } else {
+      await createFact(toSubmitFact);
     }
+    setForceUpdate(forceUpdate + 1);
+    onCloseNewActivityDialog();
   };
 
   const handleAddObjectTypeValue = async (objectId: string, payload: any) => {
@@ -190,16 +202,42 @@ const ObjectDetailPage: React.FC = () => {
               </BreadcrumbLink>
             </BreadcrumbItem>
           </Breadcrumb>
-          <Heading as='h2' size='lg'>
-            Activity
-          </Heading>
+          <HStack>
+            <Heading as='h1' size='xl'>
+              {object.name}
+            </Heading>
+          </HStack>
+          <FunnelPanel
+            objectId={objectId}
+            onAddOrMoveObjectInFunnel={handleAddOrMoveObjectInFunnel}
+            onDeleteObjectFromFunnel={handleDeleteObjectFromFunnel}
+            onUpdateSubStatus={handleUpdateSubStatus}
+            stepsAndFunnels={object.stepsAndFunnels}
+          />
           <Tabs>
             <TabList>
-              <Tab>Facts</Tab>
-              <Tab>Tasks</Tab>
-              <Tab>Funnel</Tab>
+              <Tab>
+                Tasks
+                {tasks.filter((task) => task.status !== TaskStatus.COMPLETED)
+                  .length > 0 && (
+                  <Badge colorScheme='red' ml={2}>
+                    {
+                      tasks.filter(
+                        (task) => task.status !== TaskStatus.COMPLETED
+                      ).length
+                    }
+                  </Badge>
+                )}
+              </Tab>
+              <Tab>
+                <Text mr={2}>Activity Log</Text>
+                <FaPlus onClick={onOpenNewActivityDialog} />
+              </Tab>
             </TabList>
             <TabPanels>
+              <TabPanel>
+                <TaskPanel objectId={objectId} tasks={tasks} />
+              </TabPanel>
               <TabPanel>
                 <Box flexGrow={1} overflowY='auto'>
                   <ActivityFeed
@@ -207,19 +245,6 @@ const ObjectDetailPage: React.FC = () => {
                     stepsAndFunnels={object.stepsAndFunnels}
                   />
                 </Box>
-                <FactForm onSave={handleAddFact} objectId={objectId} />
-              </TabPanel>
-              <TabPanel>
-                <TaskPanel objectId={objectId} />
-              </TabPanel>
-              <TabPanel>
-                <FunnelPanel
-                  objectId={objectId}
-                  onAddOrMoveObjectInFunnel={handleAddOrMoveObjectInFunnel}
-                  onDeleteObjectFromFunnel={handleDeleteObjectFromFunnel}
-                  onUpdateSubStatus={handleUpdateSubStatus}
-                  stepsAndFunnels={object.stepsAndFunnels}
-                />
               </TabPanel>
             </TabPanels>
           </Tabs>
@@ -263,9 +288,9 @@ const ObjectDetailPage: React.FC = () => {
         />
         {isRightPanelOpen && (
           <VStack align='stretch' spacing={4} height='100%' mt={10}>
-            <HStack>
-              <Heading as='h1' size='xl'>
-                {object.name}
+            <HStack align='stretch' spacing={2}>
+              <Heading as='h2' size='md'>
+                Detail
               </Heading>
               <EditIcon
                 fontSize='x-large'
@@ -274,8 +299,11 @@ const ObjectDetailPage: React.FC = () => {
                 }}
               />
             </HStack>
+
             {object.description && object.description !== '' && (
-              <RichTextViewer content={object.description} />
+              <>
+                <RichTextViewer content={object.description} />
+              </>
             )}
 
             <TagInput
@@ -300,6 +328,18 @@ const ObjectDetailPage: React.FC = () => {
         onClose={() => setShowEditObject(false)}
         onUpdateObject={handleUpdateObject}
       />
+      <Modal
+        isOpen={isOpenNewActivityDialog}
+        onClose={onCloseNewActivityDialog}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Add New Activity</ModalHeader>
+          <ModalBody>
+            <FactForm onSave={handleAddFact} object={object} />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Flex>
   );
 };

@@ -25,7 +25,8 @@ RETURNING *;
 -- name: GetFeed :many
 SELECT * FROM feed
 WHERE creator_id = $1 AND seen = false
-ORDER BY created_at DESC;
+ORDER BY created_at DESC
+LIMIT 10;
 
 -- name: MarkFeedAsSeen :exec
 UPDATE feed
@@ -186,9 +187,10 @@ VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING *;
 
 -- name: GetStep :one
-SELECT s.*, 
+SELECT s.*, f.name AS funnel_name, 
        (SELECT COUNT(*) FROM obj_step os WHERE os.step_id = s.id) AS object_count
 FROM step s
+JOIN funnel f ON s.funnel_id = f.id
 WHERE s.id = $1 AND s.deleted_at IS NULL;
 
 -- name: UpdateStep :one
@@ -258,7 +260,7 @@ WITH object_data AS (
            array_agg(DISTINCT t.id) AS tag_ids,
            array_agg(DISTINCT otv.id) AS type_value_ids,
            string_agg(DISTINCT otv.search_vector::text, ' ')::tsvector AS type_search,
-           string_agg(DISTINCT f.text, ' ')::tsvector AS fact_search
+           string_agg(DISTINCT f.text::text, ' ')::text AS fact_search
     FROM obj o
     JOIN creator c ON o.creator_id = c.id
     LEFT JOIN obj_tag ot ON o.id = ot.obj_id
@@ -486,7 +488,7 @@ WHERE c.org_id = $1 AND t.deleted_at IS NULL
     c.username ILIKE '%' || $2 || '%' OR
     a.username ILIKE '%' || $2 || '%'
   ))
-ORDER BY t.created_at DESC
+ORDER BY t.last_updated DESC
 LIMIT $3 OFFSET $4;
 
 -- name: CountTasksByOrgID :one
@@ -673,7 +675,7 @@ WHERE
 GROUP BY 
     t.id, c.username, a.username
 ORDER BY 
-    t.created_at DESC
+    t.last_updated DESC
 LIMIT $5 OFFSET $6;
 
 -- name: CountTasksWithFilter :one
@@ -716,10 +718,19 @@ WHERE
     );
 
 -- name: ListOrgMembers :many
-SELECT c.id, c.username, c.profile, c.role, c.active, c.created_at
-FROM creator c
-WHERE c.org_id = $1 AND c.deleted_at IS NULL
-ORDER BY c.created_at DESC;
+WITH filtered_creators AS (
+    SELECT c.id, c.username, c.profile, c.role, c.active, c.created_at,
+           to_tsvector('english', c.username) || 
+           to_tsvector('english', coalesce(c.profile::text, '')) as document
+    FROM creator c
+    WHERE c.org_id = $1 AND c.deleted_at IS NULL
+)
+SELECT id, username, profile, role, active, created_at
+FROM filtered_creators
+WHERE $2::text = '' OR 
+      document @@ plainto_tsquery('english', $2::text) OR
+      profile::text ILIKE '%' || $2::text || '%'
+ORDER BY created_at DESC;
 
 -- name: GetOrgDetails :one
 SELECT * FROM org WHERE id = $1;
@@ -746,3 +757,100 @@ UPDATE creator
 SET profile = $2
 WHERE id = $1
 RETURNING *;
+
+-- name: CountUnseenFeed :one
+SELECT COUNT(*) c FROM feed
+WHERE creator_id = $1 AND seen = false;
+
+-- name: CountOngoingTask :one
+SELECT COUNT(*) c FROM task
+WHERE assigned_id = $1 OR creator_id = $1 AND status in ('todo', 'doing');
+
+-- Add these new queries to your existing queries.sql file
+
+-- name: CreateFact :one
+INSERT INTO fact (text, happened_at, location, creator_id)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
+
+-- name: UpdateFact :one
+UPDATE fact
+SET text = $2, happened_at = $3, location = $4
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
+-- name: DeleteFact :exec
+UPDATE fact
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: GetFactByID :one
+SELECT f.*, c.username as creator_name
+FROM fact f
+JOIN creator c ON f.creator_id = c.id
+WHERE f.id = $1 AND f.deleted_at IS NULL;
+
+-- name: ListFactsByOrgID :many
+SELECT 
+    f.id,
+    f.text,
+    f.happened_at,
+    f.location,
+    f.creator_id,
+    c.username AS creator_name,
+    f.created_at,
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'id', o.id,
+                'name', o.name,
+                'description', o.description
+            )
+        ) FILTER (WHERE o.id IS NOT NULL),
+        '[]'
+    ) AS related_objects
+FROM 
+    fact f
+JOIN 
+    creator c ON f.creator_id = c.id
+LEFT JOIN 
+    obj_fact of ON f.id = of.fact_id
+LEFT JOIN 
+    obj o ON of.obj_id = o.id
+WHERE 
+    c.org_id = $1 
+    AND f.deleted_at IS NULL
+    AND ($2::text = '' OR f.text ILIKE '%' || $2 || '%')
+GROUP BY 
+    f.id, c.username
+ORDER BY 
+    f.happened_at DESC
+LIMIT $3 OFFSET $4;
+
+-- name: CountFactsByOrgID :one
+SELECT COUNT(DISTINCT f.id)
+FROM 
+    fact f
+JOIN 
+    creator c ON f.creator_id = c.id
+WHERE 
+    c.org_id = $1 
+    AND f.deleted_at IS NULL
+    AND ($2::text = '' OR f.text ILIKE '%' || $2 || '%');
+
+-- name: AddObjectsToFact :exec
+INSERT INTO obj_fact (obj_id, fact_id)
+SELECT unnest($1::uuid[]), $2
+WHERE EXISTS (
+  SELECT 1 FROM fact f
+  JOIN creator c ON f.creator_id = c.id
+  WHERE f.id = $2 AND c.org_id = $3
+)
+AND NOT EXISTS (
+  SELECT 1 FROM obj_fact
+  WHERE obj_id = ANY($1::uuid[]) AND fact_id = $2
+);
+
+-- name: RemoveObjectsFromFact :exec
+DELETE FROM obj_fact
+WHERE fact_id = $1 AND obj_id = ANY($2::uuid[]);

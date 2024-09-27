@@ -23,8 +23,12 @@ func NewOrgMemberHandler(db *database.Queries) *OrgMemberHandler {
 func (h *OrgMemberHandler) ListOrgMembers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	orgID := getOrgIDFromContext(ctx)
+	search := r.URL.Query().Get("search")
 	
-	members, err := h.db.ListOrgMembers(ctx, orgID)
+	members, err := h.db.ListOrgMembers(ctx, database.ListOrgMembersParams{
+		OrgID: orgID,
+		Column2: search,
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
