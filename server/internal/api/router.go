@@ -71,6 +71,7 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 			r.Get("/", objectTypeHandler.ListObjectTypes)
 			r.Put("/{id}", objectTypeHandler.UpdateObjectType)
 			r.Delete("/{id}", objectTypeHandler.DeleteObjectType)
+			r.Post("/{typeID}/advance", objectHandler.ListObjectsByTypeWithAdvancedFilter)
 		})
 
 		r.Route("/setting/funnels", func(r chi.Router) {
@@ -79,6 +80,7 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 			r.Get("/", funnelHandler.ListFunnels)
 			r.Put("/{id}", funnelHandler.UpdateFunnel)
 			r.Delete("/{id}", funnelHandler.DeleteFunnel)
+			r.Get("/{id}/view", funnelHandler.GetFunnelView)
 		})
 			
 		r.Route("/objects", func(r chi.Router) {

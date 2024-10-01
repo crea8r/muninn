@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"fmt"
+
 	"github.com/crea8r/muninn/server/internal/api/middleware"
 	"github.com/crea8r/muninn/server/internal/database"
 	"github.com/crea8r/muninn/server/internal/models"
@@ -318,4 +320,139 @@ func (h *ObjectHandler) UpdateObjectTypeValue(w http.ResponseWriter, r *http.Req
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(updatedTypeValue)
+}
+
+type ObjectWithTagsAndTypeValues struct {
+	ID          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Tags        json.RawMessage `json:"tags"`
+	TypeValues json.RawMessage `json:"typeValues"`
+}
+
+type AdvancedFilterParams struct {
+	TypeValues map[string]interface{} `json:"typeValues"`
+	Tags       []uuid.UUID            `json:"tags"`
+	Search     string                 `json:"search"`
+	SortOrder  string                 `json:"sortOrder"`
+}
+
+func (h *ObjectHandler) ListObjectsByTypeWithAdvancedFilter(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse query parameters
+	typeID, err := uuid.Parse(chi.URLParam(r, "typeID"))
+	if err != nil {
+		http.Error(w, "Invalid object type ID", http.StatusBadRequest)
+		return
+	}
+
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	// Parse advanced filter params
+	var filterParams AdvancedFilterParams
+	err = json.NewDecoder(r.Body).Decode(&filterParams)
+	if err != nil {
+		http.Error(w, "Invalid filter parameters", http.StatusBadRequest)
+		return
+	}
+
+	// Get the organization ID from the context
+	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
+	orgID := uuid.MustParse(claims.OrgID)
+	
+	// Prepare type values filter
+	typeValuesFilter, err := json.Marshal(filterParams.TypeValues)
+	if err != nil {
+		http.Error(w, "Invalid type values filter", http.StatusBadRequest)
+		return
+	}
+
+	// Fetch objects
+	objects, err := h.DB.ListObjectsByTypeWithAdvancedFilter(ctx, database.ListObjectsByTypeWithAdvancedFilterParams{
+		TypeID:     typeID,
+		OrgID:      orgID,
+		Column3: typeValuesFilter,
+		Column4:       filterParams.Tags,
+		Column5:     filterParams.Search,
+		Column6:  filterParams.SortOrder,
+		Limit:      int32(pageSize),
+		Offset:     int32((page - 1) * pageSize),
+	})
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Failed to fetch objects", http.StatusInternalServerError)
+		return
+	}
+	fmt.Println(database.CountObjectsByTypeWithAdvancedFilterParams{
+		TypeID:     typeID,
+		OrgID:      orgID,
+		Column3: typeValuesFilter,
+		Column4:       filterParams.Tags,
+		Column5:     filterParams.Search,
+	})
+	// Count total objects
+	totalCount, err := h.DB.CountObjectsByTypeWithAdvancedFilter(ctx, database.CountObjectsByTypeWithAdvancedFilterParams{
+		TypeID:     typeID,
+		OrgID:      orgID,
+		Column3: typeValuesFilter,
+		Column4:       filterParams.Tags,
+		Column5:     filterParams.Search,
+	})
+	if err != nil {
+		http.Error(w, "Failed to count objects", http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("total count:", totalCount);
+
+	// convert database.ListObjectsByTypeWithAdvancedFilterRow to ObjectWithTagsAndTypeValues
+	var objectsWithTagsAndTypeValues []ObjectWithTagsAndTypeValues
+	for _, object := range objects {
+		objTagsBytes := object.Tags.([]byte)
+		objectTags := json.RawMessage(objTagsBytes)
+		
+		objectWithTagsAndTypeValues := ObjectWithTagsAndTypeValues{
+			ID:          object.ID,
+			Name:        object.Name,
+			Description: object.Description,
+			Tags:        objectTags,
+			TypeValues: object.TypeValues,
+		}
+		objectsWithTagsAndTypeValues = append(objectsWithTagsAndTypeValues, objectWithTagsAndTypeValues)
+	}
+
+	// get the object type
+	objectType, err := h.DB.GetObjectTypeByID(ctx, typeID)
+	if err != nil {
+		http.Error(w, "Failed to get object type", http.StatusInternalServerError)
+		return
+	}
+
+
+	// Prepare response
+	response := struct {
+		Objects    []ObjectWithTagsAndTypeValues `json:"objects"`
+		TotalCount int64                                             `json:"totalCount"`
+		Page       int                                               `json:"page"`
+		PageSize   int                                               `json:"pageSize"`
+		ObjectType database.ObjType `json:"objectType"`
+	}{
+		Objects:    objectsWithTagsAndTypeValues,
+		TotalCount: totalCount,
+		Page:       page,
+		PageSize:   pageSize,
+		ObjectType: objectType,
+	}
+
+	// Send response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

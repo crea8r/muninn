@@ -47,3 +47,22 @@ export const getFunnel = async (id: string): Promise<Funnel> => {
   );
   return response.data;
 };
+
+export type StepWithObjects = {
+  step: any;
+  objects: any[];
+  totalCount: number;
+  currentPage: number;
+};
+
+export type FunnelViewType = {
+  funnel: any;
+  steps: any[];
+};
+
+export const getFunnelView = async (id: string): Promise<FunnelViewType> => {
+  const response = await axiosWithAuth().get(
+    `${API_URL}/setting/funnels/${id}/view`
+  );
+  return response.data;
+};

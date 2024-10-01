@@ -32,6 +32,7 @@ import {
   updateFunnel,
   deleteFunnel,
 } from 'src/api/funnel';
+import { useHistory } from 'react-router-dom';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -159,6 +160,7 @@ const FunnelsPage: React.FC = () => {
   };
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  const history = useHistory();
 
   return (
     <Box>
@@ -207,7 +209,16 @@ const FunnelsPage: React.FC = () => {
               <Tr key={funnel.id}>
                 <Td maxWidth='250px'>
                   <VStack align='left'>
-                    <Text fontWeight='bold'>{funnel.name}</Text>
+                    <Text
+                      fontWeight='bold'
+                      textDecoration={'underline'}
+                      cursor={'pointer'}
+                      onClick={() =>
+                        history.push(`/settings/funnels/${funnel.id}`)
+                      }
+                    >
+                      {funnel.name}
+                    </Text>
                     <Box>{funnel.description}</Box>
                   </VStack>
                 </Td>

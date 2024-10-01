@@ -2,8 +2,10 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,6 +14,7 @@ import (
 	"github.com/crea8r/muninn/server/internal/database"
 	"github.com/crea8r/muninn/server/internal/models"
 	"github.com/crea8r/muninn/server/internal/utils"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -175,6 +178,25 @@ type ListFunnelsRowWithStep struct {
 	Steps 			[]database.ListStepsByFunnelRow `json:"steps"`
 }
 
+type FunnelViewResponse struct {
+	Funnel  database.GetFunnelRow        `json:"funnel"`
+	Steps   []StepWithObjects      `json:"steps"`
+}
+
+type StepWithObjects struct {
+	Step 				database.ListStepsByFunnelRow `json:"step"`
+	Objects     []ObjectSummary `json:"objects"`
+	TotalCount  int32           `json:"totalCount"`
+	CurrentPage int32           `json:"currentPage"`
+}
+
+type ObjectSummary struct {
+	ID          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Tags        json.RawMessage `json:"tags"`
+}
+
 func (h *FunnelHandler) ListFunnels(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
@@ -241,4 +263,107 @@ func (h *FunnelHandler) ListFunnels(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(response)
+}
+
+func (h *FunnelHandler) GetFunnelView(w http.ResponseWriter, r *http.Request) {
+	funnelID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid funnel ID", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+
+	// Fetch funnel details
+	funnel, err := h.db.GetFunnel(ctx, funnelID)
+	if err != nil {
+		http.Error(w, "Failed to fetch funnel", http.StatusInternalServerError)
+		return
+	}
+
+	// Fetch steps for the funnel
+	steps, err := h.db.ListStepsByFunnel(ctx, funnelID)
+	if err != nil {
+		http.Error(w, "Failed to fetch funnel steps", http.StatusInternalServerError)
+		return
+	}
+
+	stepsWithObjects := make([]StepWithObjects, len(steps))
+
+	for i, step := range steps {
+		pageStr := r.URL.Query().Get("page_" + step.ID.String())
+		page, _ := strconv.Atoi(pageStr)
+		if page == 0 {
+			page = 1
+		}
+
+		searchQuery := r.URL.Query().Get("search_" + step.ID.String())
+
+		objects, totalCount, err := h.getObjectsForStep(ctx, step.ID, page, searchQuery)
+		if err != nil {
+			http.Error(w, "Failed to fetch objects for step", http.StatusInternalServerError)
+			return
+		}
+
+		stepsWithObjects[i] = StepWithObjects{
+			Step:        step,
+			Objects:     objects,
+			TotalCount:  int32(totalCount),
+			CurrentPage: int32(page),
+		}
+	}
+
+	response := FunnelViewResponse{
+		Funnel: funnel,
+		Steps:  stepsWithObjects,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *FunnelHandler) getObjectsForStep(ctx context.Context, stepID uuid.UUID, page int, searchQuery string) ([]ObjectSummary, int64, error) {
+	limit := 20 // Objects per page
+	offset := (page - 1) * limit
+
+	// Create a new query to fetch objects for a specific step with pagination and search
+	objects, err := h.db.GetObjectsForStep(ctx, database.GetObjectsForStepParams{
+		StepID:      stepID,
+		Column2: searchQuery,
+		Limit:       int32(limit),
+		Offset:      int32(offset),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Count total objects for the step (for pagination)
+	totalCount, err := h.db.CountObjectsForStep(ctx, database.CountObjectsForStepParams{
+		StepID:      stepID,
+		Column2: searchQuery,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	objectSummaries := make([]ObjectSummary, len(objects))
+	for i, obj := range objects {
+		var tags json.RawMessage
+		tagsBytes, ok := obj.Tags.([]byte);
+		if !ok {
+			fmt.Println("Cannot convert objects to bytes: ");
+		}
+		err = json.Unmarshal(tagsBytes, &tags);
+		if err != nil {
+			fmt.Println("Cannot marshal objects: ", err);
+		}
+		objectSummaries[i] = ObjectSummary{
+			ID:          obj.ID,
+			Name:        obj.Name,
+			Description: obj.Description,
+			Tags:        tags,
+		}
+	}
+
+	return objectSummaries, totalCount, nil
 }

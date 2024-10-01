@@ -32,6 +32,7 @@ import {
   ListObjectTypesParams,
 } from 'src/api/objType';
 import { ObjectType } from 'src/types';
+import { useHistory } from 'react-router-dom';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -46,6 +47,7 @@ const ObjectTypesPage: React.FC = () => {
     ObjectType | undefined
   >(undefined);
   const toast = useToast();
+  const history = useHistory();
 
   useEffect(() => {
     fetchObjectTypes();
@@ -204,7 +206,16 @@ const ObjectTypesPage: React.FC = () => {
             <Tr key={objectType.id}>
               <Td>
                 <VStack align='start' spacing={1}>
-                  <Text fontWeight='bold'>{objectType.name}</Text>
+                  <Text
+                    fontWeight='bold'
+                    textDecoration={'underline'}
+                    _hover={{ cursor: 'pointer', background: 'yellow.100' }}
+                    onClick={() =>
+                      history.push(`/settings/object-types/${objectType.id}`)
+                    }
+                  >
+                    {objectType.name}
+                  </Text>
                   <Text fontSize='sm' color='gray.600'>
                     {objectType.description}
                   </Text>

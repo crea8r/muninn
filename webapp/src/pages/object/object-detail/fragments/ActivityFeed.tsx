@@ -18,7 +18,6 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
   const groupItemsByDate = (items: Fact[]) => {
     const grouped: { [date: string]: Fact[] } = {};
     items.forEach((item) => {
-      console.log(item);
       const date = dayjs(item.happenedAt).toDate().toLocaleDateString();
       if (!grouped[date]) {
         grouped[date] = [];

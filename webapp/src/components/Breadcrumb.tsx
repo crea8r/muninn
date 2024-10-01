@@ -3,7 +3,13 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { ChevronRightIcon } from '@chakra-ui/icons';
 
-const BreadcrumbComponent: React.FC = () => {
+interface BreadcrumbComponentProps {
+  label?: string;
+}
+
+const BreadcrumbComponent: React.FC<BreadcrumbComponentProps> = ({
+  label,
+}: BreadcrumbComponentProps) => {
   const location = useLocation();
   const pathnames = location.pathname.split('/').filter((x) => x);
 
@@ -21,7 +27,13 @@ const BreadcrumbComponent: React.FC = () => {
       {pathnames.map((name, index) => {
         const routeTo = `/${pathnames.slice(0, index + 1).join('/')}`;
         const isLast = index === pathnames.length - 1;
-        return (
+        return isLast && label ? (
+          <BreadcrumbItem key={name} isCurrentPage={isLast}>
+            <BreadcrumbLink as={RouterLink} to={routeTo}>
+              {label}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        ) : (
           <BreadcrumbItem key={name} isCurrentPage={isLast}>
             <BreadcrumbLink as={RouterLink} to={routeTo}>
               {name.charAt(0).toUpperCase() + name.slice(1)}

@@ -854,3 +854,23 @@ AND NOT EXISTS (
 -- name: RemoveObjectsFromFact :exec
 DELETE FROM obj_fact
 WHERE fact_id = $1 AND obj_id = ANY($2::uuid[]);
+
+-- name: GetObjectsForStep :many
+SELECT o.id, o.name, o.description,
+       coalesce(json_agg(json_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema)) FILTER (WHERE t.id IS NOT NULL), '[]') AS tags
+FROM obj o
+JOIN obj_step os ON o.id = os.obj_id
+LEFT JOIN obj_tag ot ON o.id = ot.obj_id
+LEFT JOIN tag t ON ot.tag_id = t.id
+WHERE os.step_id = $1 AND os.deleted_at IS NULL
+  AND ($2::text = '' OR o.name ILIKE '%' || $2 || '%' OR o.description ILIKE '%' || $2 || '%')
+GROUP BY o.id
+ORDER BY o.created_at DESC
+LIMIT $3 OFFSET $4;
+
+-- name: CountObjectsForStep :one
+SELECT COUNT(DISTINCT o.id)
+FROM obj o
+JOIN obj_step os ON o.id = os.obj_id
+WHERE os.step_id = $1 AND os.deleted_at IS NULL
+  AND ($2::text = '' OR o.name ILIKE '%' || $2 || '%' OR o.description ILIKE '%' || $2 || '%');

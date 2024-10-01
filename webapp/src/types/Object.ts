@@ -57,3 +57,10 @@ export interface ObjectTypeValue {
   objectTypeId: any;
   type_values: { [key: string]: any };
 }
+
+export interface ObjectTypeFilter {
+  keyValues: { [key: string]: string };
+  tags: Tag[];
+  objectTypeFields: { [key: string]: any };
+  displayColumns?: string[];
+}

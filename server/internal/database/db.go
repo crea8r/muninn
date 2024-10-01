@@ -48,6 +48,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.countObjectsByOrgIDStmt, err = db.PrepareContext(ctx, countObjectsByOrgID); err != nil {
 		return nil, fmt.Errorf("error preparing query CountObjectsByOrgID: %w", err)
 	}
+	if q.countObjectsByTypeWithAdvancedFilterStmt, err = db.PrepareContext(ctx, countObjectsByTypeWithAdvancedFilter); err != nil {
+		return nil, fmt.Errorf("error preparing query CountObjectsByTypeWithAdvancedFilter: %w", err)
+	}
+	if q.countObjectsForStepStmt, err = db.PrepareContext(ctx, countObjectsForStep); err != nil {
+		return nil, fmt.Errorf("error preparing query CountObjectsForStep: %w", err)
+	}
 	if q.countOngoingTaskStmt, err = db.PrepareContext(ctx, countOngoingTask); err != nil {
 		return nil, fmt.Errorf("error preparing query CountOngoingTask: %w", err)
 	}
@@ -150,6 +156,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getObjectTypeByIDStmt, err = db.PrepareContext(ctx, getObjectTypeByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetObjectTypeByID: %w", err)
 	}
+	if q.getObjectsForStepStmt, err = db.PrepareContext(ctx, getObjectsForStep); err != nil {
+		return nil, fmt.Errorf("error preparing query GetObjectsForStep: %w", err)
+	}
 	if q.getOrgDetailsStmt, err = db.PrepareContext(ctx, getOrgDetails); err != nil {
 		return nil, fmt.Errorf("error preparing query GetOrgDetails: %w", err)
 	}
@@ -179,6 +188,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.listObjectsByTaskIDStmt, err = db.PrepareContext(ctx, listObjectsByTaskID); err != nil {
 		return nil, fmt.Errorf("error preparing query ListObjectsByTaskID: %w", err)
+	}
+	if q.listObjectsByTypeWithAdvancedFilterStmt, err = db.PrepareContext(ctx, listObjectsByTypeWithAdvancedFilter); err != nil {
+		return nil, fmt.Errorf("error preparing query ListObjectsByTypeWithAdvancedFilter: %w", err)
 	}
 	if q.listOrgMembersStmt, err = db.PrepareContext(ctx, listOrgMembers); err != nil {
 		return nil, fmt.Errorf("error preparing query ListOrgMembers: %w", err)
@@ -301,6 +313,16 @@ func (q *Queries) Close() error {
 	if q.countObjectsByOrgIDStmt != nil {
 		if cerr := q.countObjectsByOrgIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing countObjectsByOrgIDStmt: %w", cerr)
+		}
+	}
+	if q.countObjectsByTypeWithAdvancedFilterStmt != nil {
+		if cerr := q.countObjectsByTypeWithAdvancedFilterStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countObjectsByTypeWithAdvancedFilterStmt: %w", cerr)
+		}
+	}
+	if q.countObjectsForStepStmt != nil {
+		if cerr := q.countObjectsForStepStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countObjectsForStepStmt: %w", cerr)
 		}
 	}
 	if q.countOngoingTaskStmt != nil {
@@ -473,6 +495,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getObjectTypeByIDStmt: %w", cerr)
 		}
 	}
+	if q.getObjectsForStepStmt != nil {
+		if cerr := q.getObjectsForStepStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getObjectsForStepStmt: %w", cerr)
+		}
+	}
 	if q.getOrgDetailsStmt != nil {
 		if cerr := q.getOrgDetailsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getOrgDetailsStmt: %w", cerr)
@@ -521,6 +548,11 @@ func (q *Queries) Close() error {
 	if q.listObjectsByTaskIDStmt != nil {
 		if cerr := q.listObjectsByTaskIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listObjectsByTaskIDStmt: %w", cerr)
+		}
+	}
+	if q.listObjectsByTypeWithAdvancedFilterStmt != nil {
+		if cerr := q.listObjectsByTypeWithAdvancedFilterStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listObjectsByTypeWithAdvancedFilterStmt: %w", cerr)
 		}
 	}
 	if q.listOrgMembersStmt != nil {
@@ -690,169 +722,177 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                          DBTX
-	tx                          *sql.Tx
-	addObjectTypeValueStmt      *sql.Stmt
-	addObjectsToFactStmt        *sql.Stmt
-	addObjectsToTaskStmt        *sql.Stmt
-	addTagToObjectStmt          *sql.Stmt
-	countFactsByOrgIDStmt       *sql.Stmt
-	countFunnelsStmt            *sql.Stmt
-	countObjectTypesStmt        *sql.Stmt
-	countObjectsByOrgIDStmt     *sql.Stmt
-	countOngoingTaskStmt        *sql.Stmt
-	countTagsStmt               *sql.Stmt
-	countTasksByObjectIDStmt    *sql.Stmt
-	countTasksByOrgIDStmt       *sql.Stmt
-	countTasksWithFilterStmt    *sql.Stmt
-	countUnseenFeedStmt         *sql.Stmt
-	createCreatorStmt           *sql.Stmt
-	createFactStmt              *sql.Stmt
-	createFeedStmt              *sql.Stmt
-	createFunnelStmt            *sql.Stmt
-	createObjStepStmt           *sql.Stmt
-	createObjectStmt            *sql.Stmt
-	createObjectTypeStmt        *sql.Stmt
-	createOrganizationStmt      *sql.Stmt
-	createStepStmt              *sql.Stmt
-	createTagStmt               *sql.Stmt
-	createTaskStmt              *sql.Stmt
-	deleteCreatorStmt           *sql.Stmt
-	deleteFactStmt              *sql.Stmt
-	deleteFunnelStmt            *sql.Stmt
-	deleteObjectStmt            *sql.Stmt
-	deleteObjectTypeStmt        *sql.Stmt
-	deleteStepStmt              *sql.Stmt
-	deleteTagStmt               *sql.Stmt
-	deleteTaskStmt              *sql.Stmt
-	getCreatorStmt              *sql.Stmt
-	getCreatorByIDStmt          *sql.Stmt
-	getCreatorByUsernameStmt    *sql.Stmt
-	getFactByIDStmt             *sql.Stmt
-	getFeedStmt                 *sql.Stmt
-	getFunnelStmt               *sql.Stmt
-	getObjStepStmt              *sql.Stmt
-	getObjectDetailsStmt        *sql.Stmt
-	getObjectTypeByIDStmt       *sql.Stmt
-	getOrgDetailsStmt           *sql.Stmt
-	getStepStmt                 *sql.Stmt
-	getTagByIDStmt              *sql.Stmt
-	getTaskByIDStmt             *sql.Stmt
-	hardDeleteObjStepStmt       *sql.Stmt
-	listFactsByOrgIDStmt        *sql.Stmt
-	listFunnelsStmt             *sql.Stmt
-	listObjectTypesStmt         *sql.Stmt
-	listObjectsByOrgIDStmt      *sql.Stmt
-	listObjectsByTaskIDStmt     *sql.Stmt
-	listOrgMembersStmt          *sql.Stmt
-	listStepsByFunnelStmt       *sql.Stmt
-	listTagsStmt                *sql.Stmt
-	listTasksByObjectIDStmt     *sql.Stmt
-	listTasksByOrgIDStmt        *sql.Stmt
-	listTasksWithFilterStmt     *sql.Stmt
-	markFeedAsSeenStmt          *sql.Stmt
-	removeObjectTypeValueStmt   *sql.Stmt
-	removeObjectsFromFactStmt   *sql.Stmt
-	removeObjectsFromTaskStmt   *sql.Stmt
-	removeTagFromObjectStmt     *sql.Stmt
-	softDeleteObjStepStmt       *sql.Stmt
-	updateFactStmt              *sql.Stmt
-	updateFunnelStmt            *sql.Stmt
-	updateObjStepStmt           *sql.Stmt
-	updateObjStepSubStatusStmt  *sql.Stmt
-	updateObjectStmt            *sql.Stmt
-	updateObjectTypeStmt        *sql.Stmt
-	updateObjectTypeValueStmt   *sql.Stmt
-	updateOrgDetailsStmt        *sql.Stmt
-	updateStepStmt              *sql.Stmt
-	updateTagStmt               *sql.Stmt
-	updateTaskStmt              *sql.Stmt
-	updateUserPasswordStmt      *sql.Stmt
-	updateUserProfileStmt       *sql.Stmt
-	updateUserRoleAndStatusStmt *sql.Stmt
+	db                                       DBTX
+	tx                                       *sql.Tx
+	addObjectTypeValueStmt                   *sql.Stmt
+	addObjectsToFactStmt                     *sql.Stmt
+	addObjectsToTaskStmt                     *sql.Stmt
+	addTagToObjectStmt                       *sql.Stmt
+	countFactsByOrgIDStmt                    *sql.Stmt
+	countFunnelsStmt                         *sql.Stmt
+	countObjectTypesStmt                     *sql.Stmt
+	countObjectsByOrgIDStmt                  *sql.Stmt
+	countObjectsByTypeWithAdvancedFilterStmt *sql.Stmt
+	countObjectsForStepStmt                  *sql.Stmt
+	countOngoingTaskStmt                     *sql.Stmt
+	countTagsStmt                            *sql.Stmt
+	countTasksByObjectIDStmt                 *sql.Stmt
+	countTasksByOrgIDStmt                    *sql.Stmt
+	countTasksWithFilterStmt                 *sql.Stmt
+	countUnseenFeedStmt                      *sql.Stmt
+	createCreatorStmt                        *sql.Stmt
+	createFactStmt                           *sql.Stmt
+	createFeedStmt                           *sql.Stmt
+	createFunnelStmt                         *sql.Stmt
+	createObjStepStmt                        *sql.Stmt
+	createObjectStmt                         *sql.Stmt
+	createObjectTypeStmt                     *sql.Stmt
+	createOrganizationStmt                   *sql.Stmt
+	createStepStmt                           *sql.Stmt
+	createTagStmt                            *sql.Stmt
+	createTaskStmt                           *sql.Stmt
+	deleteCreatorStmt                        *sql.Stmt
+	deleteFactStmt                           *sql.Stmt
+	deleteFunnelStmt                         *sql.Stmt
+	deleteObjectStmt                         *sql.Stmt
+	deleteObjectTypeStmt                     *sql.Stmt
+	deleteStepStmt                           *sql.Stmt
+	deleteTagStmt                            *sql.Stmt
+	deleteTaskStmt                           *sql.Stmt
+	getCreatorStmt                           *sql.Stmt
+	getCreatorByIDStmt                       *sql.Stmt
+	getCreatorByUsernameStmt                 *sql.Stmt
+	getFactByIDStmt                          *sql.Stmt
+	getFeedStmt                              *sql.Stmt
+	getFunnelStmt                            *sql.Stmt
+	getObjStepStmt                           *sql.Stmt
+	getObjectDetailsStmt                     *sql.Stmt
+	getObjectTypeByIDStmt                    *sql.Stmt
+	getObjectsForStepStmt                    *sql.Stmt
+	getOrgDetailsStmt                        *sql.Stmt
+	getStepStmt                              *sql.Stmt
+	getTagByIDStmt                           *sql.Stmt
+	getTaskByIDStmt                          *sql.Stmt
+	hardDeleteObjStepStmt                    *sql.Stmt
+	listFactsByOrgIDStmt                     *sql.Stmt
+	listFunnelsStmt                          *sql.Stmt
+	listObjectTypesStmt                      *sql.Stmt
+	listObjectsByOrgIDStmt                   *sql.Stmt
+	listObjectsByTaskIDStmt                  *sql.Stmt
+	listObjectsByTypeWithAdvancedFilterStmt  *sql.Stmt
+	listOrgMembersStmt                       *sql.Stmt
+	listStepsByFunnelStmt                    *sql.Stmt
+	listTagsStmt                             *sql.Stmt
+	listTasksByObjectIDStmt                  *sql.Stmt
+	listTasksByOrgIDStmt                     *sql.Stmt
+	listTasksWithFilterStmt                  *sql.Stmt
+	markFeedAsSeenStmt                       *sql.Stmt
+	removeObjectTypeValueStmt                *sql.Stmt
+	removeObjectsFromFactStmt                *sql.Stmt
+	removeObjectsFromTaskStmt                *sql.Stmt
+	removeTagFromObjectStmt                  *sql.Stmt
+	softDeleteObjStepStmt                    *sql.Stmt
+	updateFactStmt                           *sql.Stmt
+	updateFunnelStmt                         *sql.Stmt
+	updateObjStepStmt                        *sql.Stmt
+	updateObjStepSubStatusStmt               *sql.Stmt
+	updateObjectStmt                         *sql.Stmt
+	updateObjectTypeStmt                     *sql.Stmt
+	updateObjectTypeValueStmt                *sql.Stmt
+	updateOrgDetailsStmt                     *sql.Stmt
+	updateStepStmt                           *sql.Stmt
+	updateTagStmt                            *sql.Stmt
+	updateTaskStmt                           *sql.Stmt
+	updateUserPasswordStmt                   *sql.Stmt
+	updateUserProfileStmt                    *sql.Stmt
+	updateUserRoleAndStatusStmt              *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                          tx,
-		tx:                          tx,
-		addObjectTypeValueStmt:      q.addObjectTypeValueStmt,
-		addObjectsToFactStmt:        q.addObjectsToFactStmt,
-		addObjectsToTaskStmt:        q.addObjectsToTaskStmt,
-		addTagToObjectStmt:          q.addTagToObjectStmt,
-		countFactsByOrgIDStmt:       q.countFactsByOrgIDStmt,
-		countFunnelsStmt:            q.countFunnelsStmt,
-		countObjectTypesStmt:        q.countObjectTypesStmt,
-		countObjectsByOrgIDStmt:     q.countObjectsByOrgIDStmt,
-		countOngoingTaskStmt:        q.countOngoingTaskStmt,
-		countTagsStmt:               q.countTagsStmt,
-		countTasksByObjectIDStmt:    q.countTasksByObjectIDStmt,
-		countTasksByOrgIDStmt:       q.countTasksByOrgIDStmt,
-		countTasksWithFilterStmt:    q.countTasksWithFilterStmt,
-		countUnseenFeedStmt:         q.countUnseenFeedStmt,
-		createCreatorStmt:           q.createCreatorStmt,
-		createFactStmt:              q.createFactStmt,
-		createFeedStmt:              q.createFeedStmt,
-		createFunnelStmt:            q.createFunnelStmt,
-		createObjStepStmt:           q.createObjStepStmt,
-		createObjectStmt:            q.createObjectStmt,
-		createObjectTypeStmt:        q.createObjectTypeStmt,
-		createOrganizationStmt:      q.createOrganizationStmt,
-		createStepStmt:              q.createStepStmt,
-		createTagStmt:               q.createTagStmt,
-		createTaskStmt:              q.createTaskStmt,
-		deleteCreatorStmt:           q.deleteCreatorStmt,
-		deleteFactStmt:              q.deleteFactStmt,
-		deleteFunnelStmt:            q.deleteFunnelStmt,
-		deleteObjectStmt:            q.deleteObjectStmt,
-		deleteObjectTypeStmt:        q.deleteObjectTypeStmt,
-		deleteStepStmt:              q.deleteStepStmt,
-		deleteTagStmt:               q.deleteTagStmt,
-		deleteTaskStmt:              q.deleteTaskStmt,
-		getCreatorStmt:              q.getCreatorStmt,
-		getCreatorByIDStmt:          q.getCreatorByIDStmt,
-		getCreatorByUsernameStmt:    q.getCreatorByUsernameStmt,
-		getFactByIDStmt:             q.getFactByIDStmt,
-		getFeedStmt:                 q.getFeedStmt,
-		getFunnelStmt:               q.getFunnelStmt,
-		getObjStepStmt:              q.getObjStepStmt,
-		getObjectDetailsStmt:        q.getObjectDetailsStmt,
-		getObjectTypeByIDStmt:       q.getObjectTypeByIDStmt,
-		getOrgDetailsStmt:           q.getOrgDetailsStmt,
-		getStepStmt:                 q.getStepStmt,
-		getTagByIDStmt:              q.getTagByIDStmt,
-		getTaskByIDStmt:             q.getTaskByIDStmt,
-		hardDeleteObjStepStmt:       q.hardDeleteObjStepStmt,
-		listFactsByOrgIDStmt:        q.listFactsByOrgIDStmt,
-		listFunnelsStmt:             q.listFunnelsStmt,
-		listObjectTypesStmt:         q.listObjectTypesStmt,
-		listObjectsByOrgIDStmt:      q.listObjectsByOrgIDStmt,
-		listObjectsByTaskIDStmt:     q.listObjectsByTaskIDStmt,
-		listOrgMembersStmt:          q.listOrgMembersStmt,
-		listStepsByFunnelStmt:       q.listStepsByFunnelStmt,
-		listTagsStmt:                q.listTagsStmt,
-		listTasksByObjectIDStmt:     q.listTasksByObjectIDStmt,
-		listTasksByOrgIDStmt:        q.listTasksByOrgIDStmt,
-		listTasksWithFilterStmt:     q.listTasksWithFilterStmt,
-		markFeedAsSeenStmt:          q.markFeedAsSeenStmt,
-		removeObjectTypeValueStmt:   q.removeObjectTypeValueStmt,
-		removeObjectsFromFactStmt:   q.removeObjectsFromFactStmt,
-		removeObjectsFromTaskStmt:   q.removeObjectsFromTaskStmt,
-		removeTagFromObjectStmt:     q.removeTagFromObjectStmt,
-		softDeleteObjStepStmt:       q.softDeleteObjStepStmt,
-		updateFactStmt:              q.updateFactStmt,
-		updateFunnelStmt:            q.updateFunnelStmt,
-		updateObjStepStmt:           q.updateObjStepStmt,
-		updateObjStepSubStatusStmt:  q.updateObjStepSubStatusStmt,
-		updateObjectStmt:            q.updateObjectStmt,
-		updateObjectTypeStmt:        q.updateObjectTypeStmt,
-		updateObjectTypeValueStmt:   q.updateObjectTypeValueStmt,
-		updateOrgDetailsStmt:        q.updateOrgDetailsStmt,
-		updateStepStmt:              q.updateStepStmt,
-		updateTagStmt:               q.updateTagStmt,
-		updateTaskStmt:              q.updateTaskStmt,
-		updateUserPasswordStmt:      q.updateUserPasswordStmt,
-		updateUserProfileStmt:       q.updateUserProfileStmt,
-		updateUserRoleAndStatusStmt: q.updateUserRoleAndStatusStmt,
+		db:                                       tx,
+		tx:                                       tx,
+		addObjectTypeValueStmt:                   q.addObjectTypeValueStmt,
+		addObjectsToFactStmt:                     q.addObjectsToFactStmt,
+		addObjectsToTaskStmt:                     q.addObjectsToTaskStmt,
+		addTagToObjectStmt:                       q.addTagToObjectStmt,
+		countFactsByOrgIDStmt:                    q.countFactsByOrgIDStmt,
+		countFunnelsStmt:                         q.countFunnelsStmt,
+		countObjectTypesStmt:                     q.countObjectTypesStmt,
+		countObjectsByOrgIDStmt:                  q.countObjectsByOrgIDStmt,
+		countObjectsByTypeWithAdvancedFilterStmt: q.countObjectsByTypeWithAdvancedFilterStmt,
+		countObjectsForStepStmt:                  q.countObjectsForStepStmt,
+		countOngoingTaskStmt:                     q.countOngoingTaskStmt,
+		countTagsStmt:                            q.countTagsStmt,
+		countTasksByObjectIDStmt:                 q.countTasksByObjectIDStmt,
+		countTasksByOrgIDStmt:                    q.countTasksByOrgIDStmt,
+		countTasksWithFilterStmt:                 q.countTasksWithFilterStmt,
+		countUnseenFeedStmt:                      q.countUnseenFeedStmt,
+		createCreatorStmt:                        q.createCreatorStmt,
+		createFactStmt:                           q.createFactStmt,
+		createFeedStmt:                           q.createFeedStmt,
+		createFunnelStmt:                         q.createFunnelStmt,
+		createObjStepStmt:                        q.createObjStepStmt,
+		createObjectStmt:                         q.createObjectStmt,
+		createObjectTypeStmt:                     q.createObjectTypeStmt,
+		createOrganizationStmt:                   q.createOrganizationStmt,
+		createStepStmt:                           q.createStepStmt,
+		createTagStmt:                            q.createTagStmt,
+		createTaskStmt:                           q.createTaskStmt,
+		deleteCreatorStmt:                        q.deleteCreatorStmt,
+		deleteFactStmt:                           q.deleteFactStmt,
+		deleteFunnelStmt:                         q.deleteFunnelStmt,
+		deleteObjectStmt:                         q.deleteObjectStmt,
+		deleteObjectTypeStmt:                     q.deleteObjectTypeStmt,
+		deleteStepStmt:                           q.deleteStepStmt,
+		deleteTagStmt:                            q.deleteTagStmt,
+		deleteTaskStmt:                           q.deleteTaskStmt,
+		getCreatorStmt:                           q.getCreatorStmt,
+		getCreatorByIDStmt:                       q.getCreatorByIDStmt,
+		getCreatorByUsernameStmt:                 q.getCreatorByUsernameStmt,
+		getFactByIDStmt:                          q.getFactByIDStmt,
+		getFeedStmt:                              q.getFeedStmt,
+		getFunnelStmt:                            q.getFunnelStmt,
+		getObjStepStmt:                           q.getObjStepStmt,
+		getObjectDetailsStmt:                     q.getObjectDetailsStmt,
+		getObjectTypeByIDStmt:                    q.getObjectTypeByIDStmt,
+		getObjectsForStepStmt:                    q.getObjectsForStepStmt,
+		getOrgDetailsStmt:                        q.getOrgDetailsStmt,
+		getStepStmt:                              q.getStepStmt,
+		getTagByIDStmt:                           q.getTagByIDStmt,
+		getTaskByIDStmt:                          q.getTaskByIDStmt,
+		hardDeleteObjStepStmt:                    q.hardDeleteObjStepStmt,
+		listFactsByOrgIDStmt:                     q.listFactsByOrgIDStmt,
+		listFunnelsStmt:                          q.listFunnelsStmt,
+		listObjectTypesStmt:                      q.listObjectTypesStmt,
+		listObjectsByOrgIDStmt:                   q.listObjectsByOrgIDStmt,
+		listObjectsByTaskIDStmt:                  q.listObjectsByTaskIDStmt,
+		listObjectsByTypeWithAdvancedFilterStmt:  q.listObjectsByTypeWithAdvancedFilterStmt,
+		listOrgMembersStmt:                       q.listOrgMembersStmt,
+		listStepsByFunnelStmt:                    q.listStepsByFunnelStmt,
+		listTagsStmt:                             q.listTagsStmt,
+		listTasksByObjectIDStmt:                  q.listTasksByObjectIDStmt,
+		listTasksByOrgIDStmt:                     q.listTasksByOrgIDStmt,
+		listTasksWithFilterStmt:                  q.listTasksWithFilterStmt,
+		markFeedAsSeenStmt:                       q.markFeedAsSeenStmt,
+		removeObjectTypeValueStmt:                q.removeObjectTypeValueStmt,
+		removeObjectsFromFactStmt:                q.removeObjectsFromFactStmt,
+		removeObjectsFromTaskStmt:                q.removeObjectsFromTaskStmt,
+		removeTagFromObjectStmt:                  q.removeTagFromObjectStmt,
+		softDeleteObjStepStmt:                    q.softDeleteObjStepStmt,
+		updateFactStmt:                           q.updateFactStmt,
+		updateFunnelStmt:                         q.updateFunnelStmt,
+		updateObjStepStmt:                        q.updateObjStepStmt,
+		updateObjStepSubStatusStmt:               q.updateObjStepSubStatusStmt,
+		updateObjectStmt:                         q.updateObjectStmt,
+		updateObjectTypeStmt:                     q.updateObjectTypeStmt,
+		updateObjectTypeValueStmt:                q.updateObjectTypeValueStmt,
+		updateOrgDetailsStmt:                     q.updateOrgDetailsStmt,
+		updateStepStmt:                           q.updateStepStmt,
+		updateTagStmt:                            q.updateTagStmt,
+		updateTaskStmt:                           q.updateTaskStmt,
+		updateUserPasswordStmt:                   q.updateUserPasswordStmt,
+		updateUserProfileStmt:                    q.updateUserProfileStmt,
+		updateUserRoleAndStatusStmt:              q.updateUserRoleAndStatusStmt,
 	}
 }

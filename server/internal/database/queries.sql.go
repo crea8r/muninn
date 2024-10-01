@@ -232,6 +232,26 @@ func (q *Queries) CountObjectsByOrgID(ctx context.Context, arg CountObjectsByOrg
 	return count, err
 }
 
+const countObjectsForStep = `-- name: CountObjectsForStep :one
+SELECT COUNT(DISTINCT o.id)
+FROM obj o
+JOIN obj_step os ON o.id = os.obj_id
+WHERE os.step_id = $1 AND os.deleted_at IS NULL
+  AND ($2::text = '' OR o.name ILIKE '%' || $2 || '%' OR o.description ILIKE '%' || $2 || '%')
+`
+
+type CountObjectsForStepParams struct {
+	StepID  uuid.UUID `json:"step_id"`
+	Column2 string    `json:"column_2"`
+}
+
+func (q *Queries) CountObjectsForStep(ctx context.Context, arg CountObjectsForStepParams) (int64, error) {
+	row := q.queryRow(ctx, q.countObjectsForStepStmt, countObjectsForStep, arg.StepID, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countOngoingTask = `-- name: CountOngoingTask :one
 SELECT COUNT(*) c FROM task
 WHERE assigned_id = $1 OR creator_id = $1 AND status in ('todo', 'doing')
@@ -1239,6 +1259,67 @@ func (q *Queries) GetObjectTypeByID(ctx context.Context, id uuid.UUID) (ObjType,
 		&i.FieldsSearch,
 	)
 	return i, err
+}
+
+const getObjectsForStep = `-- name: GetObjectsForStep :many
+SELECT o.id, o.name, o.description,
+       coalesce(json_agg(json_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema)) FILTER (WHERE t.id IS NOT NULL), '[]') AS tags
+FROM obj o
+JOIN obj_step os ON o.id = os.obj_id
+LEFT JOIN obj_tag ot ON o.id = ot.obj_id
+LEFT JOIN tag t ON ot.tag_id = t.id
+WHERE os.step_id = $1 AND os.deleted_at IS NULL
+  AND ($2::text = '' OR o.name ILIKE '%' || $2 || '%' OR o.description ILIKE '%' || $2 || '%')
+GROUP BY o.id
+ORDER BY o.created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type GetObjectsForStepParams struct {
+	StepID  uuid.UUID `json:"step_id"`
+	Column2 string    `json:"column_2"`
+	Limit   int32     `json:"limit"`
+	Offset  int32     `json:"offset"`
+}
+
+type GetObjectsForStepRow struct {
+	ID          uuid.UUID   `json:"id"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Tags        interface{} `json:"tags"`
+}
+
+func (q *Queries) GetObjectsForStep(ctx context.Context, arg GetObjectsForStepParams) ([]GetObjectsForStepRow, error) {
+	rows, err := q.query(ctx, q.getObjectsForStepStmt, getObjectsForStep,
+		arg.StepID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetObjectsForStepRow
+	for rows.Next() {
+		var i GetObjectsForStepRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Tags,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getOrgDetails = `-- name: GetOrgDetails :one

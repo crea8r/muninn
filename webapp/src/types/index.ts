@@ -13,6 +13,7 @@ import {
   NewObject,
   UpdateObject,
   StepAndFunnel,
+  ObjectTypeFilter,
 } from './Object';
 import { TaskStatus, Task, NewTask, UpdateTask } from './Task';
 import { Tag } from './Tag';
@@ -28,6 +29,7 @@ export type {
   Object,
   ObjectType,
   ObjectTypeValue,
+  ObjectTypeFilter,
   NewObject,
   Task,
   NewTask,
