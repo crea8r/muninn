@@ -18,6 +18,7 @@ Restart=always
 RestartSec=3
 User=root
 Environment=PORT=8080
+EnvironmentFile=/root/deploy/muninn/.env
 
 [Install]
 WantedBy=multi-user.target
