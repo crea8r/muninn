@@ -70,6 +70,7 @@ type Querier interface {
 	GetTagByID(ctx context.Context, id uuid.UUID) (Tag, error)
 	GetTaskByID(ctx context.Context, id uuid.UUID) (GetTaskByIDRow, error)
 	HardDeleteObjStep(ctx context.Context, id uuid.UUID) error
+	HealthCheck(ctx context.Context) (int32, error)
 	ListCreatorListsByCreatorID(ctx context.Context, creatorID uuid.UUID) ([]ListCreatorListsByCreatorIDRow, error)
 	ListFactsByOrgID(ctx context.Context, arg ListFactsByOrgIDParams) ([]ListFactsByOrgIDRow, error)
 	ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]ListFunnelsRow, error)

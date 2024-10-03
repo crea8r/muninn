@@ -1,7 +1,7 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Enable trigram extension for fuzzy search
-CREATE EXTENSION pg_trgm;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Drop existing tables if they exist
 DROP TABLE IF EXISTS obj_fact CASCADE;

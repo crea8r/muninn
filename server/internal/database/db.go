@@ -192,6 +192,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.hardDeleteObjStepStmt, err = db.PrepareContext(ctx, hardDeleteObjStep); err != nil {
 		return nil, fmt.Errorf("error preparing query HardDeleteObjStep: %w", err)
 	}
+	if q.healthCheckStmt, err = db.PrepareContext(ctx, healthCheck); err != nil {
+		return nil, fmt.Errorf("error preparing query HealthCheck: %w", err)
+	}
 	if q.listCreatorListsByCreatorIDStmt, err = db.PrepareContext(ctx, listCreatorListsByCreatorID); err != nil {
 		return nil, fmt.Errorf("error preparing query ListCreatorListsByCreatorID: %w", err)
 	}
@@ -585,6 +588,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing hardDeleteObjStepStmt: %w", cerr)
 		}
 	}
+	if q.healthCheckStmt != nil {
+		if cerr := q.healthCheckStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing healthCheckStmt: %w", cerr)
+		}
+	}
 	if q.listCreatorListsByCreatorIDStmt != nil {
 		if cerr := q.listCreatorListsByCreatorIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listCreatorListsByCreatorIDStmt: %w", cerr)
@@ -860,6 +868,7 @@ type Queries struct {
 	getTagByIDStmt                           *sql.Stmt
 	getTaskByIDStmt                          *sql.Stmt
 	hardDeleteObjStepStmt                    *sql.Stmt
+	healthCheckStmt                          *sql.Stmt
 	listCreatorListsByCreatorIDStmt          *sql.Stmt
 	listFactsByOrgIDStmt                     *sql.Stmt
 	listFunnelsStmt                          *sql.Stmt
@@ -958,6 +967,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getTagByIDStmt:                           q.getTagByIDStmt,
 		getTaskByIDStmt:                          q.getTaskByIDStmt,
 		hardDeleteObjStepStmt:                    q.hardDeleteObjStepStmt,
+		healthCheckStmt:                          q.healthCheckStmt,
 		listCreatorListsByCreatorIDStmt:          q.listCreatorListsByCreatorIDStmt,
 		listFactsByOrgIDStmt:                     q.listFactsByOrgIDStmt,
 		listFunnelsStmt:                          q.listFunnelsStmt,

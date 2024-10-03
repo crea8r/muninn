@@ -1,15 +1,16 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
+
+	"github.com/crea8r/muninn/server/internal/database"
 )
 
-func HealthCheck(db *sql.DB) http.HandlerFunc {
+func HealthCheck(db *database.Queries) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Check if the database connection is alive
-		err := db.QueryRow("SELECT 1").Scan(new(int))
+		_,err := db.HealthCheck(r.Context())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"status": "error", "message": "Database connection failed"})
