@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { ChakraProvider, Flex, CSSReset, extendTheme } from '@chakra-ui/react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
-import { Header, Sidebar, MainContent } from './components/layout/';
+import { Header, Sidebar, MainContent } from './components/layouts/';
 import LandingPage from './pages/LandingPage';
 import {
   AccountPage,
