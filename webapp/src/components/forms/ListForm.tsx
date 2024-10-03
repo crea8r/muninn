@@ -7,6 +7,7 @@ import {
   Input,
   Textarea,
 } from '@chakra-ui/react';
+import MarkdownEditor from '../mardown/MardownEditor';
 
 interface List {
   id: number;
@@ -43,9 +44,10 @@ const ListForm: React.FC<{
       </FormControl>
       <FormControl>
         <FormLabel>Description</FormLabel>
-        <Textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+        <MarkdownEditor
+          initialValue={description}
+          onChange={setDescription}
+          filters={[]}
         />
       </FormControl>
       <FormControl>

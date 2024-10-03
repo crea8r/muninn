@@ -14,7 +14,7 @@ const SettingsPage: React.FC = () => {
   const settingsSections = [
     { name: 'Object Types', path: '/settings/object-types' },
     { name: 'Funnels', path: '/settings/funnels' },
-    { name: 'Lists', path: '/settings/lists' },
+    { name: 'Templates', path: '/settings/templates' },
     { name: 'Tags', path: '/settings/tags' },
   ];
 

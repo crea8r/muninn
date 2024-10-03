@@ -392,13 +392,6 @@ func (h *ObjectHandler) ListObjectsByTypeWithAdvancedFilter(w http.ResponseWrite
 		http.Error(w, "Failed to fetch objects", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(database.CountObjectsByTypeWithAdvancedFilterParams{
-		TypeID:     typeID,
-		OrgID:      orgID,
-		Column3: typeValuesFilter,
-		Column4:       filterParams.Tags,
-		Column5:     filterParams.Search,
-	})
 	// Count total objects
 	totalCount, err := h.DB.CountObjectsByTypeWithAdvancedFilter(ctx, database.CountObjectsByTypeWithAdvancedFilterParams{
 		TypeID:     typeID,
@@ -411,7 +404,6 @@ func (h *ObjectHandler) ListObjectsByTypeWithAdvancedFilter(w http.ResponseWrite
 		http.Error(w, "Failed to count objects", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("total count:", totalCount);
 
 	// convert database.ListObjectsByTypeWithAdvancedFilterRow to ObjectWithTagsAndTypeValues
 	var objectsWithTagsAndTypeValues []ObjectWithTagsAndTypeValues

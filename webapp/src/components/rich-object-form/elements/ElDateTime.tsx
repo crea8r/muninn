@@ -6,7 +6,7 @@ export const ElDateTime: React.FC<MasterFormElementProps> = (
   props: MasterFormElementProps
 ) => {
   const { field, value, onChange, dataType } = props;
-  return (
+  return onChange ? (
     <FormControl key={field}>
       <FormLabel>{field}</FormLabel>
       <Input value={value} onChange={(e) => onChange(e.target.value)} />
@@ -14,5 +14,7 @@ export const ElDateTime: React.FC<MasterFormElementProps> = (
         {dataType}
       </Text>
     </FormControl>
+  ) : (
+    <Text>{value}</Text>
   );
 };

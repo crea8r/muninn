@@ -1,6 +1,6 @@
 import { Badge, Box, HStack, Text } from '@chakra-ui/react';
 import { Task, TaskStatus } from 'src/types';
-import { RichTextViewer } from './rich-text';
+import MarkdownDisplay from './mardown/MarkdownDisplay';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -41,7 +41,7 @@ const TaskItem = ({ task, handleClick }: TaskItemProps) => {
           </Text>
         )}
       </HStack>
-      <RichTextViewer content={task.content} />
+      <MarkdownDisplay content={task.content} />
       {task.assignedName && (
         <Text fontSize='sm' color='gray.500' mt={2}>
           Assigned to: {task.assignedName}

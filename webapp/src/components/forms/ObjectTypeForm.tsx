@@ -11,7 +11,6 @@ import {
   FormControl,
   FormLabel,
   Input,
-  Textarea,
   Table,
   Thead,
   Tbody,
@@ -20,9 +19,18 @@ import {
   Td,
   Select,
   IconButton,
+  InputGroup,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  InputLeftElement,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import { ObjectType } from 'src/types';
+import MarkdownEditor from '../mardown/MardownEditor';
+import { IconType } from 'react-icons';
+import FaIconList from '../FaIconList';
 
 // Define the props for the ObjectTypeForm component
 interface ObjectTypeFormProps {
@@ -47,6 +55,7 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
   // State to hold the form data
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [selectedIcon, setSelectedIcon] = useState<string>('file');
   const [fields, setFields] = useState<Field[]>([]);
 
   // Effect to populate form when editing an existing ObjectType
@@ -93,6 +102,7 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
   const handleSave = () => {
     const objectType: ObjectType = {
       id: initialData?.id || null, // Use existing ID if editing, otherwise null for new ObjectType
+      icon: selectedIcon,
       name,
       description,
       fields: Object.fromEntries(
@@ -102,7 +112,6 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
     onSave(objectType);
     onClose();
   };
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} size='xl'>
       <ModalOverlay />
@@ -112,15 +121,42 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          <FormControl isRequired mb={4}>
+          <FormControl isRequired mb={4} zIndex={'9999'}>
             <FormLabel>Name</FormLabel>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            <InputGroup>
+              <InputLeftElement>
+                <Menu matchWidth={true}>
+                  <MenuButton
+                    as={IconButton}
+                    aria-label='Icon'
+                    icon={FaIconList[selectedIcon as keyof IconType]}
+                    variant={'outline'}
+                    border={'none'}
+                  />
+
+                  <MenuList maxHeight={'200px'} overflowY='auto' minW={'50px'}>
+                    {window.Object.keys(FaIconList).map((icon) => (
+                      <MenuItem
+                        key={icon}
+                        onClick={() => setSelectedIcon(icon)}
+                        display={'flex'}
+                        alignItems={'center'}
+                        width={'50px'}
+                      >
+                        {FaIconList[icon as keyof IconType]}
+                      </MenuItem>
+                    ))}
+                  </MenuList>
+                </Menu>
+              </InputLeftElement>
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
+            </InputGroup>
           </FormControl>
           <FormControl mb={4}>
             <FormLabel>Description</FormLabel>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+            <MarkdownEditor
+              initialValue={description}
+              onChange={(c: string) => setDescription(c)}
             />
           </FormControl>
           <FormControl>
@@ -155,9 +191,11 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
                           )
                         }
                       >
+                        {/* Use the rich-object-form ObjectType */}
                         <option value='string'>String</option>
                         <option value='number'>Number</option>
                         <option value='datetime'>Datetime</option>
+                        <option value='image'>Image</option>
                       </Select>
                     </Td>
                     <Td>

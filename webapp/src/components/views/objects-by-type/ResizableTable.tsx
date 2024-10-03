@@ -10,9 +10,12 @@ import {
 } from '@chakra-ui/react';
 import { ObjectWithTags } from 'src/api/objType';
 import dayjs from 'dayjs';
-import { ObjectTypeFilter } from 'src/types';
+import { ObjectType, ObjectTypeFilter } from 'src/types';
+import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
+import { MasterFormElement } from 'src/components/rich-object-form/MasterFormElement';
 
 interface ResizableTableProps {
+  objectType: ObjectType;
   objects: ObjectWithTags[];
   filter: ObjectTypeFilter;
   totalCount: number;
@@ -23,6 +26,7 @@ interface ResizableTableProps {
 }
 
 const ResizableTable: React.FC<ResizableTableProps> = ({
+  objectType,
   objects,
   filter,
   totalCount,
@@ -155,7 +159,7 @@ const ResizableTable: React.FC<ResizableTableProps> = ({
                 borderStyle='solid'
                 borderColor={'gray.300'}
               >
-                <Text>{obj.description}</Text>
+                <MarkdownDisplay content={obj.description} />
                 {obj.tags?.map((tag: any) => (
                   <ChakraTag
                     key={tag.id}
@@ -189,7 +193,13 @@ const ResizableTable: React.FC<ResizableTableProps> = ({
                   borderStyle='solid'
                   borderColor={'gray.300'}
                 >
-                  {obj.typeValues?.[field]}
+                  {/* {obj.typeValues?.[field]} , {objectType.fields[field]} */}
+                  <MasterFormElement
+                    key={field}
+                    field={field}
+                    dataType={objectType.fields[field]}
+                    value={obj.typeValues?.[field]}
+                  />
                 </Box>
               ))}
             </Flex>

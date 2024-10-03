@@ -1,5 +1,5 @@
 import { axiosWithAuth } from './utils';
-import { OrgMemberProfile, OrgProfile } from 'src/types/Org';
+import { OrgProfile } from 'src/types/Org';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -24,7 +24,7 @@ type AddNewOrgMemberProps = {
   username: string;
   role: string;
   password: string;
-  profile: OrgMemberProfile;
+  profile: any;
 };
 
 export const addNewOrgMember = async (props: AddNewOrgMemberProps) => {
@@ -58,10 +58,7 @@ export const updateUserPassword = async (userID: string, password: string) => {
   return data;
 };
 
-export const updateUserProfile = async (
-  userID: string,
-  profile: OrgMemberProfile
-) => {
+export const updateUserProfile = async (userID: string, profile: any) => {
   const { data } = await axiosWithAuth().put(
     `${API_URL}/org/members/${userID}/profile`,
     {

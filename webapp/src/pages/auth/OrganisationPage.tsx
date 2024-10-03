@@ -35,7 +35,7 @@ import {
 import BreadcrumbComponent from 'src/components/Breadcrumb';
 import { addNewOrgMember, listOrgMembers, updateUserPassword } from 'src/api';
 import authService from 'src/services/authService';
-import { OrgMember, OrgMemberProfile } from 'src/types/Org';
+import { OrgMember } from 'src/types/Org';
 import { ChevronDownIcon, CopyIcon } from '@chakra-ui/icons';
 import { normalise, generateRandomPassword } from 'src/utils';
 
@@ -59,7 +59,7 @@ const OrganisationPage: React.FC = () => {
   }: {
     username: string;
     password: string;
-    profile: OrgMemberProfile;
+    profile: any;
   }) => {
     await addNewOrgMember({ username, password, role: 'member', profile });
     setForceUpdate(forceUpdate + 1);
@@ -173,11 +173,7 @@ const OrganisationPage: React.FC = () => {
 type AddMemberDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  submit: (props: {
-    username: string;
-    password: string;
-    profile: OrgMemberProfile;
-  }) => void;
+  submit: (props: { username: string; password: string; profile: any }) => void;
 };
 
 const AddMemberDialog = ({ isOpen, onClose, submit }: AddMemberDialogProps) => {

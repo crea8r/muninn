@@ -25,6 +25,7 @@ func (h *ObjectTypeHandler) CreateObjectType(w http.ResponseWriter, r *http.Requ
 		Name        string          `json:"name"`
 		Description string          `json:"description"`
 		Fields      json.RawMessage `json:"fields"`
+		Icon				string          `json:"icon"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -44,6 +45,7 @@ func (h *ObjectTypeHandler) CreateObjectType(w http.ResponseWriter, r *http.Requ
 		Description: req.Description,
 		Fields:      req.Fields,
 		CreatorID:   creator.ID,
+		Icon:				 req.Icon,
 	})
 
 	if err != nil {
@@ -65,6 +67,7 @@ func (h *ObjectTypeHandler) UpdateObjectType(w http.ResponseWriter, r *http.Requ
 		Name        string          `json:"name"`
 		Description string          `json:"description"`
 		Fields      json.RawMessage `json:"fields"`
+		Icon 			  string          `json:"icon"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -77,6 +80,7 @@ func (h *ObjectTypeHandler) UpdateObjectType(w http.ResponseWriter, r *http.Requ
 		Name:        req.Name,
 		Description: req.Description,
 		Fields:      req.Fields,
+		Icon:				 req.Icon,
 	})
 
 	if err != nil {

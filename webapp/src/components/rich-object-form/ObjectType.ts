@@ -1,5 +1,7 @@
 import { ElString } from './elements/ElString';
 import { ElDateTime } from './elements/ElDateTime';
+import { image } from '@uiw/react-md-editor';
+import { ElImage } from './elements/ElImage';
 // obj_type_value.type_values: key -> value
 // obj_type.fields: field name -> field type and its configuration
 // e.g:{
@@ -29,13 +31,14 @@ export const ObjectTypeElement: any = {
   phone: ElString,
   email: ElString,
   datetime: ElString,
+  image: ElImage,
 };
 
 export type MasterFormElementProps = {
   field: string;
   dataType: any;
   value: string;
-  onChange: (value: any) => void;
+  onChange?: (value: any) => void;
 };
 
 // datetime: {

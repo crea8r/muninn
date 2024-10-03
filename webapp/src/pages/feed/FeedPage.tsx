@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, VStack, Heading, Text, Divider, HStack } from '@chakra-ui/react';
+import { Box, VStack, Heading, Text, Divider } from '@chakra-ui/react';
 import { getFeed } from 'src/api/feed';
 import { FeedItem } from 'src/types/Feed';
 import dayjs from 'dayjs';

@@ -50,6 +50,7 @@ export interface ObjectType {
   name: string;
   description?: string;
   fields: { [key: string]: any };
+  icon: string;
 }
 
 export interface ObjectTypeValue {

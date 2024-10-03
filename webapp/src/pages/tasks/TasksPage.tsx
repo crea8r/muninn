@@ -9,17 +9,17 @@ import {
   Badge,
   useDisclosure,
   Flex,
-  Select,
   Input,
   InputGroup,
   InputLeftElement,
   Spinner,
+  Checkbox,
+  CheckboxGroup,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import BreadcrumbComponent from '../../components/Breadcrumb';
 import { TaskForm } from '../../components/forms';
 import { Task, NewTask, TaskStatus, UpdateTask } from '../../types/Task';
-import { RichTextViewer } from '../../components/rich-text';
 import { createTask, listTasks, updateTask } from 'src/api';
 import authService from 'src/services/authService';
 import dayjs from 'dayjs';
@@ -41,7 +41,10 @@ const TasksPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<TaskStatus[]>([
+    TaskStatus.TODO,
+    TaskStatus.DOING,
+  ]);
   const [isLoading, setIsLoading] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [forceUpdate, setForceUpdate] = useState(0);
@@ -51,7 +54,7 @@ const TasksPage: React.FC = () => {
   }, [forceUpdate, currentPage, searchQuery, statusFilter]);
 
   const fetchTasks = async () => {
-    const status = statusFilter === 'all' ? '' : statusFilter.toString();
+    const status = statusFilter.join(',');
     const options = {
       page: currentPage,
       pageSize: ITEMS_PER_PAGE,
@@ -95,10 +98,8 @@ const TasksPage: React.FC = () => {
     setCurrentPage(1); // Reset to first page on new search
   };
 
-  const handleStatusFilterChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    setStatusFilter(e.target.value as TaskStatus | 'all');
+  const handleStatusFilterChange = (values: TaskStatus[]) => {
+    setStatusFilter(values);
     setCurrentPage(1); // Reset to first page on new filter
   };
 
@@ -123,25 +124,30 @@ const TasksPage: React.FC = () => {
             New Task
           </Button>
         </HStack>
-        <HStack spacing={4} mb={4}>
-          <InputGroup>
-            <InputLeftElement pointerEvents='none'>
-              <SearchIcon color='gray.300' />
-            </InputLeftElement>
-            <Input
-              placeholder='Search tasks...'
-              value={searchQuery}
-              onChange={handleSearchChange}
-            />
-          </InputGroup>
-          <Select value={statusFilter} onChange={handleStatusFilterChange}>
-            <option value='all'>All Statuses</option>
-            {Object.values(TaskStatus).map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </Select>
+        <InputGroup>
+          <InputLeftElement pointerEvents='none'>
+            <SearchIcon color='gray.300' />
+          </InputLeftElement>
+          <Input
+            placeholder='Search tasks...'
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
+        </InputGroup>
+        <HStack alignItems={'center'} my={2} pl={2}>
+          <CheckboxGroup
+            colorScheme='blue'
+            defaultValue={[TaskStatus.TODO, TaskStatus.DOING]}
+            onChange={handleStatusFilterChange}
+          >
+            <HStack alignItems='flex-start'>
+              {Object.values(TaskStatus).map((status) => (
+                <Checkbox key={status} value={status}>
+                  {status}
+                </Checkbox>
+              ))}
+            </HStack>
+          </CheckboxGroup>
         </HStack>
       </Box>
 
@@ -153,15 +159,13 @@ const TasksPage: React.FC = () => {
         ) : (
           <VStack spacing={4} align='stretch'>
             {tasks.length > 0 ? (
-              tasks.map((task) => {
-                return (
-                  <TaskItem
-                    key={task.id}
-                    task={task}
-                    handleClick={handleEditTask}
-                  />
-                );
-              })
+              tasks.map((task) => (
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  handleClick={handleEditTask}
+                />
+              ))
             ) : (
               <Flex justify='center' align='center' height='100%'>
                 <Box>No tasks found</Box>
@@ -189,17 +193,6 @@ const TasksPage: React.FC = () => {
           >
             Previous
           </Button>
-          <Select
-            value={currentPage}
-            onChange={(e) => setCurrentPage(Number(e.target.value))}
-            disabled={isLoading}
-          >
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <option key={page} value={page}>
-                Page {page}
-              </option>
-            ))}
-          </Select>
           <Button
             onClick={() =>
               setCurrentPage((prev) => Math.min(prev + 1, totalPages))

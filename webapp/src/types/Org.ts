@@ -1,12 +1,7 @@
-export interface OrgMemberProfile {
-  avatar: string;
-  fullname: string;
-  email: string;
-}
-
 export interface OrgProfile {
   avatar: string;
   email: string;
+  views?: string[];
 }
 
 export interface Org {
@@ -17,7 +12,7 @@ export interface Org {
 
 export interface OrgMember {
   id: string;
-  profile: OrgMemberProfile;
+  profile: any;
   role: string;
   username: string;
   active: boolean;

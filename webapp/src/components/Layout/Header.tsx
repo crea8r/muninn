@@ -42,6 +42,9 @@ const Header: React.FC = () => {
       }
     );
   };
+  const name = details?.profile?.fullname
+    ? details?.profile?.fullname
+    : details?.name;
   return (
     <Box as='header' bg='white' boxShadow='sm' py={4}>
       <Flex
@@ -70,9 +73,12 @@ const Header: React.FC = () => {
         </Flex>
         <Menu>
           <MenuButton paddingRight='16px'>
-            <Avatar size='sm' />
+            <Avatar size='sm' title={name} />
           </MenuButton>
           <MenuList>
+            <Box pl={3} pb={1} borderBottom={'1px solid #ccc'}>
+              {name}
+            </Box>
             <MenuItem onClick={() => history.push('/account')}>
               Account
             </MenuItem>

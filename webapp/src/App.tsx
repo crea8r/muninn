@@ -28,7 +28,7 @@ import { GlobalProvider } from './contexts/GlobalContext';
 import { SpotLightProvider } from './contexts/SpotLightContext';
 import SpotLight from './components/SpotLight';
 import GlobalImageFallback from 'src/components/GlobalImageFallback';
-import FunnelBoard from './pages/settings/funnel-board/FunnelBoard';
+import FunnelBoard from './pages/settings/FunnelBoard';
 import ListObjectByTypesPage from './pages/settings/ListObjectByTypesPage';
 
 const theme = extendTheme({
@@ -142,7 +142,7 @@ const App: React.FC = () => {
                           />
                           <ProtectedRoute
                             exact
-                            path='/settings/lists'
+                            path='/settings/templates'
                             component={ListsPage}
                           />
                           <ProtectedRoute

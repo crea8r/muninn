@@ -639,9 +639,9 @@ func (q *Queries) CreateObject(ctx context.Context, arg CreateObjectParams) (Obj
 }
 
 const createObjectType = `-- name: CreateObjectType :one
-INSERT INTO obj_type (name, description, fields, creator_id)
-VALUES ($1, $2, $3, $4)
-RETURNING id, name, description, fields, creator_id, created_at, deleted_at, fields_search
+INSERT INTO obj_type (name, description, fields, creator_id, icon)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, name, icon, description, fields, creator_id, created_at, deleted_at, fields_search
 `
 
 type CreateObjectTypeParams struct {
@@ -649,6 +649,7 @@ type CreateObjectTypeParams struct {
 	Description string          `json:"description"`
 	Fields      json.RawMessage `json:"fields"`
 	CreatorID   uuid.UUID       `json:"creator_id"`
+	Icon        string          `json:"icon"`
 }
 
 func (q *Queries) CreateObjectType(ctx context.Context, arg CreateObjectTypeParams) (ObjType, error) {
@@ -657,11 +658,13 @@ func (q *Queries) CreateObjectType(ctx context.Context, arg CreateObjectTypePara
 		arg.Description,
 		arg.Fields,
 		arg.CreatorID,
+		arg.Icon,
 	)
 	var i ObjType
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Icon,
 		&i.Description,
 		&i.Fields,
 		&i.CreatorID,
@@ -1147,6 +1150,7 @@ WITH object_data AS (
                'id', otv.id,
                'objectTypeId', ot.id,
                'objectTypeName', ot.name,
+               'objectTypeIcon', ot.icon,
                'objectTypeFields', ot.fields,
                'type_values', otv.type_values
            )) FILTER (WHERE otv.id IS NOT NULL), '[]')
@@ -1240,7 +1244,7 @@ func (q *Queries) GetObjectDetails(ctx context.Context, arg GetObjectDetailsPara
 }
 
 const getObjectTypeByID = `-- name: GetObjectTypeByID :one
-SELECT id, name, description, fields, creator_id, created_at, deleted_at, fields_search FROM obj_type
+SELECT id, name, icon, description, fields, creator_id, created_at, deleted_at, fields_search FROM obj_type
 WHERE id = $1 AND deleted_at IS NULL
 LIMIT 1
 `
@@ -1251,6 +1255,7 @@ func (q *Queries) GetObjectTypeByID(ctx context.Context, id uuid.UUID) (ObjType,
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Icon,
 		&i.Description,
 		&i.Fields,
 		&i.CreatorID,
@@ -1632,7 +1637,7 @@ func (q *Queries) ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]Lis
 }
 
 const listObjectTypes = `-- name: ListObjectTypes :many
-SELECT o.id, o.name, o.description, o.fields, o.created_at
+SELECT o.id, o.name, o.icon, o.description, o.fields, o.created_at
 FROM obj_type o
 JOIN creator c ON o.creator_id = c.id
 WHERE c.org_id = $1
@@ -1655,6 +1660,7 @@ type ListObjectTypesParams struct {
 type ListObjectTypesRow struct {
 	ID          uuid.UUID       `json:"id"`
 	Name        string          `json:"name"`
+	Icon        string          `json:"icon"`
 	Description string          `json:"description"`
 	Fields      json.RawMessage `json:"fields"`
 	CreatedAt   time.Time       `json:"created_at"`
@@ -1677,6 +1683,7 @@ func (q *Queries) ListObjectTypes(ctx context.Context, arg ListObjectTypesParams
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
+			&i.Icon,
 			&i.Description,
 			&i.Fields,
 			&i.CreatedAt,
@@ -2558,9 +2565,9 @@ func (q *Queries) UpdateObject(ctx context.Context, arg UpdateObjectParams) (Obj
 
 const updateObjectType = `-- name: UpdateObjectType :one
 UPDATE obj_type
-SET name = $2, description = $3, fields = $4
+SET name = $2, description = $3, fields = $4, icon = $5
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, name, description, fields, creator_id, created_at, deleted_at, fields_search
+RETURNING id, name, icon, description, fields, creator_id, created_at, deleted_at, fields_search
 `
 
 type UpdateObjectTypeParams struct {
@@ -2568,6 +2575,7 @@ type UpdateObjectTypeParams struct {
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
 	Fields      json.RawMessage `json:"fields"`
+	Icon        string          `json:"icon"`
 }
 
 func (q *Queries) UpdateObjectType(ctx context.Context, arg UpdateObjectTypeParams) (ObjType, error) {
@@ -2576,11 +2584,13 @@ func (q *Queries) UpdateObjectType(ctx context.Context, arg UpdateObjectTypePara
 		arg.Name,
 		arg.Description,
 		arg.Fields,
+		arg.Icon,
 	)
 	var i ObjType
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Icon,
 		&i.Description,
 		&i.Fields,
 		&i.CreatorID,

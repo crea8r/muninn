@@ -18,6 +18,8 @@ import {
 } from '@chakra-ui/react';
 import { ObjectType, ObjectTypeValue } from 'src/types/';
 import { MasterFormElement } from 'src/components/rich-object-form/MasterFormElement';
+import FaIconList from 'src/components/FaIconList';
+import { IconType } from 'react-icons';
 
 interface ObjectTypeCardProps {
   objectTypeValue: ObjectTypeValue;
@@ -82,7 +84,10 @@ const ObjectTypeCard: React.FC<ObjectTypeCardProps> = ({
         onClick={onOpen}
         cursor='pointer'
       >
-        <Heading size='sm'>{objectType?.name || 'Unknown Type'}</Heading>
+        <Heading size='sm' display={'flex'} alignItems={'center'}>
+          {FaIconList[objectType?.icon as keyof IconType]}{' '}
+          <Text ml={1}>{objectType?.name || 'Unknown Type'}</Text>
+        </Heading>
         <Text noOfLines={3}>{cardContent}</Text>
       </Box>
 

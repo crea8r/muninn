@@ -11,7 +11,6 @@ import {
   VStack,
   HStack,
   Input,
-  Textarea,
   Accordion,
   AccordionItem,
   AccordionButton,
@@ -47,6 +46,7 @@ import {
   EditIcon,
 } from '@chakra-ui/icons';
 import { Funnel, FunnelStep, FunnelUpdate } from 'src/types';
+import MarkdownEditor from 'src/components/mardown/MardownEditor';
 
 interface EditFunnelFormProps {
   isOpen: boolean;
@@ -232,28 +232,34 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
         <InfoIcon />
         <Text>Definition</Text>
       </HStack>
-      <Textarea
-        placeholder='Step Definition'
-        value={step.definition}
-        onChange={(e) => handleStepChange(index, 'definition', e.target.value)}
+      <MarkdownEditor
+        initialValue={step.definition}
+        onChange={(content: string) =>
+          handleStepChange(index, 'definition', content)
+        }
+        filters={[]}
       />
       <HStack>
         <StarIcon />
         <Text>Example</Text>
       </HStack>
-      <Textarea
-        placeholder='Step Example'
-        value={step.example}
-        onChange={(e) => handleStepChange(index, 'example', e.target.value)}
+      <MarkdownEditor
+        initialValue={step.example}
+        onChange={(content: string) =>
+          handleStepChange(index, 'example', content)
+        }
+        filters={[]}
       />
       <HStack>
         <ArrowForwardIcon />
         <Text>Action</Text>
       </HStack>
-      <Textarea
-        placeholder='Step Action'
-        value={step.action}
-        onChange={(e) => handleStepChange(index, 'action', e.target.value)}
+      <MarkdownEditor
+        initialValue={step.action}
+        onChange={(content: string) =>
+          handleStepChange(index, 'action', content)
+        }
+        filters={[]}
       />
       <HStack justifyContent='space-between'>
         <HStack>
@@ -521,10 +527,10 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
-            <Textarea
-              placeholder='Funnel Description'
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+            <MarkdownEditor
+              initialValue={description}
+              onChange={setDescription}
+              filters={[]}
             />
             <Stepper index={currentPhase}>
               {['Redesign Steps', 'Map Steps', 'Preview Changes'].map(

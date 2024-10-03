@@ -19,16 +19,16 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import { CalendarIcon, EditIcon } from '@chakra-ui/icons';
-import { RichTextEditor } from '../rich-text/';
+import MarkdownEditor from 'src/components/mardown/MardownEditor';
 import { Fact, Object } from 'src/types/';
 import { SpotLightFilter } from '../SpotLight';
-import { getInitialValueFromMentionItem } from '../rich-text/utils';
+import { getInitialValueFromMentionItem } from 'src/components/mardown/utils';
 import { FactToUpdate, FactToCreate } from 'src/api/fact';
 import dayjs from 'dayjs';
 
 interface FactFormProps {
   onSave: (fact: FactToUpdate | FactToCreate) => void;
-  object: Object;
+  requireObject?: Object;
   fact?: Fact;
 }
 
@@ -42,40 +42,42 @@ interface FactFormData {
 
 const parseInitialFact = (
   initialFact: Fact | undefined,
-  object: Object
-): FactFormData => {
-  return initialFact
-    ? {
-        id: initialFact.id,
-        text: initialFact.text,
-        happenedAt: initialFact.happenedAt,
-        location: initialFact.location,
-        objectIds: initialFact.relatedObjects.map((obj) => obj.id),
-      }
-    : {
-        text: object
-          ? getInitialValueFromMentionItem({
-              type: SpotLightFilter.OBJECT,
-              payload: {
-                id: object.id,
-                name: object.name,
-                description: object.description,
-              },
-            })
-          : '',
-        happenedAt: new Date().toLocaleString(),
-        location: '',
-        objectIds: [],
-      };
+  object: Object | undefined
+): FactFormData | undefined => {
+  if (initialFact) {
+    return {
+      id: initialFact.id,
+      text: initialFact.text,
+      happenedAt: initialFact.happenedAt,
+      location: initialFact.location,
+      objectIds: (initialFact.relatedObjects || []).map((obj) => obj.id),
+    };
+  }
+  if (object) {
+    return {
+      text: object
+        ? getInitialValueFromMentionItem({
+            type: SpotLightFilter.OBJECT,
+            payload: {
+              id: object.id,
+              name: object.name,
+            },
+          })
+        : '',
+      happenedAt: new Date().toLocaleString(),
+      location: '',
+      objectIds: [],
+    };
+  }
 };
 
 const FactForm: React.FC<FactFormProps> = ({
   onSave,
-  object,
+  requireObject = undefined,
   fact: initialFact,
 }) => {
-  const [fact, setFact] = useState<FactFormData>(
-    parseInitialFact(initialFact, object)
+  const [fact, setFact] = useState<any>(
+    parseInitialFact(initialFact, requireObject)
   );
   const { isOpen, onOpen, onClose } = useDisclosure();
   const datePickerRef = useRef<HTMLInputElement>(null);
@@ -83,18 +85,24 @@ const FactForm: React.FC<FactFormProps> = ({
   const toast = useToast();
 
   const handleChange = (name: string, value: string) => {
-    setFact((prevFact) => ({ ...prevFact, [name]: value }));
+    if (fact) {
+      setFact({ ...fact, [name]: value });
+    } else {
+      setFact({ [name]: value });
+    }
   };
 
   const handleReset = () => {
-    setFact(parseInitialFact(initialFact, object));
+    setFact(parseInitialFact(initialFact, requireObject));
   };
   const handleSave = async () => {
     const relatedObjectIds = fact.objectIds;
-    if (!relatedObjectIds.length || !relatedObjectIds.includes(object.id)) {
+    console.log(relatedObjectIds);
+    console.log(requireObject?.id);
+    if (requireObject && !relatedObjectIds.includes(requireObject.id)) {
       toast({
         title: 'Error adding fact',
-        description: 'Please select at least one object',
+        description: `Fail to include ${requireObject.name}`,
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -182,23 +190,23 @@ const FactForm: React.FC<FactFormProps> = ({
         </Flex>
       </Flex>
 
-      <RichTextEditor
+      <MarkdownEditor
         initialValue={fact.text}
         filters={[SpotLightFilter.OBJECT]}
         onChange={(content: string, relatedItems) => {
           try {
             const jsonContent = JSON.parse(content);
-            setFact((prev) => ({
+            setFact((prev: any) => ({
               ...prev,
               text: jsonContent,
             }));
           } catch (e) {
-            setFact((prev) => ({ ...prev, text: content }));
+            setFact((prev: any) => ({ ...prev, text: content }));
           }
           let objIds = relatedItems
             ? relatedItems.map((item: any) => item.payload.id)
             : [];
-          setFact((prev) => ({ ...prev, objectIds: objIds }));
+          setFact((prev: any) => ({ ...prev, objectIds: objIds }));
         }}
       />
       <HStack width={'100%'} mt={2} mb={2}>

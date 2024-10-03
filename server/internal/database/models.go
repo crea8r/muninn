@@ -25,6 +25,7 @@ type Creator struct {
 }
 
 type CreatorList struct {
+	ID          uuid.UUID       `json:"id"`
 	CreatorID   uuid.UUID       `json:"creator_id"`
 	ListID      uuid.UUID       `json:"list_id"`
 	Params      json.RawMessage `json:"params"`
@@ -119,6 +120,7 @@ type ObjTask struct {
 type ObjType struct {
 	ID           uuid.UUID       `json:"id"`
 	Name         string          `json:"name"`
+	Icon         string          `json:"icon"`
 	Description  string          `json:"description"`
 	Fields       json.RawMessage `json:"fields"`
 	CreatorID    uuid.UUID       `json:"creator_id"`

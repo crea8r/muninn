@@ -1,20 +1,45 @@
 import React from 'react';
-import { Box, VStack, Text, Heading, Badge } from '@chakra-ui/react';
-import { Fact, StepAndFunnel } from 'src/types/';
-import { RichTextViewer } from 'src/components/rich-text';
+import {
+  Box,
+  VStack,
+  Text,
+  Heading,
+  Badge,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  useDisclosure,
+  ModalOverlay,
+  ModalContent,
+} from '@chakra-ui/react';
+import { Fact, StepAndFunnel, Object } from 'src/types/';
 import dayjs from 'dayjs';
 import FactItem from 'src/components/FactItem';
 import { randomId } from 'src/utils';
+import { FactForm } from 'src/components/forms';
+import { FactToCreate, FactToUpdate } from 'src/api/fact';
 
 interface ActivityFeedProps {
   facts: Fact[];
   stepsAndFunnels: StepAndFunnel[];
+  object: Object;
+  onSave: (toSubmitFact: FactToUpdate | FactToCreate) => void;
 }
 
 const ActivityFeed: React.FC<ActivityFeedProps> = ({
   facts,
   stepsAndFunnels,
+  object,
+  onSave,
 }) => {
+  const {
+    isOpen: isFactFormOpen,
+    onOpen: openFactForm,
+    onClose: closeFactForm,
+  } = useDisclosure();
+  const [editingFact, setEditingFact] = React.useState<Fact | undefined>(
+    undefined
+  );
   const groupItemsByDate = (items: Fact[]) => {
     const grouped: { [date: string]: Fact[] } = {};
     items.forEach((item) => {
@@ -45,22 +70,50 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
     ...stepHistoryItems,
   ]);
 
+  const handlleFactItemClick = (fact: Fact) => {
+    const { id } = fact;
+    if (id.length > 4) {
+      setEditingFact(fact);
+      openFactForm();
+    }
+  };
+
   return (
     <Box>
       <VStack align='stretch' spacing={6}>
-        {Object.entries(groupedFacts).map(([date, dateItems]) => (
+        {window.Object.entries(groupedFacts).map(([date, dateItems]) => (
           <Box key={date}>
             <Heading size='sm' mb={2}>
               {date}
             </Heading>
             <VStack align='stretch' spacing={4}>
               {dateItems.map((item, i) => (
-                <FactItem key={i} fact={item} handleClick={() => {}} />
+                <FactItem
+                  key={i}
+                  fact={item}
+                  handleClick={() => handlleFactItemClick(item)}
+                />
               ))}
             </VStack>
           </Box>
         ))}
       </VStack>
+      <Modal isOpen={isFactFormOpen} onClose={closeFactForm}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Edit Fact</ModalHeader>
+          <ModalBody>
+            <FactForm
+              onSave={async (fact: FactToCreate | FactToUpdate) => {
+                await onSave(fact);
+                closeFactForm();
+              }}
+              fact={editingFact}
+              requireObject={object}
+            />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };

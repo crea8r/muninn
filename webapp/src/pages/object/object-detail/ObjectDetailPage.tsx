@@ -29,7 +29,7 @@ import {
 } from '@chakra-ui/react';
 import { ChevronRightIcon, EditIcon } from '@chakra-ui/icons';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { RichTextViewer } from 'src/components/rich-text';
+import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 import {
   TagInput,
   ObjectTypePanel,
@@ -56,7 +56,7 @@ import {
   deleteObjectFromFunnel,
   updateObjectStepSubStatus,
 } from 'src/api';
-import { ObjectDetail } from 'src/types/Object';
+import { ObjectDetail, ObjectTypeValue } from 'src/types/Object';
 import { FaPlus } from 'react-icons/fa';
 import { FactToCreate, FactToUpdate } from 'src/api/fact';
 
@@ -169,7 +169,14 @@ const ObjectDetailPage: React.FC = () => {
   if (!object) {
     return <Text>Loading...</Text>;
   }
-
+  let imgUrl = undefined;
+  object.typeValues.forEach((otv: ObjectTypeValue) => {
+    window.Object.entries(otv.type_values).forEach(([_, value]) => {
+      if (value && (value.includes('http://') || value.includes('https://'))) {
+        imgUrl = value;
+      }
+    });
+  });
   return (
     <Flex height='calc(100vh - 96px)' overflow='hidden'>
       {/* Left Column */}
@@ -204,7 +211,16 @@ const ObjectDetailPage: React.FC = () => {
           </Breadcrumb>
           <HStack>
             <Heading as='h1' size='xl'>
-              {object.name}
+              <HStack>
+                {imgUrl && (
+                  <img
+                    src={imgUrl}
+                    alt={object.name}
+                    style={{ height: '32px' }}
+                  />
+                )}
+                <Text>{object.name}</Text>
+              </HStack>
             </Heading>
           </HStack>
           <FunnelPanel
@@ -243,6 +259,8 @@ const ObjectDetailPage: React.FC = () => {
                   <ActivityFeed
                     facts={facts}
                     stepsAndFunnels={object.stepsAndFunnels}
+                    object={object}
+                    onSave={handleAddFact}
                   />
                 </Box>
               </TabPanel>
@@ -302,7 +320,7 @@ const ObjectDetailPage: React.FC = () => {
 
             {object.description && object.description !== '' && (
               <>
-                <RichTextViewer content={object.description} />
+                <MarkdownDisplay content={object.description} />
               </>
             )}
 
@@ -336,7 +354,7 @@ const ObjectDetailPage: React.FC = () => {
         <ModalContent>
           <ModalHeader>Add New Activity</ModalHeader>
           <ModalBody>
-            <FactForm onSave={handleAddFact} object={object} />
+            <FactForm onSave={handleAddFact} requireObject={object} />
           </ModalBody>
         </ModalContent>
       </Modal>

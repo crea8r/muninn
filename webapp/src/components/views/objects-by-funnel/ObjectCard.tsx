@@ -1,12 +1,15 @@
 import { Object } from 'src/types';
 import { Box, Divider, Tag, Text, Wrap } from '@chakra-ui/react';
+import { useHistory } from 'react-router-dom';
 
 type ObjectCardProps = {
   object: Object;
 };
 const ObjectCard = ({ object }: ObjectCardProps) => {
+  const history = useHistory();
   return (
     <Box
+      id={object.id}
       p={2}
       bg='white'
       borderRadius='md'
@@ -19,7 +22,7 @@ const ObjectCard = ({ object }: ObjectCardProps) => {
         cursor={'pointer'}
         textDecoration={'underline'}
         onClick={() => {
-          window.open(`/objects/${object.id}`, '_blank');
+          history.push(`/objects/${object.id}`);
         }}
       >
         {object.name}

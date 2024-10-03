@@ -71,6 +71,7 @@ CREATE TABLE tag (
 CREATE TABLE obj_type (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
+    icon VARCHAR(255) NOT NULL DEFAULT 'file',
     description TEXT NOT NULL,
     fields JSONB NOT NULL,
     creator_id UUID NOT NULL REFERENCES creator(id) ON DELETE CASCADE,
@@ -205,12 +206,13 @@ CREATE TABLE obj_step (
 );
 
 CREATE TABLE creator_list (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     creator_id UUID NOT NULL REFERENCES creator(id) ON DELETE CASCADE,
     list_id UUID NOT NULL REFERENCES list(id) ON DELETE CASCADE,
     params JSONB NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (creator_id, list_id)
+    UNIQUE (creator_id, list_id)
 );
 
 -- Add indexes to foreign keys and frequently queried columns

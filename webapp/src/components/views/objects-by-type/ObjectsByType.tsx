@@ -14,7 +14,12 @@ import {
   TagLabel,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
-import { FaFilter, FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
+import {
+  FaFilter,
+  FaSave,
+  FaSortAmountDown,
+  FaSortAmountUp,
+} from 'react-icons/fa';
 import { useParams, useHistory } from 'react-router-dom';
 import { debounce } from 'lodash';
 import {
@@ -27,6 +32,7 @@ import ResizableTable from './ResizableTable';
 // import { listTags } from 'src/api/tag';
 import BreadcrumbComponent from 'src/components/Breadcrumb';
 import { Tag, ObjectTypeFilter } from 'src/types';
+import CreateListDialog from 'src/components/CreateListDialog';
 
 const ITEMS_PER_PAGE = 6;
 const renderColumns = (columns: string[]) => {
@@ -53,6 +59,11 @@ const ObjectsByType: React.FC<ObjecsByTypeProps> = ({
   const history = useHistory();
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isListOpen,
+    onOpen: onListOpen,
+    onClose: onListClose,
+  } = useDisclosure();
   const [objects, setObjects] = useState<ObjectWithTags[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -65,7 +76,7 @@ const ObjectsByType: React.FC<ObjecsByTypeProps> = ({
       objectTypeFields: {},
     }
   );
-
+  console.log('predefinedFilters', initFilters);
   const [filterParams, setFilterParams] = useState<AdvancedFilterParams>({
     typeValues: {},
     tags: [],
@@ -176,6 +187,13 @@ const ObjectsByType: React.FC<ObjecsByTypeProps> = ({
         </HStack>
         <HStack background={'gray.100'} borderRadius={8} p={1}>
           <IconButton
+            icon={<FaSave />}
+            aria-label={'Save'}
+            _hover={{ cursor: 'pointer' }}
+            title={'Save as a list'}
+            onClick={onListOpen}
+          />
+          <IconButton
             onClick={onOpen}
             _hover={{ cursor: 'pointer' }}
             icon={<FaFilter />}
@@ -204,6 +222,7 @@ const ObjectsByType: React.FC<ObjecsByTypeProps> = ({
           <Spinner />
         ) : (
           <ResizableTable
+            objectType={objectType}
             objects={objects}
             filter={predefinedFilters}
             totalCount={totalCount}
@@ -221,6 +240,16 @@ const ObjectsByType: React.FC<ObjecsByTypeProps> = ({
         onSearchTag={listTags}
         onApplyFilter={handleApplyFilter}
         initialFilters={predefinedFilters}
+      />
+
+      <CreateListDialog
+        isOpen={isListOpen}
+        onClose={onListClose}
+        onListCreated={() => {}}
+        filterSetting={{
+          typeId: typeId,
+          typeFilter: predefinedFilters,
+        }}
       />
     </Box>
   );

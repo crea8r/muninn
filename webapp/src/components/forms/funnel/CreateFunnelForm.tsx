@@ -10,7 +10,6 @@ import {
   Button,
   VStack,
   Input,
-  Textarea,
   Accordion,
   AccordionItem,
   AccordionButton,
@@ -31,6 +30,7 @@ import {
   ArrowForwardIcon,
 } from '@chakra-ui/icons';
 import { NewFunnel, NewFunnelStep } from 'src/types';
+import MarkdownEditor from 'src/components/mardown/MardownEditor';
 
 interface CreateFunnelFormProps {
   isOpen: boolean;
@@ -122,10 +122,10 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
-            <Textarea
-              placeholder='Funnel Description'
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+            <MarkdownEditor
+              initialValue={description}
+              onChange={setDescription}
+              filters={[]}
             />
             <Button leftIcon={<AddIcon />} onClick={handleAddStep}>
               Add Step
@@ -154,34 +154,34 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
                         <InfoIcon />
                         <Text>Definition</Text>
                       </HStack>
-                      <Textarea
-                        placeholder='Step Definition'
-                        value={step.definition}
-                        onChange={(e) =>
-                          handleStepChange(index, 'definition', e.target.value)
+                      <MarkdownEditor
+                        initialValue={step.definition}
+                        onChange={(content: string) =>
+                          handleStepChange(index, 'definition', content)
                         }
+                        filters={[]}
                       />
                       <HStack>
                         <StarIcon />
                         <Text>Example</Text>
                       </HStack>
-                      <Textarea
-                        placeholder='Step Example'
-                        value={step.example}
-                        onChange={(e) =>
-                          handleStepChange(index, 'example', e.target.value)
+                      <MarkdownEditor
+                        initialValue={step.example}
+                        onChange={(c: string) =>
+                          handleStepChange(index, 'example', c)
                         }
+                        filters={[]}
                       />
                       <HStack>
                         <ArrowForwardIcon />
                         <Text>Action</Text>
                       </HStack>
-                      <Textarea
-                        placeholder='Step Action'
-                        value={step.action}
-                        onChange={(e) =>
-                          handleStepChange(index, 'action', e.target.value)
+                      <MarkdownEditor
+                        initialValue={step.action}
+                        onChange={(c: string) =>
+                          handleStepChange(index, 'action', c)
                         }
+                        filters={[]}
                       />
                       <HStack justifyContent='space-between'>
                         <HStack>

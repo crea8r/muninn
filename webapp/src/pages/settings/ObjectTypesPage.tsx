@@ -33,6 +33,8 @@ import {
 } from 'src/api/objType';
 import { ObjectType } from 'src/types';
 import { useHistory } from 'react-router-dom';
+import FaIconList from 'src/components/FaIconList';
+import { IconType } from 'react-icons';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -82,6 +84,7 @@ const ObjectTypesPage: React.FC = () => {
         name: newObjectType.name,
         description: newObjectType.description || '',
         fields: newObjectType.fields,
+        icon: newObjectType.icon,
       });
       fetchObjectTypes();
       onClose();
@@ -108,6 +111,7 @@ const ObjectTypesPage: React.FC = () => {
         name: updatedObjectType.name,
         description: updatedObjectType.description || '',
         fields: updatedObjectType.fields,
+        icon: updatedObjectType.icon,
       });
       fetchObjectTypes();
       onClose();
@@ -206,16 +210,20 @@ const ObjectTypesPage: React.FC = () => {
             <Tr key={objectType.id}>
               <Td>
                 <VStack align='start' spacing={1}>
-                  <Text
-                    fontWeight='bold'
-                    textDecoration={'underline'}
-                    _hover={{ cursor: 'pointer', background: 'yellow.100' }}
-                    onClick={() =>
-                      history.push(`/settings/object-types/${objectType.id}`)
-                    }
-                  >
-                    {objectType.name}
-                  </Text>
+                  <HStack>
+                    {FaIconList[objectType.icon as keyof typeof FaIconList]}
+                    <Text
+                      fontWeight='bold'
+                      textDecoration={'underline'}
+                      _hover={{ cursor: 'pointer', background: 'yellow.100' }}
+                      onClick={() =>
+                        history.push(`/settings/object-types/${objectType.id}`)
+                      }
+                    >
+                      {objectType.name}
+                    </Text>
+                  </HStack>
+
                   <Text fontSize='sm' color='gray.600'>
                     {objectType.description}
                   </Text>

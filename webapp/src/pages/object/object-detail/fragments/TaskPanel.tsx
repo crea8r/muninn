@@ -1,24 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Box,
   VStack,
-  Heading,
-  Text,
-  Button,
   useDisclosure,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
   useToast,
   Alert,
   AlertIcon,
 } from '@chakra-ui/react';
 import { Task, TaskStatus } from 'src/types/';
-import { listTasks, createTask, updateTask } from 'src/api';
 import { TaskForm } from 'src/components/forms/';
-import ActionSuggestion from './ActionSuggestion';
-import { RichTextViewer } from 'src/components/rich-text';
 import TaskItem from 'src/components/TaskItem';
 
 interface TaskPanelProps {

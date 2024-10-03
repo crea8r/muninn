@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  VStack,
   Heading,
   Button,
   HStack,
   Tag as ChakraTag,
-  Text,
   Input,
   InputGroup,
   InputLeftElement,
@@ -18,9 +16,9 @@ import {
   Td,
   Flex,
   Select,
-  Tooltip,
   Spinner,
   useDisclosure,
+  Text,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { useHistory } from 'react-router-dom';
@@ -29,6 +27,8 @@ import { fetchObjects } from 'src/api/object';
 import ImporterDialog from 'src/components/ImporterDialog';
 import { ObjectForm } from 'src/components/forms/';
 import { createObject } from 'src/api/object';
+import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
+import { shortenText } from 'src/utils';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -139,10 +139,24 @@ const ObjectsPage: React.FC = () => {
             ) : objects.length > 0 ? (
               objects.map((obj) => {
                 let str: string[] = [];
+                let imgUrl = undefined;
                 obj.typeValues.map((otv) => {
                   return window.Object.entries(otv.type_values).forEach(
                     ([_, value]) => {
-                      if (value && value !== '') {
+                      if (
+                        value &&
+                        (value.includes('http://') ||
+                          value.includes('https://'))
+                      ) {
+                        imgUrl = value;
+                      }
+                      if (
+                        value &&
+                        !(
+                          value.includes('http') || value.includes('https://')
+                        ) &&
+                        value !== ''
+                      ) {
                         str.push(`${value}`);
                       }
                     }
@@ -159,9 +173,24 @@ const ObjectsPage: React.FC = () => {
                     onClick={() => handleRowClick(obj.id)}
                     _hover={{ bg: 'gray.100', cursor: 'pointer' }}
                   >
-                    <Td>{obj.name}</Td>
                     <Td>
-                      <Box mb={1}>{obj.description}</Box>
+                      <HStack>
+                        {imgUrl ? (
+                          <img
+                            src={imgUrl}
+                            style={{ height: '32px' }}
+                            alt={obj.name}
+                          />
+                        ) : null}
+                        <Text>{shortenText(obj.name, 50)}</Text>
+                      </HStack>
+                    </Td>
+                    <Td>
+                      <Box mb={1}>
+                        <MarkdownDisplay
+                          content={shortenText(obj.description, 50)}
+                        />
+                      </Box>
                       {obj.tags.length > 0 && (
                         <Box>
                           {obj.tags.map((tag: Tag) => (

@@ -22,6 +22,7 @@ import {
   FiCheckSquare,
 } from 'react-icons/fi';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
+import authService from 'src/services/authService';
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -117,6 +118,9 @@ const Sidebar: React.FC = () => {
   const [unseenFeedCount, setUnseenFeedCount] = useState(0);
   const [todoTaskCount, setTodoTaskCount] = useState(0);
   const { globalData } = useGlobalContext();
+  const member = globalData?.members.find(
+    (m) => m.id === authService.getCreatorId()
+  );
 
   useEffect(() => {
     setIsOpen(!isMobile);
@@ -152,9 +156,14 @@ const Sidebar: React.FC = () => {
   const settingsSubItems = [
     { text: 'Object Types', to: '/settings/object-types' },
     { text: 'Funnels', to: '/settings/funnels' },
-    { text: 'Lists', to: '/settings/lists' },
+    { text: 'View Templates', to: '/settings/templates' },
     { text: 'Tags', to: '/settings/tags' },
   ];
+
+  const sidebarViews =
+    member?.profile.views?.map((v: any) => {
+      return { text: v.name, to: '/views/' + v.id };
+    }) || [];
 
   return (
     <>
@@ -219,6 +228,7 @@ const Sidebar: React.FC = () => {
               isActive={isActive('/views')}
               isCollapsed={isCollapsed}
               location={location}
+              subItems={sidebarViews}
             />
             <SidebarItem
               icon={FiFolder}

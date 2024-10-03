@@ -11,7 +11,6 @@ import {
   FormControl,
   FormLabel,
   Input,
-  Textarea,
   VStack,
   InputGroup,
   InputRightAddon,
@@ -20,6 +19,7 @@ import {
 } from '@chakra-ui/react';
 import { v4 as uuidv4 } from 'uuid';
 import { NewObject, UpdateObject } from 'src/types';
+import MarkdownEditor from 'src/components/mardown/MardownEditor';
 
 interface ObjectFormProps {
   isOpen: boolean;
@@ -168,10 +168,10 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
               </FormControl>
               <FormControl>
                 <FormLabel>Description</FormLabel>
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder='Enter object description'
+                <MarkdownEditor
+                  initialValue={description}
+                  onChange={setDescription}
+                  filters={[]}
                 />
               </FormControl>
             </VStack>

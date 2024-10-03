@@ -18,7 +18,7 @@ import {
   Spacer,
 } from '@chakra-ui/react';
 import { TaskStatus, Task, NewTask, UpdateTask } from 'src/types/';
-import { RichTextEditor } from 'src/components/rich-text';
+import MarkdownEditor from 'src/components/mardown/MardownEditor';
 import dayjs from 'dayjs';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { SpotLightFilter } from '../SpotLight';
@@ -202,7 +202,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
             </FormControl>
             <FormControl>
               <FormLabel>Task Description</FormLabel>
-              <RichTextEditor
+              <MarkdownEditor
                 initialValue={formData.content}
                 filters={[SpotLightFilter.OBJECT]}
                 onChange={(content: string, relatedItems: any) => {

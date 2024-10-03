@@ -9,12 +9,14 @@ export interface CreateObjectTypeParams {
   name: string;
   description: string;
   fields: Record<string, any>;
+  icon: string;
 }
 
 export interface UpdateObjectTypeParams {
   name: string;
   description: string;
   fields: Record<string, any>;
+  icon: string;
 }
 
 export interface ListObjectTypesParams {

@@ -17,6 +17,7 @@ type Querier interface {
 	AddTagToObject(ctx context.Context, arg AddTagToObjectParams) error
 	CountFactsByOrgID(ctx context.Context, arg CountFactsByOrgIDParams) (int64, error)
 	CountFunnels(ctx context.Context, arg CountFunnelsParams) (int64, error)
+	CountListsByOrgID(ctx context.Context, orgID uuid.UUID) (int64, error)
 	CountObjectTypes(ctx context.Context, arg CountObjectTypesParams) (int64, error)
 	CountObjectsByOrgID(ctx context.Context, arg CountObjectsByOrgIDParams) (int64, error)
 	CountObjectsByTypeWithAdvancedFilter(ctx context.Context, arg CountObjectsByTypeWithAdvancedFilterParams) (int64, error)
@@ -28,10 +29,12 @@ type Querier interface {
 	CountTasksWithFilter(ctx context.Context, arg CountTasksWithFilterParams) (int64, error)
 	CountUnseenFeed(ctx context.Context, creatorID uuid.UUID) (int64, error)
 	CreateCreator(ctx context.Context, arg CreateCreatorParams) (Creator, error)
+	CreateCreatorList(ctx context.Context, arg CreateCreatorListParams) (CreatorList, error)
 	// Add these new queries to your existing queries.sql file
 	CreateFact(ctx context.Context, arg CreateFactParams) (Fact, error)
 	CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error)
 	CreateFunnel(ctx context.Context, arg CreateFunnelParams) (Funnel, error)
+	CreateList(ctx context.Context, arg CreateListParams) (List, error)
 	CreateObjStep(ctx context.Context, arg CreateObjStepParams) (CreateObjStepRow, error)
 	CreateObject(ctx context.Context, arg CreateObjectParams) (Obj, error)
 	CreateObjectType(ctx context.Context, arg CreateObjectTypeParams) (ObjType, error)
@@ -42,8 +45,10 @@ type Querier interface {
 	// Existing queries...
 	CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error)
 	DeleteCreator(ctx context.Context, id uuid.UUID) error
+	DeleteCreatorList(ctx context.Context, id uuid.UUID) error
 	DeleteFact(ctx context.Context, id uuid.UUID) error
 	DeleteFunnel(ctx context.Context, id uuid.UUID) error
+	DeleteList(ctx context.Context, id uuid.UUID) error
 	DeleteObject(ctx context.Context, id uuid.UUID) error
 	DeleteObjectType(ctx context.Context, id uuid.UUID) (int64, error)
 	DeleteStep(ctx context.Context, id uuid.UUID) error
@@ -52,6 +57,7 @@ type Querier interface {
 	GetCreator(ctx context.Context, id uuid.UUID) (Creator, error)
 	GetCreatorByID(ctx context.Context, id uuid.UUID) (Creator, error)
 	GetCreatorByUsername(ctx context.Context, arg GetCreatorByUsernameParams) (GetCreatorByUsernameRow, error)
+	GetCreatorListByID(ctx context.Context, id uuid.UUID) (GetCreatorListByIDRow, error)
 	GetFactByID(ctx context.Context, id uuid.UUID) (GetFactByIDRow, error)
 	GetFeed(ctx context.Context, creatorID uuid.UUID) ([]Feed, error)
 	GetFunnel(ctx context.Context, id uuid.UUID) (GetFunnelRow, error)
@@ -64,8 +70,10 @@ type Querier interface {
 	GetTagByID(ctx context.Context, id uuid.UUID) (Tag, error)
 	GetTaskByID(ctx context.Context, id uuid.UUID) (GetTaskByIDRow, error)
 	HardDeleteObjStep(ctx context.Context, id uuid.UUID) error
+	ListCreatorListsByCreatorID(ctx context.Context, creatorID uuid.UUID) ([]ListCreatorListsByCreatorIDRow, error)
 	ListFactsByOrgID(ctx context.Context, arg ListFactsByOrgIDParams) ([]ListFactsByOrgIDRow, error)
 	ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]ListFunnelsRow, error)
+	ListListsByOrgID(ctx context.Context, arg ListListsByOrgIDParams) ([]ListListsByOrgIDRow, error)
 	ListObjectTypes(ctx context.Context, arg ListObjectTypesParams) ([]ListObjectTypesRow, error)
 	ListObjectsByOrgID(ctx context.Context, arg ListObjectsByOrgIDParams) ([]ListObjectsByOrgIDRow, error)
 	ListObjectsByTaskID(ctx context.Context, taskID uuid.UUID) ([]ListObjectsByTaskIDRow, error)
@@ -83,8 +91,10 @@ type Querier interface {
 	RemoveObjectsFromTask(ctx context.Context, arg RemoveObjectsFromTaskParams) error
 	RemoveTagFromObject(ctx context.Context, arg RemoveTagFromObjectParams) error
 	SoftDeleteObjStep(ctx context.Context, id uuid.UUID) error
+	UpdateCreatorList(ctx context.Context, arg UpdateCreatorListParams) (CreatorList, error)
 	UpdateFact(ctx context.Context, arg UpdateFactParams) (Fact, error)
 	UpdateFunnel(ctx context.Context, arg UpdateFunnelParams) (Funnel, error)
+	UpdateList(ctx context.Context, arg UpdateListParams) (List, error)
 	UpdateObjStep(ctx context.Context, arg UpdateObjStepParams) error
 	UpdateObjStepSubStatus(ctx context.Context, arg UpdateObjStepSubStatusParams) error
 	UpdateObject(ctx context.Context, arg UpdateObjectParams) (Obj, error)

@@ -1,8 +1,8 @@
 import { Box, Text } from '@chakra-ui/react';
 import { Fact } from 'src/types';
-import { RichTextViewer } from './rich-text';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import MarkdownDisplay from './mardown/MarkdownDisplay';
 
 type FactItemProps = {
   fact: Fact;
@@ -22,7 +22,7 @@ const FactItem = ({ fact, handleClick }: FactItemProps) => {
       cursor='pointer'
       _hover={{ boxShadow: 'md' }}
     >
-      <RichTextViewer content={fact.text} />
+      <MarkdownDisplay content={fact.text} />
       {fact.location && (
         <Text fontSize='sm' color='gray.500' mt={2}>
           Location: {fact.location}

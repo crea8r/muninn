@@ -36,6 +36,7 @@ const mockObjectTypes: ObjectType[] = [
       age: 'number',
       email: 'string',
     },
+    icon: 'file',
   },
   {
     id: '2',
@@ -45,6 +46,7 @@ const mockObjectTypes: ObjectType[] = [
       industry: 'string',
       employees: 'number',
     },
+    icon: 'file',
   },
   {
     id: '3',
@@ -55,6 +57,7 @@ const mockObjectTypes: ObjectType[] = [
       startDate: 'date',
       budget: 'number',
     },
+    icon: 'file',
   },
 ];
 

@@ -80,13 +80,13 @@ WHERE org_id = $1
   AND ($2::text = '' OR (name ILIKE '%' || $2 || '%' OR description ILIKE '%' || $2 || '%'));
 
 -- name: CreateObjectType :one
-INSERT INTO obj_type (name, description, fields, creator_id)
-VALUES ($1, $2, $3, $4)
+INSERT INTO obj_type (name, description, fields, creator_id, icon)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 
 -- name: UpdateObjectType :one
 UPDATE obj_type
-SET name = $2, description = $3, fields = $4
+SET name = $2, description = $3, fields = $4, icon = $5
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
@@ -99,7 +99,7 @@ WHERE obj_type.id = $1 AND deleted_at IS NULL
   );
 
 -- name: ListObjectTypes :many
-SELECT o.id, o.name, o.description, o.fields, o.created_at
+SELECT o.id, o.name, o.icon, o.description, o.fields, o.created_at
 FROM obj_type o
 JOIN creator c ON o.creator_id = c.id
 WHERE c.org_id = $1
@@ -313,6 +313,7 @@ WITH object_data AS (
                'id', otv.id,
                'objectTypeId', ot.id,
                'objectTypeName', ot.name,
+               'objectTypeIcon', ot.icon,
                'objectTypeFields', ot.fields,
                'type_values', otv.type_values
            )) FILTER (WHERE otv.id IS NOT NULL), '[]')

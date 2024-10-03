@@ -18,6 +18,7 @@ import {
 import { TaskStatus, Task, NewTask, UpdateTask } from './Task';
 import { Tag } from './Tag';
 import { OrgMember } from './Org';
+import { List, CreatorList } from './List';
 
 export { TaskStatus };
 export type {
@@ -39,4 +40,6 @@ export type {
   UpdateObject,
   StepAndFunnel,
   OrgMember,
+  List,
+  CreatorList,
 };

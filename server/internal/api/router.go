@@ -36,6 +36,7 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 	orgMemberHandler := handlers.NewOrgMemberHandler(db)
 	feedHandler := handlers.NewFeedHandler(db)
 	summarizeHandler := handlers.NewSummarizeHandler(db)
+	listHandler := handlers.NewListHandler(db)
 
 	// Public routes
 	r.Post("/auth/signup", handlers.SignUp(db))
@@ -52,7 +53,8 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 
 				// Only create feed entry if the response was successful (status code < 400)
 				if rw.Status() < 400 {
-					middleware.CreateFeedEntry(db, r, rw)
+					// TODO: rethink this
+					// middleware.CreateFeedEntry(db, r, rw)
 				}
 			}
 		}
@@ -128,6 +130,21 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 				r.Put("/", wrapWithFeed(taskHandler.Update))
 				r.Delete("/", taskHandler.Delete)
 			})
+		})
+
+		r.Route("/lists", func(r chi.Router) {
+			r.Use(middleware.Permission)
+			r.Post("/", listHandler.CreateList)
+			r.Get("/", listHandler.ListListsByOrgID)
+			r.Put("/{id}", listHandler.UpdateList)
+			r.Delete("/{id}", listHandler.DeleteList)
+			// create "creator_list" for a list
+			r.Post("/{id}/creator",listHandler.CreateCreatorList)
+			// id of creator_list
+			r.Put("/creator/{id}", listHandler.UpdateCreatorList)
+			r.Delete("/creator/{id}", listHandler.DeleteCreatorList)
+			r.Get("/creator/", listHandler.ListCreatorListsByCreatorID)
+			r.Get("/creator/detail/{id}", listHandler.GetCreateListByID)
 		})
 
 		r.Route("/org", func(r chi.Router) {

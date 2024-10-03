@@ -204,15 +204,15 @@ func (h *OrgMemberHandler) UpdateUserProfile(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Validate profile format
-	var profile struct {
-		Avatar   string `json:"avatar"`
-		Email    string `json:"email"`
-		FullName string `json:"fullname"`
-	}
-	if err := json.Unmarshal(req.Profile, &profile); err != nil {
-		http.Error(w, "Invalid profile format", http.StatusBadRequest)
-		return
-	}
+	// var profile struct {
+	// 	Avatar   string `json:"avatar"`
+	// 	Email    string `json:"email"`
+	// 	FullName string `json:"fullname"`
+	// }
+	// if err := json.Unmarshal(req.Profile, &profile); err != nil {
+	// 	http.Error(w, "Invalid profile format", http.StatusBadRequest)
+	// 	return
+	// }
 
 	updatedUser, err := h.db.UpdateUserProfile(ctx, database.UpdateUserProfileParams{
 		ID:      userID,
