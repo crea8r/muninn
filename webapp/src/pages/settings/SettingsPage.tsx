@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  Box,
-  VStack,
-  Heading,
-  Text,
-  Button,
-  HStack,
-  Link,
-} from '@chakra-ui/react';
+import { Box, VStack, Heading, Text, Button, HStack } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
 
 const SettingsPage: React.FC = () => {

@@ -1,16 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Box,
-  Flex,
-  Input,
-  Tag as ChakraTag,
-  TagCloseButton,
-  TagLabel,
-  Text,
-  useToast,
-} from '@chakra-ui/react';
+import { Box, Input, Text, useToast } from '@chakra-ui/react';
 import { Tag } from 'src/types';
-import { createTag, listTags } from 'src/api/tag';
 
 interface TagSuggestionProps {
   onAttachTag: (tag: Tag) => void;
@@ -88,6 +78,7 @@ const TagSuggestion = ({
     };
 
     getSuggestions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inputValue]);
 
   return (

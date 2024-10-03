@@ -92,10 +92,10 @@ const ListsPage = () => {
     const resp2 = await listCreatorListsByCreatorID();
     setCreatorLists(resp2 || []);
   };
-  const [forcedRefresh, setForcedRefresh] = useState(0);
+  // const [forcedRefresh, setForcedRefresh] = useState(0);
   useEffect(() => {
     loadData();
-  }, [forcedRefresh]);
+  }, []);
   return (
     <Box>
       <BreadcrumbComponent label='Templates' />

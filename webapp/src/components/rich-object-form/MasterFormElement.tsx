@@ -1,4 +1,3 @@
-import { FormControl, FormLabel, Input, Text } from '@chakra-ui/react';
 import { ObjectTypeElement, MasterFormElementProps } from './ObjectType';
 import React from 'react';
 import { ElString } from './elements/ElString';

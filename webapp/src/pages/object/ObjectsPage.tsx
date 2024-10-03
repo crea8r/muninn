@@ -22,7 +22,7 @@ import {
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { useHistory } from 'react-router-dom';
-import { NewObject, Object, ObjectTypeValue, Tag } from 'src/types/';
+import { NewObject, Object, Tag } from 'src/types/';
 import { fetchObjects } from 'src/api/object';
 import ImporterDialog from 'src/components/ImporterDialog';
 import { ObjectForm } from 'src/components/forms/';
@@ -38,15 +38,16 @@ const ObjectsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [objectTypeValues, setObjectTypeValues] = useState<{
-    [key: string]: ObjectTypeValue[];
-  }>({});
+  // const [objectTypeValues, setObjectTypeValues] = useState<{
+  //   [key: string]: ObjectTypeValue[];
+  // }>({});
   const history = useHistory();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isCreatingObject, setIsCreatingObject] = useState(false);
 
   useEffect(() => {
     loadObjects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchQuery]);
 
   const loadObjects = async () => {

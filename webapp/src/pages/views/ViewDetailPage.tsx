@@ -1,37 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
-import {
-  Box,
-  Heading,
-  Text,
-  VStack,
-  HStack,
-  Button,
-  Tag,
-  Alert,
-} from '@chakra-ui/react';
+import { Box, Heading, Text, HStack, Button } from '@chakra-ui/react';
 import BreadcrumbComponent from 'src/components/Breadcrumb';
 import { getCreatorList } from 'src/api/list';
 import { CreatorList } from 'src/types';
 import ObjectsByType from 'src/components/views/objects-by-type/ObjectsByType';
 import { listTags } from 'src/api/tag';
 import { fetchObjectsByTypeAdvanced } from 'src/api/objType';
-import FunnelBoard from '../settings/FunnelBoard';
 import ObjectsByFunnel from 'src/components/views/objects-by-funnel/ObjectsByFunnel';
 import { getFunnelView } from 'src/api/funnel';
-
-interface Object {
-  id: number;
-  name: string;
-  type: string;
-  tags: string[];
-}
 
 const ViewDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
   const [view, setView] = useState<CreatorList | null>(null);
-  const [objects, setObjects] = useState<Object[]>([]);
 
   const loadView = async () => {
     const resp = await getCreatorList(id);
@@ -40,11 +22,8 @@ const ViewDetailPage: React.FC = () => {
 
   useEffect(() => {
     loadView();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
-
-  const handleObjectClick = (objectId: number) => {
-    history.push(`/objects/${objectId}`);
-  };
 
   if (!view) {
     return <Text>Loading...</Text>;

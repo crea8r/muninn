@@ -2,9 +2,7 @@ import React from 'react';
 import {
   Box,
   VStack,
-  Text,
   Heading,
-  Badge,
   Modal,
   ModalHeader,
   ModalBody,

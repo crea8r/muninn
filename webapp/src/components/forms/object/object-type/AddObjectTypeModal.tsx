@@ -11,9 +11,7 @@ import {
   FormControl,
   FormLabel,
   Select,
-  Input,
   VStack,
-  FormHelperText,
 } from '@chakra-ui/react';
 import { ObjectType } from 'src/types/';
 import { MasterFormElement } from 'src/components/rich-object-form/MasterFormElement';

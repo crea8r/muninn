@@ -64,7 +64,7 @@ const OrganisationPage: React.FC = () => {
     await addNewOrgMember({ username, password, role: 'member', profile });
     setForceUpdate(forceUpdate + 1);
   };
-  const handleUpdateUserRoleAndStatus = () => {};
+  // const handleUpdateUserRoleAndStatus = () => {};
   const handleUpdateUserPassword = async (password: string) => {
     await updateUserPassword(currentEditingUserId, password);
     setForceUpdate(forceUpdate + 1);

@@ -22,7 +22,6 @@ import BreadcrumbComponent from 'src/components/Breadcrumb';
 import authService from 'src/services/authService';
 import { updateUserPassword, updateUserProfile } from 'src/api/orgMember';
 import { useHistory } from 'react-router-dom';
-import { set } from 'lodash';
 
 const AccountPage: React.FC = () => {
   const toast = useToast();

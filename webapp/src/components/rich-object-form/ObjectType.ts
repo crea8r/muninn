@@ -1,25 +1,23 @@
 import { ElString } from './elements/ElString';
-import { ElDateTime } from './elements/ElDateTime';
-import { image } from '@uiw/react-md-editor';
 import { ElImage } from './elements/ElImage';
 // obj_type_value.type_values: key -> value
 // obj_type.fields: field name -> field type and its configuration
 // e.g:{
-const example = {
-  id: 'some_uuid',
-  description: 'A person',
-  name: 'Person',
-  fields: {
-    name: 'string',
-    age: { type: 'datetime', min: '1990' },
-    email: 'email',
-    interest: {
-      type: 'multiple_choice',
-      max_choice: 3,
-      options: ['music', 'movie', 'book', 'sport'],
-    },
-  },
-};
+// const example = {
+//   id: 'some_uuid',
+//   description: 'A person',
+//   name: 'Person',
+//   fields: {
+//     name: 'string',
+//     age: { type: 'datetime', min: '1990' },
+//     email: 'email',
+//     interest: {
+//       type: 'multiple_choice',
+//       max_choice: 3,
+//       options: ['music', 'movie', 'book', 'sport'],
+//     },
+//   },
+// };
 
 // TODO: each field type has its own custom render UI
 export const ObjectTypeElement: any = {

@@ -1,4 +1,3 @@
-import { Fact } from 'src/types';
 import { axiosWithAuth } from './utils';
 
 const API_URL = process.env.REACT_APP_API_URL;

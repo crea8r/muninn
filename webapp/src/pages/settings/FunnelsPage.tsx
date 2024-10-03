@@ -57,6 +57,7 @@ const FunnelsPage: React.FC = () => {
 
   useEffect(() => {
     loadFunnels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchQuery]);
 
   const loadFunnels = async () => {

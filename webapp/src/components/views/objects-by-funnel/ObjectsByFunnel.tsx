@@ -13,7 +13,7 @@ import {
 } from '@chakra-ui/react';
 import FunnelStep from './FunnelStep';
 import { FunnelViewType } from 'src/api/funnel';
-import { FaPlus, FaSave } from 'react-icons/fa';
+import { FaSave } from 'react-icons/fa';
 import CreateListDialog from 'src/components/CreateListDialog';
 import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 
@@ -42,6 +42,8 @@ const ObjectsByFunnel: React.FC<ObjectsByFunnelProps> = ({
       }
     };
     initFunnelViewData();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [funnelId]);
   const funnel = funnelViewData?.funnel || {};
   const steps = funnelViewData?.steps || [];

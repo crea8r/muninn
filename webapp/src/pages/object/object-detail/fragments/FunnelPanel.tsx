@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
   VStack,
-  Heading,
   Button,
   useToast,
   Switch,
@@ -13,7 +11,6 @@ import {
   HStack,
   Spacer,
   Text,
-  IconButton,
 } from '@chakra-ui/react';
 import { Funnel, FunnelStep } from 'src/types/';
 import { fetchAllFunnels } from 'src/api/funnel';

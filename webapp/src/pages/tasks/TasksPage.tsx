@@ -3,10 +3,8 @@ import {
   Box,
   VStack,
   Heading,
-  Text,
   Button,
   HStack,
-  Badge,
   useDisclosure,
   Flex,
   Input,
@@ -51,6 +49,7 @@ const TasksPage: React.FC = () => {
 
   useEffect(() => {
     fetchTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forceUpdate, currentPage, searchQuery, statusFilter]);
 
   const fetchTasks = async () => {

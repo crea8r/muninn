@@ -18,14 +18,12 @@ import {
   IconButton,
   useMediaQuery,
   Badge,
-  Button,
   Modal,
   ModalHeader,
   ModalContent,
   ModalBody,
   useDisclosure,
   ModalOverlay,
-  Spacer,
 } from '@chakra-ui/react';
 import { ChevronRightIcon, EditIcon } from '@chakra-ui/icons';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';

@@ -17,7 +17,7 @@ interface TaskPanelProps {
 }
 
 const TaskPanel: React.FC<TaskPanelProps> = ({ objectId, tasks }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen, onClose } = useDisclosure();
   const toast = useToast();
 
   const handleAddTask = async (newTask: Task) => {
@@ -34,48 +34,6 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ objectId, tasks }) => {
     } catch (error) {
       toast({
         title: 'Error adding task',
-        description: 'Please try again later.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleUpdateTaskStatus = async (taskId: number, newStatus: string) => {
-    try {
-      // const updatedTask = await updateTaskStatus(taskId, newStatus);
-      // setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)));
-      toast({
-        title: 'Task status updated',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error updating task status',
-        description: 'Please try again later.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleReassignTask = async (taskId: number, newAssigneeId: number) => {
-    try {
-      // const updatedTask = await reassignTask(taskId, newAssigneeId);
-      // setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)));
-      toast({
-        title: 'Task reassigned',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error reassigning task',
         description: 'Please try again later.',
         status: 'error',
         duration: 5000,

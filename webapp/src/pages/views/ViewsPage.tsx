@@ -52,6 +52,7 @@ const ViewsPage: React.FC = () => {
       (m) => m.id === authService.getCreatorId()
     );
     setBookmarkViews(member?.profile.views || []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [foredRefresh]);
 
   const handleBookmarkClick = async (viewId: string) => {

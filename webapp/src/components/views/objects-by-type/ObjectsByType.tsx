@@ -20,7 +20,7 @@ import {
   FaSortAmountDown,
   FaSortAmountUp,
 } from 'react-icons/fa';
-import { useParams, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { debounce } from 'lodash';
 import {
   // fetchObjectsByTypeAdvanced,
@@ -30,7 +30,7 @@ import {
 import FilterDialog from './FilterDialog';
 import ResizableTable from './ResizableTable';
 // import { listTags } from 'src/api/tag';
-import BreadcrumbComponent from 'src/components/Breadcrumb';
+// import BreadcrumbComponent from 'src/components/Breadcrumb';
 import { Tag, ObjectTypeFilter } from 'src/types';
 import CreateListDialog from 'src/components/CreateListDialog';
 
@@ -88,6 +88,7 @@ const ObjectsByType: React.FC<ObjecsByTypeProps> = ({
     if (typeId) {
       loadObjects();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [typeId, currentPage, filterParams]);
 
   const loadObjects = async () => {
@@ -149,7 +150,7 @@ const ObjectsByType: React.FC<ObjecsByTypeProps> = ({
   const handleObjectClick = (objectId: string) => {
     history.push(`/objects/${objectId}`);
   };
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSearch = useCallback(
     debounce((value: string) => {
       setFilterParams({ ...filterParams, search: value });

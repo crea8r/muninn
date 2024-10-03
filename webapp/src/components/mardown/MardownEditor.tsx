@@ -78,12 +78,14 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         }
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [editorRef, handleValueChange]
   );
 
   const handleMentionTrigger = useCallback(() => {
     console.log('mention trigger');
     openSpotLight(filters, () => handleSpotLightSelect);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openSpotLight, value, handleValueChange]);
 
   const mentionCommand = {

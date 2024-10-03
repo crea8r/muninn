@@ -121,6 +121,7 @@ const SpotLight: React.FC = () => {
     }
   }, [isOpen, openModal, closeModal]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSearch = useCallback(
     debounce(async (query: string) => {
       if (query.length < 2) {

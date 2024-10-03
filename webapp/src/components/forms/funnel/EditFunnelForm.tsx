@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -26,7 +26,6 @@ import {
   StepIcon,
   StepNumber,
   StepTitle,
-  StepDescription,
   StepSeparator,
   Select,
   Tooltip,

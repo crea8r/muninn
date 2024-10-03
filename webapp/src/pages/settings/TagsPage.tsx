@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  VStack,
   Heading,
   Button,
   HStack,
@@ -56,6 +55,7 @@ const TagsPage: React.FC = () => {
 
   useEffect(() => {
     fetchTags();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchQuery]);
 
   const fetchTags = async () => {

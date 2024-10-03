@@ -15,7 +15,6 @@ import {
   VStack,
   useToast,
 } from '@chakra-ui/react';
-import { List } from 'src/types';
 import { createList, CreateListResponse } from 'src/api/list';
 import MarkdownEditor from './mardown/MardownEditor';
 

@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
 import { SpotLightFilter } from 'src/components/SpotLight';
 
 export type SearchFilter = 'object' | 'fact' | 'task' | 'creator';

@@ -34,7 +34,6 @@ import {
 import { ObjectType } from 'src/types';
 import { useHistory } from 'react-router-dom';
 import FaIconList from 'src/components/FaIconList';
-import { IconType } from 'react-icons';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -53,6 +52,7 @@ const ObjectTypesPage: React.FC = () => {
 
   useEffect(() => {
     fetchObjectTypes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchQuery]);
 
   const fetchObjectTypes = async () => {

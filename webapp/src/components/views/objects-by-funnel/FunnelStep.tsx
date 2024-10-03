@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   VStack,
@@ -25,11 +25,11 @@ const FunnelStep: React.FC<FunnelStepProps> = ({
   onObjectMove,
 }) => {
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
-  const [groupedObjects, setGroupedObjects] = useState<{
-    [key: string]: Object[];
-  }>({
-    ungrouped: objects,
-  });
+  // const [groupedObjects, setGroupedObjects] = useState<{
+  //   [key: string]: Object[];
+  // }>({
+  //   ungrouped: objects,
+  // });
 
   const handleDragStart = (e: React.DragEvent, objectId: string) => {
     e.dataTransfer.setData('text/plain', objectId);
@@ -73,29 +73,29 @@ const FunnelStep: React.FC<FunnelStepProps> = ({
         </Button>
         <Collapse in={isOpen}>
           <VStack align='stretch' spacing={2}>
-            {window.Object.entries(groupedObjects).map(
-              ([groupName, groupObjects]) => (
-                <Box key={groupName}>
-                  {groupName !== 'ungrouped' && (
-                    <Text fontWeight='bold' mb={2}>
-                      {groupName}
-                    </Text>
-                  )}
-                  {groupObjects.map((obj: Object) => {
-                    return (
-                      <Box
-                        key={obj.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, obj.id)}
-                        mt={2}
-                      >
-                        <ObjectCard object={obj} />
-                      </Box>
-                    );
-                  })}
-                </Box>
-              )
-            )}
+            {window.Object.entries({
+              ungrouped: objects,
+            }).map(([groupName, groupObjects]) => (
+              <Box key={groupName}>
+                {groupName !== 'ungrouped' && (
+                  <Text fontWeight='bold' mb={2}>
+                    {groupName}
+                  </Text>
+                )}
+                {groupObjects.map((obj: Object) => {
+                  return (
+                    <Box
+                      key={obj.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, obj.id)}
+                      mt={2}
+                    >
+                      <ObjectCard object={obj} />
+                    </Box>
+                  );
+                })}
+              </Box>
+            ))}
           </VStack>
         </Collapse>
       </VStack>
