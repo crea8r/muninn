@@ -21,6 +21,7 @@ interface MarkdownEditorProps {
   initialValue: string;
   onChange: (content: string, relatedItems: any[]) => void;
   filters?: SpotLightFilter[];
+  isDisable?: boolean;
 }
 
 const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
@@ -32,6 +33,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     SpotLightFilter.FACT,
     SpotLightFilter.TASK,
   ],
+  isDisable = false,
 }) => {
   const [value, setValue] = useState(initialValue);
   const [relatedItems, setRelatedItems] = useState<any[]>([]);
@@ -109,7 +111,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               ref={editorRef}
               value={value}
               onChange={handleValueChange}
-              preview='edit'
+              preview={isDisable ? 'preview' : 'edit'}
               commands={
                 filters.length > 0
                   ? [...commands.getCommands(), mentionCommand]

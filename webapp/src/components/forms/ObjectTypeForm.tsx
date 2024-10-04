@@ -25,6 +25,7 @@ import {
   MenuList,
   MenuItem,
   InputLeftElement,
+  useToast,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import { ObjectType } from 'src/types';
@@ -57,6 +58,7 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
   const [description, setDescription] = useState('');
   const [selectedIcon, setSelectedIcon] = useState<string>('file');
   const [fields, setFields] = useState<Field[]>([]);
+  const toast = useToast();
 
   // Effect to populate form when editing an existing ObjectType
   useEffect(() => {
@@ -100,6 +102,15 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
 
   // Handler to save the ObjectType
   const handleSave = () => {
+    if (!name || !description) {
+      toast({
+        title: 'Name and description are required',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
     const objectType: ObjectType = {
       id: initialData?.id || null, // Use existing ID if editing, otherwise null for new ObjectType
       icon: selectedIcon,
@@ -152,7 +163,7 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
               <Input value={name} onChange={(e) => setName(e.target.value)} />
             </InputGroup>
           </FormControl>
-          <FormControl mb={4}>
+          <FormControl isRequired mb={4}>
             <FormLabel>Description</FormLabel>
             <MarkdownEditor
               initialValue={description}

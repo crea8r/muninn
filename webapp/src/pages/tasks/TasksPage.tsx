@@ -10,19 +10,18 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
-  Spinner,
   Checkbox,
   CheckboxGroup,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
-import BreadcrumbComponent from '../../components/Breadcrumb';
-import { TaskForm } from '../../components/forms';
-import { Task, NewTask, TaskStatus, UpdateTask } from '../../types/Task';
+import { TaskForm } from 'src/components/forms';
+import { Task, NewTask, TaskStatus, UpdateTask } from 'src/types/Task';
 import { createTask, listTasks, updateTask } from 'src/api';
 import authService from 'src/services/authService';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import TaskItem from 'src/components/TaskItem';
+import LoadingPanel from 'src/components/LoadingPanel';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -108,7 +107,6 @@ const TasksPage: React.FC = () => {
   return (
     <Box height='100%' display='flex' flexDirection='column'>
       <Box flexShrink={0}>
-        <BreadcrumbComponent />
         <HStack justify='space-between' mb={6}>
           <Heading as='h1' size='xl' color='var(--color-primary)'>
             Tasks
@@ -119,6 +117,7 @@ const TasksPage: React.FC = () => {
               setSelectedTask(null);
               onOpen();
             }}
+            isDisabled={isLoading}
           >
             New Task
           </Button>
@@ -131,6 +130,7 @@ const TasksPage: React.FC = () => {
             placeholder='Search tasks...'
             value={searchQuery}
             onChange={handleSearchChange}
+            isDisabled={isLoading}
           />
         </InputGroup>
         <HStack alignItems={'center'} my={2} pl={2}>
@@ -141,7 +141,7 @@ const TasksPage: React.FC = () => {
           >
             <HStack alignItems='flex-start'>
               {Object.values(TaskStatus).map((status) => (
-                <Checkbox key={status} value={status}>
+                <Checkbox key={status} value={status} isDisabled={isLoading}>
                   {status}
                 </Checkbox>
               ))}
@@ -150,58 +150,58 @@ const TasksPage: React.FC = () => {
         </HStack>
       </Box>
 
-      <Box flexGrow={1} overflowY='auto'>
-        {isLoading ? (
-          <Flex justify='center' align='center' height='100%'>
-            <Spinner />
-          </Flex>
-        ) : (
-          <VStack spacing={4} align='stretch'>
-            {tasks.length > 0 ? (
-              tasks.map((task) => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  handleClick={handleEditTask}
-                />
-              ))
-            ) : (
-              <Flex justify='center' align='center' height='100%'>
-                <Box>No tasks found</Box>
-              </Flex>
-            )}
-          </VStack>
-        )}
-      </Box>
+      {isLoading ? (
+        <LoadingPanel />
+      ) : (
+        <>
+          <Box flexGrow={1} overflowY='auto'>
+            <VStack spacing={4} align='stretch'>
+              {tasks.length > 0 ? (
+                tasks.map((task) => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    handleClick={handleEditTask}
+                  />
+                ))
+              ) : (
+                <Flex justify='center' align='center' height='100%'>
+                  <Box>No tasks found</Box>
+                </Flex>
+              )}
+            </VStack>
+          </Box>
 
-      <Flex
-        justifyContent='space-between'
-        alignItems='center'
-        mt={4}
-        flexShrink={0}
-      >
-        <Box>
-          Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
-          {Math.min(currentPage * ITEMS_PER_PAGE, totalTasks)} of {totalTasks}{' '}
-          tasks
-        </Box>
-        <HStack>
-          <Button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1 || isLoading}
+          <Flex
+            justifyContent='space-between'
+            alignItems='center'
+            mt={4}
+            flexShrink={0}
           >
-            Previous
-          </Button>
-          <Button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={currentPage === totalPages || isLoading}
-          >
-            Next
-          </Button>
-        </HStack>
-      </Flex>
+            <Box>
+              Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
+              {Math.min(currentPage * ITEMS_PER_PAGE, totalTasks)} of{' '}
+              {totalTasks} tasks
+            </Box>
+            <HStack>
+              <Button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1 || isLoading}
+              >
+                Previous
+              </Button>
+              <Button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages || isLoading}
+              >
+                Next
+              </Button>
+            </HStack>
+          </Flex>
+        </>
+      )}
 
       <TaskForm
         isOpen={isOpen}

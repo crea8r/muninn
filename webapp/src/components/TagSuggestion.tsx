@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Input, Text, useToast } from '@chakra-ui/react';
 import { Tag } from 'src/types';
+import LoadingPanel from './LoadingPanel';
 
 interface TagSuggestionProps {
   onAttachTag: (tag: Tag) => void;
@@ -16,6 +17,7 @@ const TagSuggestion = ({
   const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState<Tag[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
@@ -31,6 +33,7 @@ const TagSuggestion = ({
         (s) => s.name.toLowerCase() === inputValue.toLowerCase()
       );
       try {
+        setIsLoading(true);
         if (newTag) {
           await onAttachTag(newTag);
         } else {
@@ -56,6 +59,7 @@ const TagSuggestion = ({
           isClosable: true,
         });
       } finally {
+        setIsLoading(false);
         setShowSuggestions(false);
       }
     }
@@ -83,47 +87,53 @@ const TagSuggestion = ({
 
   return (
     <Box position={'relative'}>
-      <Input
-        ref={inputRef}
-        value={inputValue}
-        onChange={handleInputChange}
-        onKeyDown={handleInputKeyDown}
-        placeholder='Add a tag...'
-        size='sm'
-        border='none'
-        _focus={{ outline: 'none' }}
-        flexGrow={1}
-        minWidth='120px'
-        marginTop={1}
-      />
-      {showSuggestions && suggestions?.length > 0 && (
-        <Box
-          position='absolute'
-          top='100%'
-          left={0}
-          right={0}
-          zIndex={1}
-          mt={1}
-          bg='white'
-          boxShadow='md'
-          borderRadius='md'
-          maxHeight='200px'
-          overflowY='auto'
-        >
-          {suggestions.map((suggestion) => (
-            <Text
-              key={suggestion.id}
-              p={2}
-              cursor='pointer'
-              _hover={{ bg: 'gray.100' }}
-              onClick={() => {
-                handleSuggestionClick(suggestion);
-              }}
+      {isLoading ? (
+        <LoadingPanel height='auto' minHeight='auto' />
+      ) : (
+        <>
+          <Input
+            ref={inputRef}
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleInputKeyDown}
+            placeholder='Add a tag...'
+            size='sm'
+            border='none'
+            _focus={{ outline: 'none' }}
+            flexGrow={1}
+            minWidth='120px'
+            marginTop={1}
+          />
+          {showSuggestions && suggestions?.length > 0 && (
+            <Box
+              position='absolute'
+              top='100%'
+              left={0}
+              right={0}
+              zIndex={1}
+              mt={1}
+              bg='white'
+              boxShadow='md'
+              borderRadius='md'
+              maxHeight='200px'
+              overflowY='auto'
             >
-              {suggestion.name}
-            </Text>
-          ))}
-        </Box>
+              {suggestions.map((suggestion) => (
+                <Text
+                  key={suggestion.id}
+                  p={2}
+                  cursor='pointer'
+                  _hover={{ bg: 'gray.100' }}
+                  onClick={() => {
+                    handleSuggestionClick(suggestion);
+                  }}
+                >
+                  {suggestion.name}
+                </Text>
+              ))}
+            </Box>
+          )}
+        </>
       )}
     </Box>
   );

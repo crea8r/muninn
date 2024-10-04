@@ -34,6 +34,8 @@ import {
 import { ObjectType } from 'src/types';
 import { useHistory } from 'react-router-dom';
 import FaIconList from 'src/components/FaIconList';
+import LoadingPanel from 'src/components/LoadingPanel';
+import LoadingModal from 'src/components/LoadingModal';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -80,13 +82,14 @@ const ObjectTypesPage: React.FC = () => {
 
   const handleCreateObjectType = async (newObjectType: ObjectType) => {
     try {
+      setIsLoading(true);
       await createObjectType({
         name: newObjectType.name,
         description: newObjectType.description || '',
         fields: newObjectType.fields,
         icon: newObjectType.icon,
       });
-      fetchObjectTypes();
+      await fetchObjectTypes();
       onClose();
       toast({
         title: 'Object type created',
@@ -102,18 +105,21 @@ const ObjectTypesPage: React.FC = () => {
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleUpdateObjectType = async (updatedObjectType: ObjectType) => {
     try {
+      setIsLoading(true);
       await updateObjectType(updatedObjectType.id!, {
         name: updatedObjectType.name,
         description: updatedObjectType.description || '',
         fields: updatedObjectType.fields,
         icon: updatedObjectType.icon,
       });
-      fetchObjectTypes();
+      await fetchObjectTypes();
       onClose();
       setEditingObjectType(undefined);
       toast({
@@ -130,13 +136,16 @@ const ObjectTypesPage: React.FC = () => {
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDeleteObjectType = async (id: string) => {
     try {
+      setIsLoading(true);
       await deleteObjectType(id);
-      fetchObjectTypes();
+      await fetchObjectTypes();
       toast({
         title: 'Object type deleted',
         status: 'success',
@@ -152,6 +161,8 @@ const ObjectTypesPage: React.FC = () => {
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -181,6 +192,7 @@ const ObjectTypesPage: React.FC = () => {
             setEditingObjectType(undefined);
             onOpen();
           }}
+          isDisabled={isLoading}
         >
           New Data Type
         </Button>
@@ -194,107 +206,120 @@ const ObjectTypesPage: React.FC = () => {
           placeholder='Search in name, description and field name'
           value={searchQuery}
           onChange={handleSearchChange}
+          isDisabled={isLoading}
         />
       </InputGroup>
+      {isLoading ? (
+        <LoadingPanel />
+      ) : (
+        <>
+          <Table variant='simple'>
+            <Thead>
+              <Tr>
+                <Th>Name</Th>
+                <Th>Fields</Th>
+                <Th>Actions</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {objectTypes.map((objectType) => (
+                <Tr key={objectType.id}>
+                  <Td>
+                    <VStack align='start' spacing={1}>
+                      <HStack>
+                        {FaIconList[objectType.icon as keyof typeof FaIconList]}
+                        <Text
+                          fontWeight='bold'
+                          textDecoration={'underline'}
+                          _hover={{
+                            cursor: 'pointer',
+                            background: 'yellow.100',
+                          }}
+                          onClick={() =>
+                            history.push(
+                              `/settings/object-types/${objectType.id}`
+                            )
+                          }
+                        >
+                          {objectType.name}
+                        </Text>
+                      </HStack>
 
-      <Table variant='simple'>
-        <Thead>
-          <Tr>
-            <Th>Name</Th>
-            <Th>Fields</Th>
-            <Th>Actions</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {objectTypes.map((objectType) => (
-            <Tr key={objectType.id}>
-              <Td>
-                <VStack align='start' spacing={1}>
-                  <HStack>
-                    {FaIconList[objectType.icon as keyof typeof FaIconList]}
-                    <Text
-                      fontWeight='bold'
-                      textDecoration={'underline'}
-                      _hover={{ cursor: 'pointer', background: 'yellow.100' }}
-                      onClick={() =>
-                        history.push(`/settings/object-types/${objectType.id}`)
-                      }
+                      <Text fontSize='sm' color='gray.600'>
+                        {objectType.description}
+                      </Text>
+                    </VStack>
+                  </Td>
+                  <Td>
+                    {Object.keys(objectType.fields).map((k, index) => (
+                      <Badge key={index} mr={2} mb={1}>
+                        {k}: {objectType.fields[k]}
+                      </Badge>
+                    ))}
+                  </Td>
+                  <Td minWidth='200px'>
+                    <Button
+                      size='sm'
+                      mr={2}
+                      onClick={() => handleEditObjectType(objectType)}
                     >
-                      {objectType.name}
-                    </Text>
-                  </HStack>
+                      Edit
+                    </Button>
+                    <Button
+                      size='sm'
+                      colorScheme='red'
+                      onClick={() => handleDeleteObjectType(objectType.id!)}
+                    >
+                      Delete
+                    </Button>
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
 
-                  <Text fontSize='sm' color='gray.600'>
-                    {objectType.description}
-                  </Text>
-                </VStack>
-              </Td>
-              <Td>
-                {Object.keys(objectType.fields).map((k, index) => (
-                  <Badge key={index} mr={2} mb={1}>
-                    {k}: {objectType.fields[k]}
-                  </Badge>
-                ))}
-              </Td>
-              <Td minWidth='200px'>
-                <Button
-                  size='sm'
-                  mr={2}
-                  onClick={() => handleEditObjectType(objectType)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  size='sm'
-                  colorScheme='red'
-                  onClick={() => handleDeleteObjectType(objectType.id!)}
-                >
-                  Delete
-                </Button>
-              </Td>
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
-
-      <Flex justifyContent='space-between' alignItems='center' mt={4}>
-        <Box>
-          Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
-          {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of {totalCount}{' '}
-          object types
-        </Box>
-        <HStack>
-          <Button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            isLoading={isLoading}
-          >
-            Previous
-          </Button>
-          <Select
-            value={currentPage}
-            onChange={(e) => setCurrentPage(Number(e.target.value))}
-          >
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <option key={page} value={page}>
-                Page {page}
-              </option>
-            ))}
-          </Select>
-          <Button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={currentPage === totalPages}
-            isLoading={isLoading}
-          >
-            Next
-          </Button>
-        </HStack>
-      </Flex>
+          <Flex justifyContent='space-between' alignItems='center' mt={4}>
+            <Box>
+              Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
+              {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of{' '}
+              {totalCount} object types
+            </Box>
+            <HStack>
+              <Button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                isLoading={isLoading}
+              >
+                Previous
+              </Button>
+              <Select
+                value={currentPage}
+                onChange={(e) => setCurrentPage(Number(e.target.value))}
+              >
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <option key={page} value={page}>
+                      Page {page}
+                    </option>
+                  )
+                )}
+              </Select>
+              <Button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                isLoading={isLoading}
+              >
+                Next
+              </Button>
+            </HStack>
+          </Flex>
+        </>
+      )}
 
       <ObjectTypeForm
-        isOpen={isOpen}
+        isOpen={isOpen && !isLoading}
         onClose={() => {
           onClose();
           setEditingObjectType(undefined);
@@ -304,6 +329,8 @@ const ObjectTypesPage: React.FC = () => {
         }
         initialData={editingObjectType}
       />
+
+      <LoadingModal isOpen={isLoading} onClose={() => {}} />
     </Box>
   );
 };

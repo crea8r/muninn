@@ -11,6 +11,8 @@ import {
   useToast,
   Alert,
   AlertIcon,
+  Flex,
+  Spinner,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useHistory } from 'react-router-dom';
 import { deleteCreatorList, listCreatorListsByCreatorID } from 'src/api/list';
@@ -32,18 +34,31 @@ const ViewsPage: React.FC = () => {
   const [bookmarkViews, setBookmarkViews] = useState<
     { id: string; name: string }[]
   >([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [foredRefresh, setForcedRefresh] = useState(0);
   const { globalData, refreshGlobalData } = useGlobalContext();
   const toast = useToast();
 
   const loadViews = async () => {
-    const resp = await listCreatorListsByCreatorID();
-    const tmp = resp?.map((cl: CreatorList) => ({
-      id: cl.id,
-      name: cl.list_name,
-      description: cl.list_description,
-    }));
-    setViews(tmp);
+    setIsLoading(true);
+    try {
+      const resp = await listCreatorListsByCreatorID();
+      const tmp = resp?.map((cl: CreatorList) => ({
+        id: cl.id,
+        name: cl.list_name,
+        description: cl.list_description,
+      }));
+      setViews(tmp);
+    } catch (e) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load views',
+        status: 'error',
+        duration: 2000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -124,68 +139,81 @@ const ViewsPage: React.FC = () => {
           bg='var(--color-primary)'
           onClick={() => history.push('/settings/templates')}
           leftIcon={<FaPlus />}
+          isDisabled={isLoading}
         >
           From template
         </Button>
       </HStack>
-      <VStack spacing={4} align='stretch'>
-        {!views || views.length === 0 ? (
-          <Alert status='info' my={2}>
-            <AlertIcon />
-            No view found, add more views{' '}
-            <Text
-              onClick={() => history.push('/settings/templates')}
-              mx={1}
-              textDecoration={'underline'}
-              cursor={'pointer'}
+      {isLoading ? (
+        <Flex justify='center' align='center' height='100%'>
+          <Spinner />
+        </Flex>
+      ) : (
+        <VStack spacing={4} align='stretch'>
+          {!views || views.length === 0 ? (
+            <Alert status='info' my={2}>
+              <AlertIcon />
+              No view found, add more views{' '}
+              <Text
+                onClick={() => history.push('/settings/templates')}
+                mx={1}
+                textDecoration={'underline'}
+                cursor={'pointer'}
+              >
+                here{' '}
+              </Text>
+            </Alert>
+          ) : null}
+          {views?.map((view) => (
+            <Box
+              key={view.id}
+              p={4}
+              bg='white'
+              borderRadius='md'
+              boxShadow='sm'
             >
-              here{' '}
-            </Text>
-          </Alert>
-        ) : null}
-        {views?.map((view) => (
-          <Box key={view.id} p={4} bg='white' borderRadius='md' boxShadow='sm'>
-            <HStack justify='space-between'>
-              <VStack align='start' spacing={1}>
-                <Link
-                  as={RouterLink}
-                  to={`/views/${view.id}`}
-                  fontWeight='bold'
-                  color='var(--color-primary)'
-                >
-                  {view.name}
-                </Link>
-                <Text fontSize='sm' color='gray.500'>
-                  {view.description}
-                </Text>
-              </VStack>
-              <HStack>
-                <IconButton
-                  icon={<FaBookmark />}
-                  aria-label='Bookmark'
-                  onClick={() => {
-                    handleBookmarkClick(view.id);
-                  }}
-                  colorScheme={
-                    bookmarkViews.findIndex((v) => v.id === view.id) > -1
-                      ? 'blue'
-                      : 'gray'
-                  }
-                />
-                <IconButton
-                  icon={<FaTrash />}
-                  aria-label='Delete'
-                  isDisabled={
-                    bookmarkViews.findIndex((v) => v.id === view.id) > -1
-                  }
-                  colorScheme='red'
-                  onClick={() => handleDeleteView(view.id)}
-                />
+              <HStack justify='space-between'>
+                <VStack align='start' spacing={1}>
+                  <Link
+                    as={RouterLink}
+                    to={`/views/${view.id}`}
+                    fontWeight='bold'
+                    color='var(--color-primary)'
+                  >
+                    {view.name}
+                  </Link>
+                  <Text fontSize='sm' color='gray.500'>
+                    {view.description}
+                  </Text>
+                </VStack>
+                <HStack>
+                  <IconButton
+                    icon={<FaBookmark />}
+                    aria-label='Bookmark'
+                    onClick={() => {
+                      handleBookmarkClick(view.id);
+                    }}
+                    colorScheme={
+                      bookmarkViews.findIndex((v) => v.id === view.id) > -1
+                        ? 'blue'
+                        : 'gray'
+                    }
+                  />
+                  <IconButton
+                    icon={<FaTrash />}
+                    aria-label='Delete'
+                    isDisabled={
+                      bookmarkViews.findIndex((v) => v.id === view.id) > -1
+                    }
+                    colorScheme='red'
+                    onClick={() => handleDeleteView(view.id)}
+                  />
+                </HStack>
               </HStack>
-            </HStack>
-          </Box>
-        ))}
-      </VStack>
+            </Box>
+          ))}
+        </VStack>
+      )}
     </Box>
   );
 };

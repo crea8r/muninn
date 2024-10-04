@@ -154,6 +154,7 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
                     value={idString}
                     onChange={(e) => setIDString(e.target.value)}
                     placeholder='Object id string, useful for adding info from csv'
+                    isDisabled={isSubmitting}
                   />
                   <InputRightAddon>
                     <Button

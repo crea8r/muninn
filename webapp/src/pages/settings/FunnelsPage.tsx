@@ -33,6 +33,8 @@ import {
   deleteFunnel,
 } from 'src/api/funnel';
 import { useHistory } from 'react-router-dom';
+import LoadingPanel from 'src/components/LoadingPanel';
+import LoadingModal from 'src/components/LoadingModal';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -61,8 +63,8 @@ const FunnelsPage: React.FC = () => {
   }, [currentPage, searchQuery]);
 
   const loadFunnels = async () => {
-    setIsLoading(true);
     try {
+      setIsLoading(true);
       const result = await fetchAllFunnels(
         currentPage,
         ITEMS_PER_PAGE,
@@ -78,15 +80,17 @@ const FunnelsPage: React.FC = () => {
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleCreateFunnel = async (newFunnel: NewFunnel) => {
     try {
+      setIsLoading(true);
       await createFunnel(newFunnel);
       onCreateClose();
-      loadFunnels();
+      await loadFunnels();
       toast({
         title: 'Funnel created',
         status: 'success',
@@ -101,15 +105,18 @@ const FunnelsPage: React.FC = () => {
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleUpdateFunnel = async (funnelUpdate: FunnelUpdate) => {
     try {
+      setIsLoading(true);
       await updateFunnel(funnelUpdate);
       onEditClose();
       setEditingFunnel(null);
-      loadFunnels();
+      await loadFunnels();
       toast({
         title: 'Funnel updated',
         status: 'success',
@@ -124,14 +131,17 @@ const FunnelsPage: React.FC = () => {
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDeleteFunnel = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this funnel?')) {
       try {
+        setIsLoading(true);
         await deleteFunnel(id);
-        loadFunnels();
+        await loadFunnels();
         toast({
           title: 'Funnel deleted',
           status: 'success',
@@ -146,6 +156,8 @@ const FunnelsPage: React.FC = () => {
           duration: 5000,
           isClosable: true,
         });
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -174,11 +186,11 @@ const FunnelsPage: React.FC = () => {
           colorScheme='blue'
           bg='var(--color-primary)'
           onClick={onCreateOpen}
+          isDisabled={isLoading}
         >
           New Funnel
         </Button>
       </HStack>
-
       <InputGroup mb={4}>
         <InputLeftElement pointerEvents='none'>
           <SearchIcon color='gray.300' />
@@ -187,114 +199,115 @@ const FunnelsPage: React.FC = () => {
           placeholder='Search in name and description'
           value={searchQuery}
           onChange={handleSearchChange}
+          isDisabled={isLoading}
         />
       </InputGroup>
-
-      <Table variant='simple'>
-        <Thead>
-          <Tr>
-            <Th>Name</Th>
-            <Th>Steps</Th>
-            <Th>Actions</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {isLoading ? (
-            <Tr>
-              <Td colSpan={5} textAlign='center'>
-                Loading...
-              </Td>
-            </Tr>
-          ) : (
-            funnels.map((funnel) => (
-              <Tr key={funnel.id}>
-                <Td maxWidth='250px'>
-                  <VStack align='left'>
-                    <Text
-                      fontWeight='bold'
-                      textDecoration={'underline'}
-                      cursor={'pointer'}
-                      onClick={() =>
-                        history.push(`/settings/funnels/${funnel.id}`)
-                      }
-                    >
-                      {funnel.name}
-                    </Text>
-                    <Box>{funnel.description}</Box>
-                  </VStack>
-                </Td>
-                <Td>
-                  <UnorderedList>
-                    {funnel.steps.map((step, index) => (
-                      <ListItem key={index}>{step.name}</ListItem>
-                    ))}
-                  </UnorderedList>
-                </Td>
-                <Td width='200px'>
-                  <Button size='sm' onClick={() => handleEdit(funnel)} mr={2}>
-                    Edit
-                  </Button>
-                  <Button
-                    size='sm'
-                    colorScheme='red'
-                    onClick={() => handleDeleteFunnel(funnel.id)}
-                  >
-                    Delete
-                  </Button>
-                </Td>
+      {isLoading ? (
+        <LoadingPanel />
+      ) : (
+        <>
+          <Table variant='simple'>
+            <Thead>
+              <Tr>
+                <Th>Name</Th>
+                <Th>Steps</Th>
+                <Th>Actions</Th>
               </Tr>
-            ))
-          )}
-        </Tbody>
-      </Table>
+            </Thead>
+            <Tbody>
+              {funnels.map((funnel) => (
+                <Tr key={funnel.id}>
+                  <Td maxWidth='250px'>
+                    <VStack align='left'>
+                      <Text
+                        fontWeight='bold'
+                        textDecoration={'underline'}
+                        cursor={'pointer'}
+                        onClick={() =>
+                          history.push(`/settings/funnels/${funnel.id}`)
+                        }
+                      >
+                        {funnel.name}
+                      </Text>
+                      <Box>{funnel.description}</Box>
+                    </VStack>
+                  </Td>
+                  <Td>
+                    <UnorderedList>
+                      {funnel.steps.map((step, index) => (
+                        <ListItem key={index}>{step.name}</ListItem>
+                      ))}
+                    </UnorderedList>
+                  </Td>
+                  <Td width='200px'>
+                    <Button size='sm' onClick={() => handleEdit(funnel)} mr={2}>
+                      Edit
+                    </Button>
+                    <Button
+                      size='sm'
+                      colorScheme='red'
+                      onClick={() => handleDeleteFunnel(funnel.id)}
+                    >
+                      Delete
+                    </Button>
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
 
-      <Flex justifyContent='space-between' alignItems='center' mt={4}>
-        <Text>
-          Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
-          {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of {totalCount}{' '}
-          funnels
-        </Text>
-        <HStack>
-          <Button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </Button>
-          <Select
-            value={currentPage}
-            onChange={(e) => setCurrentPage(Number(e.target.value))}
-          >
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <option key={page} value={page}>
-                Page {page}
-              </option>
-            ))}
-          </Select>
-          <Button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </Button>
-        </HStack>
-      </Flex>
+          <Flex justifyContent='space-between' alignItems='center' mt={4}>
+            <Text>
+              Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
+              {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of{' '}
+              {totalCount} funnels
+            </Text>
+            <HStack>
+              <Button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <Select
+                value={currentPage}
+                onChange={(e) => setCurrentPage(Number(e.target.value))}
+              >
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <option key={page} value={page}>
+                      Page {page}
+                    </option>
+                  )
+                )}
+              </Select>
+              <Button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </HStack>
+          </Flex>
+        </>
+      )}
 
       <CreateFunnelForm
-        isOpen={isCreateOpen}
+        isOpen={isCreateOpen && !isLoading}
         onClose={onCreateClose}
         onSave={handleCreateFunnel}
       />
       {editingFunnel && (
         <EditFunnelForm
-          isOpen={isEditOpen}
+          isOpen={isEditOpen && !isLoading}
           onClose={onEditClose}
           funnel={editingFunnel}
           onSave={handleUpdateFunnel}
         />
       )}
+      <LoadingModal isOpen={isLoading} onClose={() => {}} />
     </Box>
   );
 };

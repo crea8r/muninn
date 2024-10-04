@@ -1,5 +1,5 @@
 // ObjectTypeCard.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Text,
@@ -25,14 +25,15 @@ import {
   Badge,
   IconButton,
   Spacer,
-  Alert,
-  AlertIcon,
+  Flex,
+  Divider,
 } from '@chakra-ui/react';
 import { Funnel, FunnelStep, StepAndFunnel } from 'src/types/';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { shortenText, substatus } from 'src/utils';
-import { DeleteIcon } from '@chakra-ui/icons';
+import { ChevronDownIcon, ChevronUpIcon, CloseIcon } from '@chakra-ui/icons';
+import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 
 interface ObjectFunnelCardProps {
   currentObjectStepFunnel: StepAndFunnel;
@@ -85,12 +86,48 @@ const HistoryItems = ({
   );
 };
 
-const StepDetail = ({ step }: { step: FunnelStep }) => {
+export const StepDetail = ({
+  step,
+  defaultItem = '',
+}: {
+  step: FunnelStep;
+  defaultItem?: string;
+}) => {
+  const [showingItem, setShowingItem] = useState<string>(defaultItem);
+  const renderItem = (item: string, label: string) => {
+    const content = step[item as keyof FunnelStep];
+    return (
+      <VStack spacing={2} alignItems={'flex-start'} py={1}>
+        <Flex alignItems={'center'}>
+          <IconButton
+            onClick={() => {
+              setShowingItem(showingItem === item ? '' : item);
+            }}
+            icon={
+              showingItem === item ? <ChevronDownIcon /> : <ChevronUpIcon />
+            }
+            aria-label={label}
+            size='xs'
+            mr={1}
+          />
+
+          <Text fontWeight={'bold'}>{label}:</Text>
+        </Flex>
+
+        {content && showingItem === item && (
+          <>
+            <Divider />
+            <MarkdownDisplay content={content.toString()} />
+          </>
+        )}
+      </VStack>
+    );
+  };
   return (
     <Box padding={1} border={1} borderColor='gray.200'>
-      <Box>Defition: {step.definition}</Box>
-      <Box>Example: {step.example}</Box>
-      <Box>Action: {step.action}</Box>
+      {renderItem('definition', 'Definition')}
+      {renderItem('example', 'Example')}
+      {renderItem('action', 'Action')}
     </Box>
   );
 };
@@ -198,11 +235,15 @@ const ObjectFunnelCard: React.FC<ObjectFunnelCardProps> = ({
         borderWidth={1}
         borderRadius='md'
         p={4}
-        onClick={onOpen}
-        cursor='pointer'
       >
         <HStack alignItems={'center'} w={'100%'} mb={2}>
-          <Text size='sm' fontWeight={'bold'}>
+          <Text
+            size='sm'
+            fontWeight={'bold'}
+            textDecoration={'underline'}
+            onClick={onOpen}
+            cursor='pointer'
+          >
             {funnel.name}
           </Text>
           <Spacer />
@@ -225,15 +266,16 @@ const ObjectFunnelCard: React.FC<ObjectFunnelCardProps> = ({
         )}
         {funnel.steps.find((step) => step.step_order === currentStep.step_order)
           ?.action && (
-          <Alert status='warning' mt={2}>
-            <AlertIcon />
-            {shortenText(
-              funnel.steps.find(
-                (step) => step.step_order === currentStep.step_order
-              )?.action || '',
-              50
-            )}
-          </Alert>
+          <Box mt={2}>
+            <MarkdownDisplay
+              content={shortenText(
+                funnel.steps.find(
+                  (step) => step.step_order === currentStep.step_order
+                )?.action || '',
+                50
+              )}
+            />
+          </Box>
         )}
       </Box>
 
@@ -243,7 +285,7 @@ const ObjectFunnelCard: React.FC<ObjectFunnelCardProps> = ({
           handleReset();
           onClose();
         }}
-        size='xl'
+        size='full'
       >
         <ModalOverlay />
         <ModalContent>
@@ -252,11 +294,12 @@ const ObjectFunnelCard: React.FC<ObjectFunnelCardProps> = ({
               <Text>Step Detail</Text>
               <Spacer />
               <IconButton
+                variant={'outline'}
                 size={'sm'}
-                aria-label='Delete From Funnel'
-                icon={<DeleteIcon />}
+                aria-label='Close'
+                icon={<CloseIcon />}
                 colorScheme='red'
-                onClick={handleDeleteFromFunnel}
+                onClick={onClose}
               />
             </HStack>
           </ModalHeader>
@@ -277,7 +320,7 @@ const ObjectFunnelCard: React.FC<ObjectFunnelCardProps> = ({
                           {subStatusText}
                         </Badge>
                       </FormLabel>
-                      <StepDetail step={currentStep} />
+                      <StepDetail step={currentStep} defaultItem='action' />
                     </Box>
                     {subStatus === 1 && (
                       <FormControl mt={2}>
@@ -293,7 +336,7 @@ const ObjectFunnelCard: React.FC<ObjectFunnelCardProps> = ({
                           ))}
                         </Select>
                         {selectedStepId !== currentStep.id && tmpStep && (
-                          <StepDetail step={tmpStep} />
+                          <StepDetail step={tmpStep} defaultItem='definition' />
                         )}
                       </FormControl>
                     )}
@@ -310,7 +353,16 @@ const ObjectFunnelCard: React.FC<ObjectFunnelCardProps> = ({
           </ModalBody>
           <ModalFooter>
             <HStack w={'100%'}>
+              <Button
+                size={'md'}
+                aria-label='Delete From Funnel'
+                colorScheme='red'
+                onClick={handleDeleteFromFunnel}
+              >
+                Delete From Funnel
+              </Button>
               <Spacer />
+
               {[0, 2].includes(subStatus) && (
                 <Button
                   colorScheme='blue'
@@ -328,6 +380,7 @@ const ObjectFunnelCard: React.FC<ObjectFunnelCardProps> = ({
                     onClick={() => {
                       handleUpdateSubStatus(2);
                     }}
+                    variant={'outline'}
                   >
                     Drop out this contact
                   </Button>

@@ -4,7 +4,6 @@ import {
   VStack,
   HStack,
   Input,
-  Spinner,
   useToast,
   InputGroup,
   InputLeftElement,
@@ -33,6 +32,7 @@ import ResizableTable from './ResizableTable';
 // import BreadcrumbComponent from 'src/components/Breadcrumb';
 import { Tag, ObjectTypeFilter } from 'src/types';
 import CreateListDialog from 'src/components/CreateListDialog';
+import LoadingPanel from 'src/components/LoadingPanel';
 
 const ITEMS_PER_PAGE = 6;
 const renderColumns = (columns: string[]) => {
@@ -170,6 +170,7 @@ const ObjectsByType: React.FC<ObjecsByTypeProps> = ({
             <Input
               placeholder='Search object name and description ...'
               onChange={(e) => debouncedSearch(e.target.value)}
+              isDisabled={isLoading}
             />
           </InputGroup>
 
@@ -184,6 +185,7 @@ const ObjectsByType: React.FC<ObjecsByTypeProps> = ({
               )
             }
             aria-label={'Date Order'}
+            isDisabled={isLoading}
           />
         </HStack>
         <HStack background={'gray.100'} borderRadius={8} p={1}>
@@ -193,12 +195,14 @@ const ObjectsByType: React.FC<ObjecsByTypeProps> = ({
             _hover={{ cursor: 'pointer' }}
             title={'Save as a list'}
             onClick={onListOpen}
+            isDisabled={isLoading}
           />
           <IconButton
             onClick={onOpen}
             _hover={{ cursor: 'pointer' }}
             icon={<FaFilter />}
             aria-label={'Filter'}
+            isDisabled={isLoading}
           />
           <Box>{columnText}</Box>
           {window.Object.keys(predefinedFilters.keyValues).map((key: any) => (
@@ -220,7 +224,7 @@ const ObjectsByType: React.FC<ObjecsByTypeProps> = ({
         </HStack>
 
         {isLoading ? (
-          <Spinner />
+          <LoadingPanel />
         ) : (
           <ResizableTable
             objectType={objectType}

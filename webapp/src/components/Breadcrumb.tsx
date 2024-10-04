@@ -28,7 +28,13 @@ const BreadcrumbComponent: React.FC<BreadcrumbComponentProps> = ({
         const routeTo = `/${pathnames.slice(0, index + 1).join('/')}`;
         const isLast = index === pathnames.length - 1;
         return isLast && label ? (
-          <BreadcrumbItem key={name} isCurrentPage={isLast}>
+          <BreadcrumbItem
+            key={name}
+            isCurrentPage={isLast}
+            p={0.5}
+            background={'yellow.100'}
+            fontWeight={'bold'}
+          >
             <BreadcrumbLink as={RouterLink} to={routeTo}>
               {label}
             </BreadcrumbLink>

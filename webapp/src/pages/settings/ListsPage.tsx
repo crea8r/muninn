@@ -17,6 +17,7 @@ import {
 import { useEffect, useState } from 'react';
 import { CreatorList, List } from 'src/types';
 import { useHistory } from 'react-router-dom';
+import LoadingPanel from 'src/components/LoadingPanel';
 
 type ListItemProps = {
   item: List;
@@ -60,6 +61,7 @@ const ListItem = ({
 const ListsPage = () => {
   const [lists, setLists] = useState<List[]>([]);
   const [creatorLists, setCreatorLists] = useState<CreatorList[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
 
   const history = useHistory();
@@ -87,37 +89,54 @@ const ListsPage = () => {
     }
   };
   const loadData = async () => {
-    const resp1 = await listListsByOrgID(1, 100);
-    setLists(resp1.lists || []);
-    const resp2 = await listCreatorListsByCreatorID();
-    setCreatorLists(resp2 || []);
+    setIsLoading(true);
+    try {
+      const resp1 = await listListsByOrgID(1, 100);
+      setLists(resp1.lists || []);
+      const resp2 = await listCreatorListsByCreatorID();
+      setCreatorLists(resp2 || []);
+    } catch (e) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load lists',
+        status: 'error',
+        duration: 2000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   // const [forcedRefresh, setForcedRefresh] = useState(0);
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <Box>
       <BreadcrumbComponent label='Templates' />
-      {lists.length === 0 && (
+
+      {isLoading ? (
+        <LoadingPanel />
+      ) : lists.length === 0 ? (
         <Alert status='info' my={2}>
           No lists found.
         </Alert>
+      ) : (
+        <VStack spacing={2} align='stretch'>
+          {lists?.map((list: List, k) => {
+            const found = creatorLists.find((cl) => cl.list_id === list.id);
+            return (
+              <ListItem
+                item={list}
+                creatorList={found}
+                key={k}
+                openView={handleOpenView}
+                createView={handleCreateCreatorList}
+              />
+            );
+          })}
+        </VStack>
       )}
-      <VStack spacing={2} align='stretch'>
-        {lists?.map((list: List, k) => {
-          const found = creatorLists.find((cl) => cl.list_id === list.id);
-          return (
-            <ListItem
-              item={list}
-              creatorList={found}
-              key={k}
-              openView={handleOpenView}
-              createView={handleCreateCreatorList}
-            />
-          );
-        })}
-      </VStack>
     </Box>
   );
 };

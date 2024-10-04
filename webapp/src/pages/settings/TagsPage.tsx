@@ -31,6 +31,7 @@ import {
   UpdateTagParams,
 } from 'src/api/tag';
 import { Tag } from 'src/types';
+import LoadingPanel from 'src/components/LoadingPanel';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -170,6 +171,7 @@ const TagsPage: React.FC = () => {
           colorScheme='blue'
           bg='var(--color-primary)'
           onClick={onNewTagOpen}
+          isDisabled={isLoading}
         >
           New Tag
         </Button>
@@ -183,81 +185,94 @@ const TagsPage: React.FC = () => {
           placeholder='Search in name and description'
           value={searchQuery}
           onChange={handleSearchChange}
+          isDisabled={isLoading}
         />
       </InputGroup>
 
-      <Table variant='simple'>
-        <Thead>
-          <Tr>
-            <Th>Name</Th>
-            <Th>Description</Th>
-            <Th>Actions</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {tags.map((tag) => (
-            <Tr key={tag.id}>
-              <Td>
-                <ChakraTag
-                  backgroundColor={tag.color_schema.background}
-                  color={tag.color_schema.text}
-                >
-                  {tag.name}
-                </ChakraTag>
-              </Td>
-              <Td>{tag.description}</Td>
-              <Td>
-                <Button size='sm' mr={2} onClick={() => handleEditClick(tag)}>
-                  Edit
-                </Button>
-                <Button
-                  size='sm'
-                  colorScheme='red'
-                  onClick={() => handleDeleteTag(tag.id.toString())}
-                >
-                  Delete
-                </Button>
-              </Td>
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
+      {isLoading ? (
+        <LoadingPanel />
+      ) : (
+        <>
+          <Table variant='simple'>
+            <Thead>
+              <Tr>
+                <Th>Name</Th>
+                <Th>Description</Th>
+                <Th>Actions</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {tags.map((tag) => (
+                <Tr key={tag.id}>
+                  <Td>
+                    <ChakraTag
+                      backgroundColor={tag.color_schema.background}
+                      color={tag.color_schema.text}
+                    >
+                      {tag.name}
+                    </ChakraTag>
+                  </Td>
+                  <Td>{tag.description}</Td>
+                  <Td>
+                    <Button
+                      size='sm'
+                      mr={2}
+                      onClick={() => handleEditClick(tag)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size='sm'
+                      colorScheme='red'
+                      onClick={() => handleDeleteTag(tag.id.toString())}
+                    >
+                      Delete
+                    </Button>
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
 
-      <Flex justifyContent='space-between' alignItems='center' mt={4}>
-        <Box>
-          Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
-          {Math.min(currentPage * ITEMS_PER_PAGE, totalCount || 0)} of{' '}
-          {totalCount || 0} tags
-        </Box>
-        <HStack>
-          <Button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            isLoading={isLoading}
-          >
-            Previous
-          </Button>
-          <Select
-            value={currentPage}
-            onChange={(e) => setCurrentPage(Number(e.target.value))}
-          >
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <option key={page} value={page}>
-                Page {page}
-              </option>
-            ))}
-          </Select>
-          <Button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={currentPage === totalPages}
-            isLoading={isLoading}
-          >
-            Next
-          </Button>
-        </HStack>
-      </Flex>
+          <Flex justifyContent='space-between' alignItems='center' mt={4}>
+            <Box>
+              Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
+              {Math.min(currentPage * ITEMS_PER_PAGE, totalCount || 0)} of{' '}
+              {totalCount || 0} tags
+            </Box>
+            <HStack>
+              <Button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                isLoading={isLoading}
+              >
+                Previous
+              </Button>
+              <Select
+                value={currentPage}
+                onChange={(e) => setCurrentPage(Number(e.target.value))}
+              >
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <option key={page} value={page}>
+                      Page {page}
+                    </option>
+                  )
+                )}
+              </Select>
+              <Button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                isLoading={isLoading}
+              >
+                Next
+              </Button>
+            </HStack>
+          </Flex>
+        </>
+      )}
 
       <NewTagForm
         isOpen={isNewTagOpen}

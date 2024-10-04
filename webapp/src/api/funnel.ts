@@ -1,5 +1,5 @@
 import { axiosWithAuth } from './utils';
-import { Funnel, NewFunnel, FunnelUpdate } from 'src/types/Funnel';
+import { Funnel, NewFunnel, FunnelUpdate, FunnelStep } from 'src/types/Funnel';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -57,12 +57,18 @@ export type StepWithObjects = {
 
 export type FunnelViewType = {
   funnel: any;
-  steps: any[];
+  steps: {
+    step: FunnelStep;
+    objects: any[];
+    totalCount: number;
+    currentPage: number;
+  }[];
 };
 
 export const getFunnelView = async (id: string): Promise<FunnelViewType> => {
   const response = await axiosWithAuth().get(
     `${API_URL}/setting/funnels/${id}/view`
   );
+  console.log(response.data);
   return response.data;
 };

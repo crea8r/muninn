@@ -11,9 +11,6 @@ import {
   TabPanel,
   TabPanels,
   useToast,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
   HStack,
   IconButton,
   useMediaQuery,
@@ -24,8 +21,9 @@ import {
   ModalBody,
   useDisclosure,
   ModalOverlay,
+  Alert,
 } from '@chakra-ui/react';
-import { ChevronRightIcon, EditIcon } from '@chakra-ui/icons';
+import { EditIcon } from '@chakra-ui/icons';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 import {
@@ -57,6 +55,8 @@ import {
 import { ObjectDetail, ObjectTypeValue } from 'src/types/Object';
 import { FaPlus } from 'react-icons/fa';
 import { FactToCreate, FactToUpdate } from 'src/api/fact';
+import BreadcrumbComponent from 'src/components/Breadcrumb';
+import LoadingModal from 'src/components/LoadingModal';
 
 const ObjectDetailPage: React.FC = () => {
   const { objectId } = useParams<{ objectId: string }>();
@@ -68,6 +68,7 @@ const ObjectDetailPage: React.FC = () => {
   const [forceUpdate, setForceUpdate] = useState(0);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [isLargerThan1280] = useMediaQuery('(min-width: 1280px)');
+  const [isLoading, setIsLoading] = useState(false);
   const {
     isOpen: isOpenNewActivityDialog,
     onOpen: onOpenNewActivityDialog,
@@ -81,6 +82,7 @@ const ObjectDetailPage: React.FC = () => {
   useEffect(() => {
     const loadObjectDetails = async () => {
       try {
+        setIsLoading(true);
         const details = await fetchObjectDetails(objectId);
         setObject(details);
         setFacts(details.facts);
@@ -93,6 +95,8 @@ const ObjectDetailPage: React.FC = () => {
           duration: 5000,
           isClosable: true,
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -100,21 +104,28 @@ const ObjectDetailPage: React.FC = () => {
   }, [objectId, toast, forceUpdate]);
 
   const handleTagsAdd = async (tagId: string) => {
+    setIsLoading(true);
     await addTagToObject(objectId, tagId);
     setForceUpdate(forceUpdate + 1);
+    setIsLoading(false);
   };
 
   const handleTagsRemove = async (tagId: string) => {
+    setIsLoading(true);
     await removeTagFromObject(objectId, tagId);
     setForceUpdate(forceUpdate + 1);
+    setIsLoading(false);
   };
 
   const handleUpdateObject = async (updatedObject: UpdateObject) => {
+    setIsLoading(true);
     await updateObject(updatedObject);
     setForceUpdate(forceUpdate + 1);
+    setIsLoading(false);
   };
 
   const handleAddFact = async (toSubmitFact: FactToUpdate | FactToCreate) => {
+    setIsLoading(true);
     if ('id' in toSubmitFact) {
       await updateFact(toSubmitFact);
     } else {
@@ -122,19 +133,24 @@ const ObjectDetailPage: React.FC = () => {
     }
     setForceUpdate(forceUpdate + 1);
     onCloseNewActivityDialog();
+    setIsLoading(false);
   };
 
   const handleAddObjectTypeValue = async (objectId: string, payload: any) => {
+    setIsLoading(true);
     await addObjectTypeValue(objectId, payload);
     setForceUpdate(forceUpdate + 1);
+    setIsLoading(false);
   };
 
   const handleRemoveObjectTypeValue = async (
     objectId: string,
     objTypeValueId: string
   ) => {
+    setIsLoading(true);
     await removeObjectTypeValue(objectId, objTypeValueId);
     setForceUpdate(forceUpdate + 1);
+    setIsLoading(false);
   };
 
   const handleUpdateObjectTypeValue = async (
@@ -142,221 +158,228 @@ const ObjectDetailPage: React.FC = () => {
     objTypeValueId: string,
     payload: any
   ) => {
+    setIsLoading(true);
     await updateObjectTypeValue(objectId, objTypeValueId, payload);
     setForceUpdate(forceUpdate + 1);
+    setIsLoading(false);
   };
 
   const handleAddOrMoveObjectInFunnel = async (
     objectId: string,
     stepId: string
   ) => {
+    setIsLoading(true);
     await addOrMoveObjectInFunnel(objectId, stepId);
     setForceUpdate(forceUpdate + 1);
+    setIsLoading(false);
   };
 
   const handleDeleteObjectFromFunnel = async (objectStepId: string) => {
+    setIsLoading(true);
     await deleteObjectFromFunnel(objectStepId);
     setForceUpdate(forceUpdate + 1);
+    setIsLoading(false);
   };
 
   const handleUpdateSubStatus = async (objectId: string, subStatus: number) => {
+    setIsLoading(true);
     await updateObjectStepSubStatus(objectId, subStatus);
     setForceUpdate(forceUpdate + 1);
+    setIsLoading(false);
   };
 
-  if (!object) {
-    return <Text>Loading...</Text>;
-  }
   let imgUrl = undefined;
-  object.typeValues.forEach((otv: ObjectTypeValue) => {
+  object?.typeValues.forEach((otv: ObjectTypeValue) => {
     window.Object.entries(otv.type_values).forEach(([_, value]) => {
       if (value && (value.includes('http://') || value.includes('https://'))) {
         imgUrl = value;
       }
     });
   });
-  return (
-    <Flex height='calc(100vh - 96px)' overflow='hidden'>
-      {/* Left Column */}
-      <Box
-        width={isRightPanelOpen ? '60%' : '100%'}
-        p={4}
-        borderRight={isRightPanelOpen ? '1px solid' : 'none'}
-        borderColor='gray.200'
-        overflowY='auto'
-        css={{
-          '&::-webkit-scrollbar': { display: 'none' },
-          scrollbarWidth: 'none',
-        }}
-        transition='width 0.3s'
-      >
-        <VStack align='stretch' spacing={4}>
-          <Breadcrumb
-            spacing='8px'
-            separator={<ChevronRightIcon color='gray.500' />}
+  return isLoading ? (
+    <LoadingModal isOpen={isLoading} onClose={() => {}} />
+  ) : (
+    <>
+      {object ? (
+        <Flex height='calc(100vh - 96px)' overflow='hidden'>
+          {/* Left Column */}
+          <Box
+            width={isRightPanelOpen ? '60%' : '100%'}
+            p={4}
+            borderRight={isRightPanelOpen ? '1px solid' : 'none'}
+            borderColor='gray.200'
+            overflowY='auto'
+            css={{
+              '&::-webkit-scrollbar': { display: 'none' },
+              scrollbarWidth: 'none',
+            }}
+            transition='width 0.3s'
           >
-            <BreadcrumbItem>
-              <BreadcrumbLink href='/'>Home</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbItem>
-              <BreadcrumbLink href='/objects'>Objects</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbItem isCurrentPage>
-              <BreadcrumbLink href='#' fontWeight='bold'>
-                {object.name}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-          </Breadcrumb>
-          <HStack>
-            <Heading as='h1' size='xl'>
+            <VStack align='stretch' spacing={4}>
+              <BreadcrumbComponent label={object?.name} />
               <HStack>
-                {imgUrl && (
-                  <img
-                    src={imgUrl}
-                    alt={object.name}
-                    style={{ height: '32px' }}
-                  />
-                )}
-                <Text>{object.name}</Text>
+                <Heading as='h1' size='xl'>
+                  <HStack>
+                    {imgUrl && (
+                      <img
+                        src={imgUrl}
+                        alt={object?.name}
+                        style={{ height: '32px' }}
+                      />
+                    )}
+                    <Text>{object?.name}</Text>
+                  </HStack>
+                </Heading>
               </HStack>
-            </Heading>
-          </HStack>
-          <FunnelPanel
-            objectId={objectId}
-            onAddOrMoveObjectInFunnel={handleAddOrMoveObjectInFunnel}
-            onDeleteObjectFromFunnel={handleDeleteObjectFromFunnel}
-            onUpdateSubStatus={handleUpdateSubStatus}
-            stepsAndFunnels={object.stepsAndFunnels}
-          />
-          <Tabs>
-            <TabList>
-              <Tab>
-                Tasks
-                {tasks.filter((task) => task.status !== TaskStatus.COMPLETED)
-                  .length > 0 && (
-                  <Badge colorScheme='red' ml={2}>
-                    {
-                      tasks.filter(
-                        (task) => task.status !== TaskStatus.COMPLETED
-                      ).length
-                    }
-                  </Badge>
-                )}
-              </Tab>
-              <Tab>
-                <Text mr={2}>Activity Log</Text>
-                <FaPlus onClick={onOpenNewActivityDialog} />
-              </Tab>
-            </TabList>
-            <TabPanels>
-              <TabPanel>
-                <TaskPanel objectId={objectId} tasks={tasks} />
-              </TabPanel>
-              <TabPanel>
-                <Box flexGrow={1} overflowY='auto'>
-                  <ActivityFeed
-                    facts={facts}
-                    stepsAndFunnels={object.stepsAndFunnels}
-                    object={object}
-                    onSave={handleAddFact}
-                  />
-                </Box>
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
-        </VStack>
-      </Box>
-
-      {/* Right Column */}
-      <Box
-        width={isRightPanelOpen ? '40%' : '40px'}
-        minWidth={isRightPanelOpen ? '300px' : '40px'}
-        p={isRightPanelOpen ? 4 : 0}
-        overflowY='auto'
-        overflowX='visible'
-        css={{
-          '&::-webkit-scrollbar': { display: 'none' },
-          scrollbarWidth: 'none',
-        }}
-        transition='width 0.1s, padding 0s'
-        position={isLargerThan1280 ? 'relative' : 'absolute'}
-        right={0}
-        top={0}
-        bottom={0}
-        bg='gray.50'
-        zIndex={100}
-        boxShadow={
-          isLargerThan1280
-            ? 'none'
-            : isRightPanelOpen
-            ? '0 0 10px rgba(0,0,0,0.1)'
-            : 'none'
-        }
-      >
-        <IconButton
-          aria-label='Toggle right panel'
-          icon={isRightPanelOpen ? <FiChevronRight /> : <FiChevronLeft />}
-          position='absolute'
-          left={isRightPanelOpen ? '0' : '0'}
-          top='0'
-          onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
-          zIndex={2}
-        />
-        {isRightPanelOpen && (
-          <VStack align='stretch' spacing={4} height='100%' mt={10}>
-            <HStack align='stretch' spacing={2}>
-              <Heading as='h2' size='md'>
-                Detail
-              </Heading>
-              <EditIcon
-                fontSize='x-large'
-                onClick={() => {
-                  setShowEditObject(true);
-                }}
+              <FunnelPanel
+                objectId={objectId}
+                onAddOrMoveObjectInFunnel={handleAddOrMoveObjectInFunnel}
+                onDeleteObjectFromFunnel={handleDeleteObjectFromFunnel}
+                onUpdateSubStatus={handleUpdateSubStatus}
+                stepsAndFunnels={object?.stepsAndFunnels || []}
               />
-            </HStack>
+              <Tabs>
+                <TabList>
+                  <Tab>
+                    Tasks
+                    {tasks.filter(
+                      (task) => task.status !== TaskStatus.COMPLETED
+                    ).length > 0 && (
+                      <Badge colorScheme='red' ml={2}>
+                        {
+                          tasks.filter(
+                            (task) => task.status !== TaskStatus.COMPLETED
+                          ).length
+                        }
+                      </Badge>
+                    )}
+                  </Tab>
+                  <Tab>
+                    <Text mr={2}>Activity Log</Text>
+                    <FaPlus onClick={onOpenNewActivityDialog} />
+                  </Tab>
+                </TabList>
+                <TabPanels>
+                  <TabPanel>
+                    <TaskPanel objectId={objectId} tasks={tasks} />
+                  </TabPanel>
+                  <TabPanel>
+                    <Box flexGrow={1} overflowY='auto'>
+                      {object && (
+                        <ActivityFeed
+                          facts={facts}
+                          stepsAndFunnels={object?.stepsAndFunnels || []}
+                          object={object}
+                          onSave={handleAddFact}
+                        />
+                      )}
+                    </Box>
+                  </TabPanel>
+                </TabPanels>
+              </Tabs>
+            </VStack>
+          </Box>
 
-            {object.description && object.description !== '' && (
-              <>
-                <MarkdownDisplay content={object.description} />
-              </>
+          {/* Right Column */}
+          <Box
+            width={isRightPanelOpen ? '40%' : '40px'}
+            minWidth={isRightPanelOpen ? '300px' : '40px'}
+            p={isRightPanelOpen ? 4 : 0}
+            overflowY='auto'
+            overflowX='visible'
+            css={{
+              '&::-webkit-scrollbar': { display: 'none' },
+              scrollbarWidth: 'none',
+            }}
+            transition='width 0.1s, padding 0s'
+            position={isLargerThan1280 ? 'relative' : 'absolute'}
+            right={0}
+            top={0}
+            bottom={0}
+            bg='gray.50'
+            zIndex={100}
+            boxShadow={
+              isLargerThan1280
+                ? 'none'
+                : isRightPanelOpen
+                ? '0 0 10px rgba(0,0,0,0.1)'
+                : 'none'
+            }
+          >
+            <IconButton
+              aria-label='Toggle right panel'
+              icon={isRightPanelOpen ? <FiChevronRight /> : <FiChevronLeft />}
+              position='absolute'
+              left={isRightPanelOpen ? '0' : '0'}
+              top='0'
+              onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
+              zIndex={2}
+            />
+            {isRightPanelOpen && (
+              <VStack align='stretch' spacing={4} height='100%' mt={10}>
+                <HStack align='stretch' spacing={2}>
+                  <Heading as='h2' size='md'>
+                    Detail
+                  </Heading>
+                  <EditIcon
+                    fontSize='x-large'
+                    onClick={() => {
+                      setShowEditObject(true);
+                    }}
+                  />
+                </HStack>
+
+                {object?.description && object?.description !== '' && (
+                  <>
+                    <MarkdownDisplay content={object.description} />
+                  </>
+                )}
+
+                <TagInput
+                  tags={object?.tags || []}
+                  onAddTag={handleTagsAdd}
+                  onRemoveTag={handleTagsRemove}
+                  isReadOnly={false}
+                />
+                <ObjectTypePanel
+                  objectId={objectId}
+                  objectTypes={object?.typeValues || []}
+                  onAddObjectTypeValue={handleAddObjectTypeValue}
+                  onRemoveObjectTypeValue={handleRemoveObjectTypeValue}
+                  onUpdateObjectTypeValue={handleUpdateObjectTypeValue}
+                />
+              </VStack>
             )}
+          </Box>
 
-            <TagInput
-              tags={object.tags}
-              onAddTag={handleTagsAdd}
-              onRemoveTag={handleTagsRemove}
-              isReadOnly={false}
+          {object && (
+            <ObjectForm
+              initialObject={object}
+              isOpen={showEditObject}
+              onClose={() => setShowEditObject(false)}
+              onUpdateObject={handleUpdateObject}
             />
-            <ObjectTypePanel
-              objectId={objectId}
-              objectTypes={object.typeValues}
-              onAddObjectTypeValue={handleAddObjectTypeValue}
-              onRemoveObjectTypeValue={handleRemoveObjectTypeValue}
-              onUpdateObjectTypeValue={handleUpdateObjectTypeValue}
-            />
-          </VStack>
-        )}
-      </Box>
-      <ObjectForm
-        initialObject={object}
-        isOpen={showEditObject}
-        onClose={() => setShowEditObject(false)}
-        onUpdateObject={handleUpdateObject}
-      />
-      <Modal
-        isOpen={isOpenNewActivityDialog}
-        onClose={onCloseNewActivityDialog}
-      >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Add New Activity</ModalHeader>
-          <ModalBody>
-            <FactForm onSave={handleAddFact} requireObject={object} />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </Flex>
+          )}
+
+          <Modal
+            isOpen={isOpenNewActivityDialog}
+            onClose={onCloseNewActivityDialog}
+          >
+            <ModalOverlay />
+            <ModalContent>
+              <ModalHeader>Add New Activity</ModalHeader>
+              <ModalBody>
+                {object && (
+                  <FactForm onSave={handleAddFact} requireObject={object} />
+                )}
+              </ModalBody>
+            </ModalContent>
+          </Modal>
+        </Flex>
+      ) : (
+        <Alert status='error'>Object not found. Try it again!</Alert>
+      )}
+    </>
   );
 };
 

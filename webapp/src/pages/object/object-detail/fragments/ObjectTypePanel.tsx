@@ -11,6 +11,7 @@ import { ObjectType, ObjectTypeValue } from 'src/types/';
 import { listObjectTypes } from 'src/api/objType';
 import ObjectTypeCard from 'src/components/forms/object/object-type/ObjectTypeCard';
 import AddObjectTypeModal from 'src/components/forms/object/object-type/AddObjectTypeModal';
+import LoadingPanel from 'src/components/LoadingPanel';
 
 interface ObjectTypePanelProps {
   objectId: string;
@@ -34,10 +35,12 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
   const [availableTypes, setAvailableTypes] = useState<ObjectType[]>([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const loadObjectTypes = async () => {
       try {
+        setIsLoading(true);
         const resp = await listObjectTypes({
           page: 1,
           pageSize: 100,
@@ -51,6 +54,8 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
           duration: 5000,
           isClosable: true,
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -80,24 +85,28 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
 
   return (
     <Box>
-      <VStack align='stretch' spacing={4}>
-        <SimpleGrid columns={[1, 2]} spacing={4}>
-          {objectTypes.map((typeValue) => (
-            <ObjectTypeCard
-              key={typeValue.id}
-              objectTypeValue={typeValue}
-              objectType={availableTypes.find(
-                (type) => type.id === typeValue.objectTypeId
-              )}
-              onUpdate={(payload) =>
-                onUpdateObjectTypeValue(objectId, typeValue.id, payload)
-              }
-              onDelete={() => onRemoveObjectTypeValue(objectId, typeValue.id)}
-            />
-          ))}
-        </SimpleGrid>
-        <Button onClick={onOpen}>Add New Type</Button>
-      </VStack>
+      {isLoading ? (
+        <LoadingPanel />
+      ) : (
+        <VStack align='stretch' spacing={4}>
+          <SimpleGrid columns={[1, 2]} spacing={4}>
+            {objectTypes.map((typeValue) => (
+              <ObjectTypeCard
+                key={typeValue.id}
+                objectTypeValue={typeValue}
+                objectType={availableTypes.find(
+                  (type) => type.id === typeValue.objectTypeId
+                )}
+                onUpdate={(payload) =>
+                  onUpdateObjectTypeValue(objectId, typeValue.id, payload)
+                }
+                onDelete={() => onRemoveObjectTypeValue(objectId, typeValue.id)}
+              />
+            ))}
+          </SimpleGrid>
+          <Button onClick={onOpen}>Add New Type</Button>
+        </VStack>
+      )}
 
       <AddObjectTypeModal
         isOpen={isOpen}

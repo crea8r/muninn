@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Box, VStack, Heading, Text, Divider } from '@chakra-ui/react';
+import {
+  Box,
+  VStack,
+  Heading,
+  Text,
+  Divider,
+  useToast,
+} from '@chakra-ui/react';
 import { getFeed } from 'src/api/feed';
 import { FeedItem } from 'src/types/Feed';
 import dayjs from 'dayjs';
@@ -10,6 +17,7 @@ import FunnelFeedItem from './items/FunnelFeedItem';
 import ObjectFeedItem from './items/ObjectFeedItem';
 import NewObjectTypeValue from './items/NewObjectTypeValue';
 import ObjectStepFeedItem from './items/ObjectStepFeedItem';
+import LoadingPanel from 'src/components/LoadingPanel';
 
 const FeedItemSwitch = (data: any) => {
   const response = data.details.response;
@@ -43,17 +51,28 @@ const FeedItemSwitch = (data: any) => {
 
 const FeedPage: React.FC = () => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const toast = useToast();
   const loadFeed = async () => {
     try {
+      setIsLoading(true);
       const feed = await getFeed();
       setFeedItems(feed);
     } catch (error) {
-      console.error('Error loading feed:', error);
+      toast({
+        title: 'Error fetching feed',
+        description: 'Failed to load feed',
+        status: 'error',
+        duration: 2000,
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     loadFeed();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   dayjs.extend(relativeTime);
 
@@ -62,32 +81,36 @@ const FeedPage: React.FC = () => {
       <Heading as='h1' size='xl' mb={6} color='var(--color-primary)'>
         Feed
       </Heading>
-      <VStack spacing={4} align='stretch'>
-        {feedItems.length === 0 && (
-          <Box>
-            <Text>
-              Hurray, you caught up with the work. Nothing to display!
-            </Text>
-            <Divider />
-          </Box>
-        )}
-        {feedItems.map((item) => {
-          return (
-            <Box
-              key={item.id}
-              p={4}
-              bg='white'
-              borderRadius='md'
-              boxShadow='sm'
-            >
-              {FeedItemSwitch(item.content)}
-              <Text fontSize='sm' color='gray.500' mt={2}>
-                {dayjs(item.createdAt).fromNow()}
+      {isLoading ? (
+        <LoadingPanel />
+      ) : (
+        <VStack spacing={4} align='stretch'>
+          {feedItems.length === 0 && (
+            <Box>
+              <Text mb={2}>
+                Hurray, you caught up with the work. Nothing to display!
               </Text>
+              <Divider />
             </Box>
-          );
-        })}
-      </VStack>
+          )}
+          {feedItems.map((item) => {
+            return (
+              <Box
+                key={item.id}
+                p={4}
+                bg='white'
+                borderRadius='md'
+                boxShadow='sm'
+              >
+                {FeedItemSwitch(item.content)}
+                <Text fontSize='sm' color='gray.500' mt={2}>
+                  {dayjs(item.createdAt).fromNow()}
+                </Text>
+              </Box>
+            );
+          })}
+        </VStack>
+      )}
     </Box>
   );
 };
