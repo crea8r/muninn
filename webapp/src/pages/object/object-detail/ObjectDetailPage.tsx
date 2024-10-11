@@ -57,6 +57,8 @@ import { FaPlus } from 'react-icons/fa';
 import { FactToCreate, FactToUpdate } from 'src/api/fact';
 import BreadcrumbComponent from 'src/components/Breadcrumb';
 import LoadingModal from 'src/components/LoadingModal';
+import NoImage from 'src/assets/NoImage.jpg';
+import { set } from 'lodash';
 
 const ObjectDetailPage: React.FC = () => {
   const { objectId } = useParams<{ objectId: string }>();
@@ -74,6 +76,23 @@ const ObjectDetailPage: React.FC = () => {
     onOpen: onOpenNewActivityDialog,
     onClose: onCloseNewActivityDialog,
   } = useDisclosure();
+  const [imgUrls, setImgUrls] = useState<string[]>([]);
+  const [currentSmartImageIndex, setCurrentSmartImageIndex] = useState(0);
+
+  const loadImageUrlsFromObject = (obj: ObjectDetail) => {
+    const tmp: string[] = [];
+    obj?.typeValues.forEach((otv: ObjectTypeValue) => {
+      window.Object.entries(otv.type_values).forEach(([_, value]) => {
+        if (
+          value &&
+          (value.includes('http://') || value.includes('https://'))
+        ) {
+          tmp.push(value);
+        }
+      });
+    });
+    return tmp;
+  };
 
   useEffect(() => {
     setIsRightPanelOpen(isLargerThan1280);
@@ -87,6 +106,7 @@ const ObjectDetailPage: React.FC = () => {
         setObject(details);
         setFacts(details.facts);
         setTasks(details.tasks);
+        setImgUrls(loadImageUrlsFromObject(details));
       } catch (error) {
         toast({
           title: 'Error loading object details',
@@ -188,14 +208,6 @@ const ObjectDetailPage: React.FC = () => {
     setIsLoading(false);
   };
 
-  let imgUrl = undefined;
-  object?.typeValues.forEach((otv: ObjectTypeValue) => {
-    window.Object.entries(otv.type_values).forEach(([_, value]) => {
-      if (value && (value.includes('http://') || value.includes('https://'))) {
-        imgUrl = value;
-      }
-    });
-  });
   return isLoading ? (
     <LoadingModal isOpen={isLoading} onClose={() => {}} />
   ) : (
@@ -220,11 +232,21 @@ const ObjectDetailPage: React.FC = () => {
               <HStack>
                 <Heading as='h1' size='xl'>
                   <HStack>
-                    {imgUrl && (
+                    {imgUrls[currentSmartImageIndex] && (
                       <img
-                        src={imgUrl}
-                        alt={object?.name}
+                        src={imgUrls[currentSmartImageIndex]}
+                        alt={''}
                         style={{ height: '32px' }}
+                        onError={(e) => {
+                          if (currentSmartImageIndex < imgUrls.length) {
+                            setCurrentSmartImageIndex(
+                              currentSmartImageIndex + 1
+                            );
+                            console.log(imgUrls[currentSmartImageIndex]);
+                          } else {
+                            e.currentTarget.src = NoImage;
+                          }
+                        }}
                       />
                     )}
                     <Text>{object?.name}</Text>

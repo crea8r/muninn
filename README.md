@@ -6,6 +6,9 @@ This is the CRM project that employ two important concepts that most CRM is miss
 - Operation team works evolve around moving objects in funnels. The funnel can be sale conversion, hackathon submission, etc.
 - Within a team, data is shared while data view (saved filters) is personalized.
 
+This is the bird eye view design
+![System design](https://i.imgur.com/tqMJ6uyl.png)
+
 ## Structure
 
 This project use mono-repo approach. There are 2 project
@@ -13,6 +16,31 @@ This project use mono-repo approach. There are 2 project
 - server, using go lang
 - webapp, using reactjs
 
-## Technology
+## How to install?
 
-For git, use gitflow strategy. The scale of the project expect to be medium, do not over optimise the code. Clean code and readable is the top priority. Each code file should be less than 300 line.
+### Server
+
+- [ ] Step 1: Install [Postgresql](https://hub.docker.com/_/postgres)
+- [ ] Step 2: Run `server/migrations/001_intial_schema.sql`
+- [ ] Step 3: Install `go`
+- [ ] Step 4: Create .env
+
+```env
+DATABASE_URL=postgres://[user name]:[password]@[host]:[port]/[db name]?sslmode=disable
+JWT_SECRET=[your secret]
+PORT=[port | 8080]
+```
+
+- [ ] Step 5: run `server/.start-web.sh`
+- [ ] Step 6: Test with `[your server| http://localhost:8080]/stats`
+
+### Webapp
+
+- [ ] Step 1: Install packages: `npm i`
+- [ ] Step 2: Create .env file
+
+```env
+REACT_APP_API_URL=[your server | http://localhost:8080]
+```
+
+- [ ] Step 3: Run `npm start`
