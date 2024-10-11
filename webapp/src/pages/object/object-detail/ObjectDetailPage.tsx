@@ -57,8 +57,7 @@ import { FaPlus } from 'react-icons/fa';
 import { FactToCreate, FactToUpdate } from 'src/api/fact';
 import BreadcrumbComponent from 'src/components/Breadcrumb';
 import LoadingModal from 'src/components/LoadingModal';
-import NoImage from 'src/assets/NoImage.jpg';
-import { set } from 'lodash';
+import SmartImage from 'src/components/SmartImage';
 
 const ObjectDetailPage: React.FC = () => {
   const { objectId } = useParams<{ objectId: string }>();
@@ -77,7 +76,6 @@ const ObjectDetailPage: React.FC = () => {
     onClose: onCloseNewActivityDialog,
   } = useDisclosure();
   const [imgUrls, setImgUrls] = useState<string[]>([]);
-  const [currentSmartImageIndex, setCurrentSmartImageIndex] = useState(0);
 
   const loadImageUrlsFromObject = (obj: ObjectDetail) => {
     const tmp: string[] = [];
@@ -232,23 +230,13 @@ const ObjectDetailPage: React.FC = () => {
               <HStack>
                 <Heading as='h1' size='xl'>
                   <HStack>
-                    {imgUrls[currentSmartImageIndex] && (
-                      <img
-                        src={imgUrls[currentSmartImageIndex]}
-                        alt={''}
-                        style={{ height: '32px' }}
-                        onError={(e) => {
-                          if (currentSmartImageIndex < imgUrls.length) {
-                            setCurrentSmartImageIndex(
-                              currentSmartImageIndex + 1
-                            );
-                            console.log(imgUrls[currentSmartImageIndex]);
-                          } else {
-                            e.currentTarget.src = NoImage;
-                          }
-                        }}
-                      />
-                    )}
+                    <SmartImage
+                      src={imgUrls}
+                      alt={object?.name || ''}
+                      style={{
+                        height: '32px',
+                      }}
+                    />
                     <Text>{object?.name}</Text>
                   </HStack>
                 </Heading>

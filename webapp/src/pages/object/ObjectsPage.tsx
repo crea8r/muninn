@@ -29,6 +29,7 @@ import { ObjectForm } from 'src/components/forms/';
 import { createObject } from 'src/api/object';
 import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 import { shortenText } from 'src/utils';
+import SmartImage from 'src/components/SmartImage';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -140,7 +141,7 @@ const ObjectsPage: React.FC = () => {
             ) : objects.length > 0 ? (
               objects.map((obj) => {
                 let str: string[] = [];
-                let imgUrl = undefined;
+                let imgUrls: any[] = [];
                 obj.typeValues.map((otv) => {
                   return window.Object.entries(otv.type_values).forEach(
                     ([_, value]) => {
@@ -149,7 +150,7 @@ const ObjectsPage: React.FC = () => {
                         (value.includes('http://') ||
                           value.includes('https://'))
                       ) {
-                        imgUrl = value;
+                        imgUrls.push(value);
                       }
                       if (
                         value &&
@@ -176,11 +177,11 @@ const ObjectsPage: React.FC = () => {
                   >
                     <Td>
                       <HStack>
-                        {imgUrl ? (
-                          <img
-                            src={imgUrl}
-                            style={{ height: '32px' }}
+                        {imgUrls.length > 0 ? (
+                          <SmartImage
+                            src={imgUrls}
                             alt={obj.name}
+                            style={{ height: '32px' }}
                           />
                         ) : null}
                         <Text>{shortenText(obj.name, 50)}</Text>
