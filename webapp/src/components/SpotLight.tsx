@@ -36,6 +36,7 @@ import authService from 'src/services/authService';
 import NoImage from 'src/assets/NoImage.jpg';
 import TaskItem from './TaskItem';
 import FactItem from './FactItem';
+import LoadingPanel from './LoadingPanel';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -81,7 +82,6 @@ const SpotLight: React.FC = () => {
   } = useSpotLight();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [paginationState, setPaginationState] = useState<PaginationState>({
     object: 1,
     fact: 1,
@@ -102,6 +102,11 @@ const SpotLight: React.FC = () => {
   });
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [objectResponse, setObjectResponse] = useState<any>();
+  const [factResponse, setFactResponse] = useState<any>();
+  const [taskResponse, setTaskResponse] = useState<any>();
+  const [creatorResponse, setCreatorResponse] = useState<any>();
 
   const {
     isOpen: modalIsOpen,
@@ -114,7 +119,6 @@ const SpotLight: React.FC = () => {
       openModal();
       setSearchQuery('');
       setSearchResults([]);
-      setSelectedIndex(0);
       setPaginationState({ object: 1, fact: 1, task: 1, creator: 1 });
     } else {
       closeModal();
@@ -133,41 +137,49 @@ const SpotLight: React.FC = () => {
       const currentPage = paginationState[activeFilter];
 
       // Perform searches for all filters simultaneously
-      let objectResponse = undefined;
-      let factResponse = undefined;
-      let taskResponse = undefined;
-      let creatorResponse = undefined;
+      setIsLoading(true);
       try {
         if (filters.includes(SpotLightFilter.OBJECT)) {
-          objectResponse = await fetchObjects(
-            currentPage,
-            ITEMS_PER_PAGE,
-            query
+          setObjectResponse(
+            await fetchObjects(
+              activeFilter === SpotLightFilter.OBJECT ? currentPage : 0,
+              ITEMS_PER_PAGE,
+              query
+            )
           );
         }
       } catch (e) {}
       try {
         if (filters.includes(SpotLightFilter.FACT)) {
-          factResponse = await listFact(currentPage, ITEMS_PER_PAGE, query);
+          setFactResponse(
+            await listFact(
+              SpotLightFilter.FACT ? currentPage : 0,
+              ITEMS_PER_PAGE,
+              query
+            )
+          );
         }
       } catch (e) {}
       try {
         if (filters.includes(SpotLightFilter.TASK)) {
-          taskResponse = await listTasks({
-            page: currentPage,
-            pageSize: ITEMS_PER_PAGE,
-            search: query,
-            status: '',
-            creatorId: authService.getCreatorId() || '',
-            assignedId: authService.getCreatorId() || '',
-          });
+          setTaskResponse(
+            await listTasks({
+              page: SpotLightFilter.TASK ? currentPage : 0,
+              pageSize: ITEMS_PER_PAGE,
+              search: query,
+              status: '',
+              creatorId: authService.getCreatorId() || '',
+              assignedId: authService.getCreatorId() || '',
+            })
+          );
         }
       } catch (e) {}
       try {
         if (filters.includes(SpotLightFilter.CREATOR)) {
-          creatorResponse = await listOrgMembers(query);
+          setCreatorResponse(await listOrgMembers(query));
         }
       } catch (e) {}
+      setIsLoading(false);
 
       // Update filter counts
       setFilterCounts({
@@ -176,95 +188,77 @@ const SpotLight: React.FC = () => {
         task: taskResponse?.totalCount || 0,
         creator: creatorResponse?.length || 0,
       });
-
-      // Set search results based on active filter
-      let results: any[] = [];
-      let totalCount = 0;
-
-      switch (activeFilter) {
-        case SpotLightFilter.OBJECT:
-          results =
-            objectResponse?.objects?.map((obj: Object) => ({
-              type: SpotLightFilter.OBJECT,
-              ...obj,
-            })) || [];
-          totalCount = objectResponse?.totalCount || 0;
-          break;
-        case SpotLightFilter.FACT:
-          results =
-            factResponse?.facts?.map((fact: any) => ({
-              type: SpotLightFilter.FACT,
-              ...fact,
-            })) || [];
-          totalCount = factResponse?.totalCount || 0;
-          break;
-        case SpotLightFilter.TASK:
-          results =
-            taskResponse?.tasks?.map((task: Task) => ({
-              type: SpotLightFilter.TASK,
-              ...task,
-            })) || [];
-          totalCount = taskResponse?.totalCount || 0;
-          break;
-        case SpotLightFilter.CREATOR:
-          results =
-            creatorResponse?.map((member: OrgMember) => ({
-              type: SpotLightFilter.CREATOR,
-              id: member.id,
-              username: member.username,
-              profile: { avatar: member.profile.avatar },
-            })) || [];
-          totalCount = creatorResponse?.length || 0;
-          break;
-      }
-
-      setSearchResults(results);
-      setTotalPages((prev) => ({
-        ...prev,
-        [activeFilter]: Math.ceil(totalCount / ITEMS_PER_PAGE),
-      }));
     }, 300),
-    [activeFilter, paginationState]
+    []
   );
 
   useEffect(() => {
+    // Set search results based on active filter
+    let results: any[] = [];
+    let totalCount = 0;
+
+    switch (activeFilter) {
+      case SpotLightFilter.OBJECT:
+        results =
+          objectResponse?.objects?.map((obj: Object) => ({
+            type: SpotLightFilter.OBJECT,
+            ...obj,
+          })) || [];
+        totalCount = objectResponse?.totalCount || 0;
+        break;
+      case SpotLightFilter.FACT:
+        results =
+          factResponse?.facts?.map((fact: any) => ({
+            type: SpotLightFilter.FACT,
+            ...fact,
+          })) || [];
+        totalCount = factResponse?.totalCount || 0;
+        break;
+      case SpotLightFilter.TASK:
+        results =
+          taskResponse?.tasks?.map((task: Task) => ({
+            type: SpotLightFilter.TASK,
+            ...task,
+          })) || [];
+        totalCount = taskResponse?.totalCount || 0;
+        break;
+      case SpotLightFilter.CREATOR:
+        results =
+          creatorResponse?.map((member: OrgMember) => ({
+            type: SpotLightFilter.CREATOR,
+            id: member.id,
+            username: member.username,
+            profile: { avatar: member.profile.avatar },
+          })) || [];
+        totalCount = creatorResponse?.length || 0;
+        break;
+    }
+
+    setSearchResults(results);
+    setTotalPages((prev) => ({
+      ...prev,
+      [activeFilter]: Math.ceil(totalCount / ITEMS_PER_PAGE),
+    }));
+  }, [
+    objectResponse,
+    factResponse,
+    taskResponse,
+    creatorResponse,
+    activeFilter,
+    paginationState,
+  ]);
+
+  useEffect(() => {
     debouncedSearch(searchQuery);
-  }, [searchQuery, debouncedSearch, activeFilter, paginationState]);
+  }, [searchQuery, debouncedSearch, paginationState]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % searchResults.length);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex(
-          (prev) => (prev - 1 + searchResults.length) % searchResults.length
-        );
-        break;
-      case 'Enter':
-        if (searchResults[selectedIndex]) {
-          // onSelect(searchResults[selectedIndex]);
-          console.log('onSelect(searchResults[selectedIndex])');
-        }
-        break;
       case 'Escape':
         closeSpotLight();
         break;
     }
   };
-
-  useEffect(() => {
-    if (resultsRef.current) {
-      const selectedElement = resultsRef.current.children[
-        selectedIndex
-      ] as HTMLElement;
-      if (selectedElement) {
-        selectedElement.scrollIntoView({ block: 'nearest' });
-      }
-    }
-  }, [selectedIndex]);
 
   const renderSearchResult = (result: any, index: number) => {
     switch (result.type) {
@@ -274,8 +268,8 @@ const SpotLight: React.FC = () => {
             key={result.id}
             p={2}
             borderRadius='md'
-            bg={selectedIndex === index ? 'blue.100' : 'transparent'}
             cursor='pointer'
+            _hover={{ bg: 'blue.100' }}
             onClick={() => {
               onSelect({
                 type: result.type,
@@ -317,8 +311,8 @@ const SpotLight: React.FC = () => {
             key={result.id}
             p={2}
             borderRadius='md'
-            bg={selectedIndex === index ? 'blue.100' : 'transparent'}
             cursor='pointer'
+            _hover={{ bg: 'blue.100' }}
             onClick={() => {
               onSelect({
                 type: result.type,
@@ -361,7 +355,7 @@ const SpotLight: React.FC = () => {
   };
 
   return (
-    <Modal isOpen={modalIsOpen} onClose={closeSpotLight} size='xl'>
+    <Modal isOpen={modalIsOpen || isLoading} onClose={closeSpotLight} size='xl'>
       <ModalOverlay />
       <ModalContent
         as={motion.div}
@@ -384,66 +378,71 @@ const SpotLight: React.FC = () => {
               autoFocus
             />
           </InputGroup>
-
-          <HStack spacing={2} justifyContent='center'>
-            {renderFilterBadges()}
-          </HStack>
-          <AnimatePresence>
-            {searchResults?.length > 0 ? (
-              <VStack
-                ref={resultsRef}
-                spacing={2}
-                align='stretch'
-                w='100%'
-                maxH='400px'
-                overflowY='auto'
-                as={motion.div}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-              >
-                {searchResults.map(renderSearchResult)}
-              </VStack>
-            ) : (
-              searchQuery.length >= 2 && (
-                <Text textAlign='center' color='gray.500'>
-                  No results found for the current filter.
-                </Text>
-              )
-            )}
-          </AnimatePresence>
-          {searchResults.length > 0 && (
-            <HStack justifyContent='space-between' w='100%'>
-              <Button
-                onClick={() =>
-                  handlePageChange(
-                    Math.max(paginationState[activeFilter] - 1, 1)
+          {isLoading ? (
+            <LoadingPanel />
+          ) : (
+            <>
+              <HStack spacing={2} justifyContent='center'>
+                {renderFilterBadges()}
+              </HStack>
+              <AnimatePresence>
+                {searchResults?.length > 0 ? (
+                  <VStack
+                    ref={resultsRef}
+                    spacing={2}
+                    align='stretch'
+                    w='100%'
+                    maxH='400px'
+                    overflowY='auto'
+                    as={motion.div}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                  >
+                    {searchResults.map(renderSearchResult)}
+                  </VStack>
+                ) : (
+                  searchQuery.length >= 2 && (
+                    <Text textAlign='center' color='gray.500'>
+                      No results found for the current filter.
+                    </Text>
                   )
-                }
-                isDisabled={paginationState[activeFilter] === 1}
-              >
-                Previous
-              </Button>
-              <Text>
-                Page {paginationState[activeFilter]} of{' '}
-                {totalPages[activeFilter]}
-              </Text>
-              <Button
-                onClick={() =>
-                  handlePageChange(
-                    Math.min(
-                      paginationState[activeFilter] + 1,
-                      totalPages[activeFilter]
-                    )
-                  )
-                }
-                isDisabled={
-                  paginationState[activeFilter] === totalPages[activeFilter]
-                }
-              >
-                Next
-              </Button>
-            </HStack>
+                )}
+              </AnimatePresence>
+              {searchResults.length > 0 && (
+                <HStack justifyContent='space-between' w='100%'>
+                  <Button
+                    onClick={() =>
+                      handlePageChange(
+                        Math.max(paginationState[activeFilter] - 1, 1)
+                      )
+                    }
+                    isDisabled={paginationState[activeFilter] === 1}
+                  >
+                    Previous
+                  </Button>
+                  <Text>
+                    Page {paginationState[activeFilter]} of{' '}
+                    {totalPages[activeFilter]}
+                  </Text>
+                  <Button
+                    onClick={() =>
+                      handlePageChange(
+                        Math.min(
+                          paginationState[activeFilter] + 1,
+                          totalPages[activeFilter]
+                        )
+                      )
+                    }
+                    isDisabled={
+                      paginationState[activeFilter] === totalPages[activeFilter]
+                    }
+                  >
+                    Next
+                  </Button>
+                </HStack>
+              )}
+            </>
           )}
         </VStack>
       </ModalContent>
