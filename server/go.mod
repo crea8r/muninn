@@ -11,3 +11,5 @@ require (
 	github.com/rs/cors v1.11.1
 	golang.org/x/crypto v0.27.0
 )
+
+require github.com/sqlc-dev/pqtype v0.3.0 // indirect

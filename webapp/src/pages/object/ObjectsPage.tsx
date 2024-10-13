@@ -24,7 +24,7 @@ import { SearchIcon } from '@chakra-ui/icons';
 import { useHistory } from 'react-router-dom';
 import { NewObject, Object, Tag } from 'src/types/';
 import { fetchObjects } from 'src/api/object';
-import ImporterDialog from 'src/components/ImporterDialog';
+import ImporterDialog from 'src/components/importer-dialog/ImporterDialog';
 import { ObjectForm } from 'src/components/forms/';
 import { createObject } from 'src/api/object';
 import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
@@ -92,7 +92,7 @@ const ObjectsPage: React.FC = () => {
       <Box p={4}>
         <HStack justify='space-between' mb={6}>
           <Heading as='h1' size='xl' color='var(--color-primary)'>
-            All Contacts
+            All Contacts ({totalCount})
           </Heading>
           <HStack>
             <Button colorScheme='green' onClick={onOpen}>

@@ -36,11 +36,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.addTagToObjectStmt, err = db.PrepareContext(ctx, addTagToObject); err != nil {
 		return nil, fmt.Errorf("error preparing query AddTagToObject: %w", err)
 	}
+	if q.completeImportTaskStmt, err = db.PrepareContext(ctx, completeImportTask); err != nil {
+		return nil, fmt.Errorf("error preparing query CompleteImportTask: %w", err)
+	}
 	if q.countFactsByOrgIDStmt, err = db.PrepareContext(ctx, countFactsByOrgID); err != nil {
 		return nil, fmt.Errorf("error preparing query CountFactsByOrgID: %w", err)
 	}
 	if q.countFunnelsStmt, err = db.PrepareContext(ctx, countFunnels); err != nil {
 		return nil, fmt.Errorf("error preparing query CountFunnels: %w", err)
+	}
+	if q.countImportTasksStmt, err = db.PrepareContext(ctx, countImportTasks); err != nil {
+		return nil, fmt.Errorf("error preparing query CountImportTasks: %w", err)
 	}
 	if q.countListsByOrgIDStmt, err = db.PrepareContext(ctx, countListsByOrgID); err != nil {
 		return nil, fmt.Errorf("error preparing query CountListsByOrgID: %w", err)
@@ -89,6 +95,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.createFunnelStmt, err = db.PrepareContext(ctx, createFunnel); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateFunnel: %w", err)
+	}
+	if q.createImportTaskStmt, err = db.PrepareContext(ctx, createImportTask); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateImportTask: %w", err)
 	}
 	if q.createListStmt, err = db.PrepareContext(ctx, createList); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateList: %w", err)
@@ -165,8 +174,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getFunnelStmt, err = db.PrepareContext(ctx, getFunnel); err != nil {
 		return nil, fmt.Errorf("error preparing query GetFunnel: %w", err)
 	}
+	if q.getImportTaskStmt, err = db.PrepareContext(ctx, getImportTask); err != nil {
+		return nil, fmt.Errorf("error preparing query GetImportTask: %w", err)
+	}
+	if q.getImportTaskHistoryStmt, err = db.PrepareContext(ctx, getImportTaskHistory); err != nil {
+		return nil, fmt.Errorf("error preparing query GetImportTaskHistory: %w", err)
+	}
 	if q.getObjStepStmt, err = db.PrepareContext(ctx, getObjStep); err != nil {
 		return nil, fmt.Errorf("error preparing query GetObjStep: %w", err)
+	}
+	if q.getObjectByIDStringStmt, err = db.PrepareContext(ctx, getObjectByIDString); err != nil {
+		return nil, fmt.Errorf("error preparing query GetObjectByIDString: %w", err)
 	}
 	if q.getObjectDetailsStmt, err = db.PrepareContext(ctx, getObjectDetails); err != nil {
 		return nil, fmt.Errorf("error preparing query GetObjectDetails: %w", err)
@@ -176,6 +194,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.getObjectsForStepStmt, err = db.PrepareContext(ctx, getObjectsForStep); err != nil {
 		return nil, fmt.Errorf("error preparing query GetObjectsForStep: %w", err)
+	}
+	if q.getOngoingImportTaskStmt, err = db.PrepareContext(ctx, getOngoingImportTask); err != nil {
+		return nil, fmt.Errorf("error preparing query GetOngoingImportTask: %w", err)
 	}
 	if q.getOrgDetailsStmt, err = db.PrepareContext(ctx, getOrgDetails); err != nil {
 		return nil, fmt.Errorf("error preparing query GetOrgDetails: %w", err)
@@ -264,6 +285,15 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.updateFunnelStmt, err = db.PrepareContext(ctx, updateFunnel); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateFunnel: %w", err)
 	}
+	if q.updateImportTaskErrorStmt, err = db.PrepareContext(ctx, updateImportTaskError); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateImportTaskError: %w", err)
+	}
+	if q.updateImportTaskProgressStmt, err = db.PrepareContext(ctx, updateImportTaskProgress); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateImportTaskProgress: %w", err)
+	}
+	if q.updateImportTaskStatusStmt, err = db.PrepareContext(ctx, updateImportTaskStatus); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateImportTaskStatus: %w", err)
+	}
 	if q.updateListStmt, err = db.PrepareContext(ctx, updateList); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateList: %w", err)
 	}
@@ -303,6 +333,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.updateUserRoleAndStatusStmt, err = db.PrepareContext(ctx, updateUserRoleAndStatus); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateUserRoleAndStatus: %w", err)
 	}
+	if q.upsertObjectTypeValueStmt, err = db.PrepareContext(ctx, upsertObjectTypeValue); err != nil {
+		return nil, fmt.Errorf("error preparing query UpsertObjectTypeValue: %w", err)
+	}
 	return &q, nil
 }
 
@@ -328,6 +361,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing addTagToObjectStmt: %w", cerr)
 		}
 	}
+	if q.completeImportTaskStmt != nil {
+		if cerr := q.completeImportTaskStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing completeImportTaskStmt: %w", cerr)
+		}
+	}
 	if q.countFactsByOrgIDStmt != nil {
 		if cerr := q.countFactsByOrgIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing countFactsByOrgIDStmt: %w", cerr)
@@ -336,6 +374,11 @@ func (q *Queries) Close() error {
 	if q.countFunnelsStmt != nil {
 		if cerr := q.countFunnelsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing countFunnelsStmt: %w", cerr)
+		}
+	}
+	if q.countImportTasksStmt != nil {
+		if cerr := q.countImportTasksStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countImportTasksStmt: %w", cerr)
 		}
 	}
 	if q.countListsByOrgIDStmt != nil {
@@ -416,6 +459,11 @@ func (q *Queries) Close() error {
 	if q.createFunnelStmt != nil {
 		if cerr := q.createFunnelStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createFunnelStmt: %w", cerr)
+		}
+	}
+	if q.createImportTaskStmt != nil {
+		if cerr := q.createImportTaskStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createImportTaskStmt: %w", cerr)
 		}
 	}
 	if q.createListStmt != nil {
@@ -543,9 +591,24 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getFunnelStmt: %w", cerr)
 		}
 	}
+	if q.getImportTaskStmt != nil {
+		if cerr := q.getImportTaskStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getImportTaskStmt: %w", cerr)
+		}
+	}
+	if q.getImportTaskHistoryStmt != nil {
+		if cerr := q.getImportTaskHistoryStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getImportTaskHistoryStmt: %w", cerr)
+		}
+	}
 	if q.getObjStepStmt != nil {
 		if cerr := q.getObjStepStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getObjStepStmt: %w", cerr)
+		}
+	}
+	if q.getObjectByIDStringStmt != nil {
+		if cerr := q.getObjectByIDStringStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getObjectByIDStringStmt: %w", cerr)
 		}
 	}
 	if q.getObjectDetailsStmt != nil {
@@ -561,6 +624,11 @@ func (q *Queries) Close() error {
 	if q.getObjectsForStepStmt != nil {
 		if cerr := q.getObjectsForStepStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getObjectsForStepStmt: %w", cerr)
+		}
+	}
+	if q.getOngoingImportTaskStmt != nil {
+		if cerr := q.getOngoingImportTaskStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getOngoingImportTaskStmt: %w", cerr)
 		}
 	}
 	if q.getOrgDetailsStmt != nil {
@@ -708,6 +776,21 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing updateFunnelStmt: %w", cerr)
 		}
 	}
+	if q.updateImportTaskErrorStmt != nil {
+		if cerr := q.updateImportTaskErrorStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateImportTaskErrorStmt: %w", cerr)
+		}
+	}
+	if q.updateImportTaskProgressStmt != nil {
+		if cerr := q.updateImportTaskProgressStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateImportTaskProgressStmt: %w", cerr)
+		}
+	}
+	if q.updateImportTaskStatusStmt != nil {
+		if cerr := q.updateImportTaskStatusStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateImportTaskStatusStmt: %w", cerr)
+		}
+	}
 	if q.updateListStmt != nil {
 		if cerr := q.updateListStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateListStmt: %w", cerr)
@@ -773,6 +856,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing updateUserRoleAndStatusStmt: %w", cerr)
 		}
 	}
+	if q.upsertObjectTypeValueStmt != nil {
+		if cerr := q.upsertObjectTypeValueStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing upsertObjectTypeValueStmt: %w", cerr)
+		}
+	}
 	return err
 }
 
@@ -816,8 +904,10 @@ type Queries struct {
 	addObjectsToFactStmt                     *sql.Stmt
 	addObjectsToTaskStmt                     *sql.Stmt
 	addTagToObjectStmt                       *sql.Stmt
+	completeImportTaskStmt                   *sql.Stmt
 	countFactsByOrgIDStmt                    *sql.Stmt
 	countFunnelsStmt                         *sql.Stmt
+	countImportTasksStmt                     *sql.Stmt
 	countListsByOrgIDStmt                    *sql.Stmt
 	countObjectTypesStmt                     *sql.Stmt
 	countObjectsByOrgIDStmt                  *sql.Stmt
@@ -834,6 +924,7 @@ type Queries struct {
 	createFactStmt                           *sql.Stmt
 	createFeedStmt                           *sql.Stmt
 	createFunnelStmt                         *sql.Stmt
+	createImportTaskStmt                     *sql.Stmt
 	createListStmt                           *sql.Stmt
 	createObjStepStmt                        *sql.Stmt
 	createObjectStmt                         *sql.Stmt
@@ -859,10 +950,14 @@ type Queries struct {
 	getFactByIDStmt                          *sql.Stmt
 	getFeedStmt                              *sql.Stmt
 	getFunnelStmt                            *sql.Stmt
+	getImportTaskStmt                        *sql.Stmt
+	getImportTaskHistoryStmt                 *sql.Stmt
 	getObjStepStmt                           *sql.Stmt
+	getObjectByIDStringStmt                  *sql.Stmt
 	getObjectDetailsStmt                     *sql.Stmt
 	getObjectTypeByIDStmt                    *sql.Stmt
 	getObjectsForStepStmt                    *sql.Stmt
+	getOngoingImportTaskStmt                 *sql.Stmt
 	getOrgDetailsStmt                        *sql.Stmt
 	getStepStmt                              *sql.Stmt
 	getTagByIDStmt                           *sql.Stmt
@@ -892,6 +987,9 @@ type Queries struct {
 	updateCreatorListStmt                    *sql.Stmt
 	updateFactStmt                           *sql.Stmt
 	updateFunnelStmt                         *sql.Stmt
+	updateImportTaskErrorStmt                *sql.Stmt
+	updateImportTaskProgressStmt             *sql.Stmt
+	updateImportTaskStatusStmt               *sql.Stmt
 	updateListStmt                           *sql.Stmt
 	updateObjStepStmt                        *sql.Stmt
 	updateObjStepSubStatusStmt               *sql.Stmt
@@ -905,6 +1003,7 @@ type Queries struct {
 	updateUserPasswordStmt                   *sql.Stmt
 	updateUserProfileStmt                    *sql.Stmt
 	updateUserRoleAndStatusStmt              *sql.Stmt
+	upsertObjectTypeValueStmt                *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
@@ -915,8 +1014,10 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		addObjectsToFactStmt:                     q.addObjectsToFactStmt,
 		addObjectsToTaskStmt:                     q.addObjectsToTaskStmt,
 		addTagToObjectStmt:                       q.addTagToObjectStmt,
+		completeImportTaskStmt:                   q.completeImportTaskStmt,
 		countFactsByOrgIDStmt:                    q.countFactsByOrgIDStmt,
 		countFunnelsStmt:                         q.countFunnelsStmt,
+		countImportTasksStmt:                     q.countImportTasksStmt,
 		countListsByOrgIDStmt:                    q.countListsByOrgIDStmt,
 		countObjectTypesStmt:                     q.countObjectTypesStmt,
 		countObjectsByOrgIDStmt:                  q.countObjectsByOrgIDStmt,
@@ -933,6 +1034,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		createFactStmt:                           q.createFactStmt,
 		createFeedStmt:                           q.createFeedStmt,
 		createFunnelStmt:                         q.createFunnelStmt,
+		createImportTaskStmt:                     q.createImportTaskStmt,
 		createListStmt:                           q.createListStmt,
 		createObjStepStmt:                        q.createObjStepStmt,
 		createObjectStmt:                         q.createObjectStmt,
@@ -958,10 +1060,14 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getFactByIDStmt:                          q.getFactByIDStmt,
 		getFeedStmt:                              q.getFeedStmt,
 		getFunnelStmt:                            q.getFunnelStmt,
+		getImportTaskStmt:                        q.getImportTaskStmt,
+		getImportTaskHistoryStmt:                 q.getImportTaskHistoryStmt,
 		getObjStepStmt:                           q.getObjStepStmt,
+		getObjectByIDStringStmt:                  q.getObjectByIDStringStmt,
 		getObjectDetailsStmt:                     q.getObjectDetailsStmt,
 		getObjectTypeByIDStmt:                    q.getObjectTypeByIDStmt,
 		getObjectsForStepStmt:                    q.getObjectsForStepStmt,
+		getOngoingImportTaskStmt:                 q.getOngoingImportTaskStmt,
 		getOrgDetailsStmt:                        q.getOrgDetailsStmt,
 		getStepStmt:                              q.getStepStmt,
 		getTagByIDStmt:                           q.getTagByIDStmt,
@@ -991,6 +1097,9 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		updateCreatorListStmt:                    q.updateCreatorListStmt,
 		updateFactStmt:                           q.updateFactStmt,
 		updateFunnelStmt:                         q.updateFunnelStmt,
+		updateImportTaskErrorStmt:                q.updateImportTaskErrorStmt,
+		updateImportTaskProgressStmt:             q.updateImportTaskProgressStmt,
+		updateImportTaskStatusStmt:               q.updateImportTaskStatusStmt,
 		updateListStmt:                           q.updateListStmt,
 		updateObjStepStmt:                        q.updateObjStepStmt,
 		updateObjStepSubStatusStmt:               q.updateObjStepSubStatusStmt,
@@ -1004,5 +1113,6 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		updateUserPasswordStmt:                   q.updateUserPasswordStmt,
 		updateUserProfileStmt:                    q.updateUserProfileStmt,
 		updateUserRoleAndStatusStmt:              q.updateUserRoleAndStatusStmt,
+		upsertObjectTypeValueStmt:                q.upsertObjectTypeValueStmt,
 	}
 }

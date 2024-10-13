@@ -31,7 +31,7 @@ func main() {
 	}
 
 	queries := database.New(db)
-	router := api.SetupRouter(queries)
+	router := api.SetupRouter(queries, db)
 
 	port := os.Getenv("PORT")
 	if port == "" {
