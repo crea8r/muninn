@@ -161,7 +161,7 @@ func (h *ImportTaskHandler) processBatch(ctx context.Context, taskID uuid.UUID, 
             obj, err = h.queries.CreateObject(ctx, database.CreateObjectParams{
 								Name: 			row.IDString,
                 IDString:    row.IDString,
-                Description: fmt.Sprintf("Imported from %s, import task Id: %s", fileName, taskID),
+                Description: fmt.Sprintf("Imported from %s", fileName),
 								CreatorID:  creatorId,
             })
             if err != nil {
