@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/crea8r/muninn/server/internal/api/handlers"
@@ -11,7 +12,7 @@ import (
 	"github.com/rs/cors"
 )
 
-func SetupRouter(db *database.Queries) *chi.Mux {
+func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 	r := chi.NewRouter()
 
 	corsMiddleware := cors.New(cors.Options{
@@ -25,23 +26,24 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 	})
 	r.Use(corsMiddleware.Handler)
 
-	tagHandler := handlers.NewTagHandler(db)
-	objectTypeHandler := handlers.NewObjectTypeHandler(db)
-	funnelHandler := handlers.NewFunnelHandler(db)
-	objectModel := models.NewObjectModel(db)
-	objectHandler := handlers.NewObjectHandler(objectModel, db)
+	tagHandler := handlers.NewTagHandler(queries)
+	objectTypeHandler := handlers.NewObjectTypeHandler(queries)
+	funnelHandler := handlers.NewFunnelHandler(queries)
+	objectModel := models.NewObjectModel(queries)
+	objectHandler := handlers.NewObjectHandler(objectModel, queries)
 	objStepHandler := handlers.NewObjStepHandler(objectModel)
-	factHandler := handlers.NewFactHandler(db)
-	taskHandler := handlers.NewTaskHandler(db)
-	orgMemberHandler := handlers.NewOrgMemberHandler(db)
-	feedHandler := handlers.NewFeedHandler(db)
-	summarizeHandler := handlers.NewSummarizeHandler(db)
-	listHandler := handlers.NewListHandler(db)
+	factHandler := handlers.NewFactHandler(queries)
+	taskHandler := handlers.NewTaskHandler(queries)
+	orgMemberHandler := handlers.NewOrgMemberHandler(queries)
+	feedHandler := handlers.NewFeedHandler(queries)
+	summarizeHandler := handlers.NewSummarizeHandler(queries)
+	listHandler := handlers.NewListHandler(queries)
+	importHandler := handlers.NewImportTaskHandler(db)
 
 	// Public routes
-	r.Post("/auth/signup", handlers.SignUp(db))
-	r.Post("/auth/login", handlers.Login(db))
-	r.Get("/stats",handlers.HealthCheck(db))
+	r.Post("/auth/signup", handlers.SignUp(queries))
+	r.Post("/auth/login", handlers.Login(queries))
+	r.Get("/stats",handlers.HealthCheck(queries))
 
 	// Protected routes
 	r.Group(func(r chi.Router) {
@@ -157,6 +159,13 @@ func SetupRouter(db *database.Queries) *chi.Mux {
 			r.Put("/members/{userID}/password", orgMemberHandler.UpdateUserPassword)
 			r.Put("/members/{userID}/profile", orgMemberHandler.UpdateUserProfile)
 		})
+
+		r.Route("/import", func(r chi.Router) {
+			r.Use(middleware.Permission)
+			r.Post("/", importHandler.CreateImportTask)
+			r.Get("/status", importHandler.GetImportTaskStatus)
+			r.Get("/history", importHandler.GetImportHistory)
+	})
 
 		r.Route("/feeds", func(r chi.Router) {
 			r.Use(middleware.Permission)

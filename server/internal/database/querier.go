@@ -15,8 +15,10 @@ type Querier interface {
 	AddObjectsToFact(ctx context.Context, arg AddObjectsToFactParams) error
 	AddObjectsToTask(ctx context.Context, arg AddObjectsToTaskParams) error
 	AddTagToObject(ctx context.Context, arg AddTagToObjectParams) error
+	CompleteImportTask(ctx context.Context, arg CompleteImportTaskParams) (ImportTask, error)
 	CountFactsByOrgID(ctx context.Context, arg CountFactsByOrgIDParams) (int64, error)
 	CountFunnels(ctx context.Context, arg CountFunnelsParams) (int64, error)
+	CountImportTasks(ctx context.Context, orgID uuid.UUID) (int64, error)
 	CountListsByOrgID(ctx context.Context, orgID uuid.UUID) (int64, error)
 	CountObjectTypes(ctx context.Context, arg CountObjectTypesParams) (int64, error)
 	CountObjectsByOrgID(ctx context.Context, arg CountObjectsByOrgIDParams) (int64, error)
@@ -34,6 +36,7 @@ type Querier interface {
 	CreateFact(ctx context.Context, arg CreateFactParams) (Fact, error)
 	CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error)
 	CreateFunnel(ctx context.Context, arg CreateFunnelParams) (Funnel, error)
+	CreateImportTask(ctx context.Context, arg CreateImportTaskParams) (ImportTask, error)
 	CreateList(ctx context.Context, arg CreateListParams) (List, error)
 	CreateObjStep(ctx context.Context, arg CreateObjStepParams) (CreateObjStepRow, error)
 	CreateObject(ctx context.Context, arg CreateObjectParams) (Obj, error)
@@ -61,10 +64,14 @@ type Querier interface {
 	GetFactByID(ctx context.Context, id uuid.UUID) (GetFactByIDRow, error)
 	GetFeed(ctx context.Context, creatorID uuid.UUID) ([]Feed, error)
 	GetFunnel(ctx context.Context, id uuid.UUID) (GetFunnelRow, error)
+	GetImportTask(ctx context.Context, id uuid.UUID) (ImportTask, error)
+	GetImportTaskHistory(ctx context.Context, arg GetImportTaskHistoryParams) ([]ImportTask, error)
 	GetObjStep(ctx context.Context, id uuid.UUID) (ObjStep, error)
+	GetObjectByIDString(ctx context.Context, idString string) (Obj, error)
 	GetObjectDetails(ctx context.Context, arg GetObjectDetailsParams) (GetObjectDetailsRow, error)
 	GetObjectTypeByID(ctx context.Context, id uuid.UUID) (ObjType, error)
 	GetObjectsForStep(ctx context.Context, arg GetObjectsForStepParams) ([]GetObjectsForStepRow, error)
+	GetOngoingImportTask(ctx context.Context, orgID uuid.UUID) (ImportTask, error)
 	GetOrgDetails(ctx context.Context, id uuid.UUID) (Org, error)
 	GetStep(ctx context.Context, id uuid.UUID) (GetStepRow, error)
 	GetTagByID(ctx context.Context, id uuid.UUID) (Tag, error)
@@ -95,6 +102,9 @@ type Querier interface {
 	UpdateCreatorList(ctx context.Context, arg UpdateCreatorListParams) (CreatorList, error)
 	UpdateFact(ctx context.Context, arg UpdateFactParams) (Fact, error)
 	UpdateFunnel(ctx context.Context, arg UpdateFunnelParams) (Funnel, error)
+	UpdateImportTaskError(ctx context.Context, arg UpdateImportTaskErrorParams) (ImportTask, error)
+	UpdateImportTaskProgress(ctx context.Context, arg UpdateImportTaskProgressParams) (ImportTask, error)
+	UpdateImportTaskStatus(ctx context.Context, arg UpdateImportTaskStatusParams) (ImportTask, error)
 	UpdateList(ctx context.Context, arg UpdateListParams) (List, error)
 	UpdateObjStep(ctx context.Context, arg UpdateObjStepParams) error
 	UpdateObjStepSubStatus(ctx context.Context, arg UpdateObjStepSubStatusParams) error
@@ -108,6 +118,7 @@ type Querier interface {
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (Creator, error)
 	UpdateUserRoleAndStatus(ctx context.Context, arg UpdateUserRoleAndStatusParams) (Creator, error)
+	UpsertObjectTypeValue(ctx context.Context, arg UpsertObjectTypeValueParams) (ObjTypeValue, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -424,3 +424,38 @@ UPDATE obj_type SET fields_search = jsonb_to_tsvector(fields);
 
 -- Example query to perform full-text search
 -- SELECT * FROM obj_type WHERE fields_search @@ to_tsquery('english', 'your_search_term');
+
+-- import task
+CREATE TABLE import_task (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    org_id UUID NOT NULL REFERENCES org(id),
+    creator_id UUID NOT NULL REFERENCES creator(id),
+    obj_type_id UUID NOT NULL REFERENCES obj_type(id),
+    status VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+    progress INTEGER DEFAULT 0,
+    total_rows INTEGER NOT NULL,
+    processed_rows INTEGER DEFAULT 0,
+    error_message TEXT,
+    result_summary JSONB,
+    file_name TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_import_task_org_id ON import_task(org_id);
+CREATE INDEX idx_import_task_creator_id ON import_task(creator_id);
+CREATE INDEX idx_import_task_status ON import_task(status);
+
+-- Trigger to update the updated_at column
+CREATE OR REPLACE FUNCTION update_import_task_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_import_task_updated_at
+BEFORE UPDATE ON import_task
+FOR EACH ROW
+EXECUTE FUNCTION update_import_task_updated_at();

@@ -22,13 +22,15 @@ func NewFactHandler(db *database.Queries) *FactHandler {
 	return &FactHandler{db: db}
 }
 
+type FactToCreate struct {
+	Text       string    `json:"text"`
+	HappenedAt utils.NullTime`json:"happenedAt"`
+	Location   string    `json:"location"`
+	ObjectIDs  []string  `json:"objectIds"`
+}
+
 func (h *FactHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var input struct {
-		Text       string    `json:"text"`
-		HappenedAt utils.NullTime`json:"happenedAt"`
-		Location   string    `json:"location"`
-		ObjectIDs  []string  `json:"objectIds"`
-	}
+	var input FactToCreate
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

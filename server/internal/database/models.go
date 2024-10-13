@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sqlc-dev/pqtype"
 )
 
 type Creator struct {
@@ -68,6 +69,22 @@ type Funnel struct {
 	CreatorID   uuid.UUID    `json:"creator_id"`
 	CreatedAt   time.Time    `json:"created_at"`
 	DeletedAt   sql.NullTime `json:"deleted_at"`
+}
+
+type ImportTask struct {
+	ID            uuid.UUID             `json:"id"`
+	OrgID         uuid.UUID             `json:"org_id"`
+	CreatorID     uuid.UUID             `json:"creator_id"`
+	ObjTypeID     uuid.UUID             `json:"obj_type_id"`
+	Status        string                `json:"status"`
+	Progress      sql.NullInt32         `json:"progress"`
+	TotalRows     int32                 `json:"total_rows"`
+	ProcessedRows sql.NullInt32         `json:"processed_rows"`
+	ErrorMessage  sql.NullString        `json:"error_message"`
+	ResultSummary pqtype.NullRawMessage `json:"result_summary"`
+	FileName      string                `json:"file_name"`
+	CreatedAt     sql.NullTime          `json:"created_at"`
+	UpdatedAt     sql.NullTime          `json:"updated_at"`
 }
 
 type List struct {

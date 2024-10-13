@@ -27,9 +27,11 @@ import { FactToUpdate, FactToCreate } from 'src/api/fact';
 import dayjs from 'dayjs';
 
 interface FactFormProps {
-  onSave: (fact: FactToUpdate | FactToCreate) => void;
+  onSave?: (fact: FactToUpdate | FactToCreate) => void;
+  onChange?: (fact: FactToUpdate | FactToCreate) => void;
   requireObject?: Object;
   fact?: Fact;
+  showPanel?: boolean;
 }
 
 interface FactFormData {
@@ -64,17 +66,25 @@ const parseInitialFact = (
             },
           })
         : '',
-      happenedAt: new Date().toLocaleString(),
+      happenedAt: dayjs().toISOString(),
       location: '',
       objectIds: [],
     };
   }
+  return {
+    text: '',
+    happenedAt: dayjs().toISOString(),
+    location: '',
+    objectIds: [],
+  };
 };
 
 const FactForm: React.FC<FactFormProps> = ({
   onSave,
   requireObject = undefined,
   fact: initialFact,
+  showPanel = true,
+  onChange,
 }) => {
   const [fact, setFact] = useState<any>(
     parseInitialFact(initialFact, requireObject)
@@ -90,6 +100,7 @@ const FactForm: React.FC<FactFormProps> = ({
     } else {
       setFact({ [name]: value });
     }
+    onChange && onChange({ ...fact, [name]: value });
   };
 
   const handleReset = () => {
@@ -97,8 +108,6 @@ const FactForm: React.FC<FactFormProps> = ({
   };
   const handleSave = async () => {
     const relatedObjectIds = fact.objectIds;
-    console.log(relatedObjectIds);
-    console.log(requireObject?.id);
     if (requireObject && !relatedObjectIds.includes(requireObject.id)) {
       toast({
         title: 'Error adding fact',
@@ -126,29 +135,31 @@ const FactForm: React.FC<FactFormProps> = ({
       toAddObjectIds: toAddObjectIds,
       toRemoveObjectIds: toRemoveObjectIds,
     };
-    try {
-      await onSave(toSubmitFact);
-      toast({
-        title: 'Fact added',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-      onClose();
-    } catch (e) {
-      toast({
-        title: 'Error adding fact',
-        description: 'Please try again later.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+    if (onSave) {
+      try {
+        await onSave(toSubmitFact);
+        toast({
+          title: 'Fact added',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        onClose();
+      } catch (e) {
+        toast({
+          title: 'Error adding fact',
+          description: 'Please try again later.',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
     }
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = new Date(e.target.value);
-    handleChange('happenedAt', newDate.toLocaleString());
+    handleChange('happenedAt', dayjs(newDate).toISOString());
   };
 
   const handleLocationSave = () => {
@@ -160,7 +171,9 @@ const FactForm: React.FC<FactFormProps> = ({
     <Box width='100%'>
       <Flex justifyContent='space-between' mb={2}>
         <HStack>
-          <Text mr={2}>{fact.happenedAt}</Text>
+          <Text mr={2}>
+            {dayjs(fact.happenedAt).format('YYYY-MM-DD HH:mm')}
+          </Text>
           <div style={{ position: 'relative' }}>
             <IconButton
               aria-label='Change date'
@@ -194,28 +207,32 @@ const FactForm: React.FC<FactFormProps> = ({
         initialValue={fact.text}
         filters={[SpotLightFilter.OBJECT]}
         onChange={(content: string, relatedItems) => {
+          let newFact = { ...fact };
           try {
             const jsonContent = JSON.parse(content);
-            setFact((prev: any) => ({
-              ...prev,
-              text: jsonContent,
-            }));
+            newFact.text = jsonContent;
           } catch (e) {
-            setFact((prev: any) => ({ ...prev, text: content }));
+            newFact.text = content;
           }
           let objIds = relatedItems
             ? relatedItems.map((item: any) => item.payload.id)
             : [];
-          setFact((prev: any) => ({ ...prev, objectIds: objIds }));
+          newFact.objectIds = objIds;
+          if (onChange) {
+            onChange(newFact);
+          }
+          setFact(newFact);
         }}
       />
-      <HStack width={'100%'} mt={2} mb={2}>
-        <Button onClick={handleReset}>Reset</Button>
-        <Spacer />
-        <Button colorScheme='blue' onClick={handleSave}>
-          Save
-        </Button>
-      </HStack>
+      {showPanel && (
+        <HStack width={'100%'} mt={2} mb={2}>
+          <Button onClick={handleReset}>Reset</Button>
+          <Spacer />
+          <Button colorScheme='blue' onClick={handleSave}>
+            Save
+          </Button>
+        </HStack>
+      )}
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
@@ -229,6 +246,7 @@ const FactForm: React.FC<FactFormProps> = ({
               placeholder='Enter location'
             />
           </ModalBody>
+
           <ModalFooter>
             <Button colorScheme='blue' mr={3} onClick={handleLocationSave}>
               Save
