@@ -38,6 +38,11 @@ const ObjectTypeCard: React.FC<ObjectTypeCardProps> = ({
   const [editedValues, setEditedValues] = React.useState(
     objectTypeValue.type_values
   );
+  // allFields are fields combining from objectType and editedValues
+  const allFields = Object.keys({
+    ...objectType?.fields,
+    ...editedValues,
+  });
   const toast = useToast();
 
   const cardContent = Object.entries(objectTypeValue.type_values)
@@ -104,11 +109,11 @@ const ObjectTypeCard: React.FC<ObjectTypeCardProps> = ({
           <ModalHeader>{objectType?.name || 'Unknown Type'}</ModalHeader>
           <ModalBody>
             <VStack spacing={4} align='stretch'>
-              {Object.entries(editedValues).map(([key, value]) => (
+              {allFields.map((key) => (
                 <MasterFormElement
                   key={key}
                   field={key}
-                  value={value}
+                  value={editedValues[key]}
                   onChange={(value) =>
                     setEditedValues({ ...editedValues, [key]: value })
                   }
