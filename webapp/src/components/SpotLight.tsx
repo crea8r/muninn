@@ -19,7 +19,7 @@ import {
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSpotLight, SearchFilter } from 'src/contexts/SpotLightContext';
-import { debounce } from 'lodash';
+import { debounce, set } from 'lodash';
 import {
   FaSearch,
   FaAddressCard,
@@ -134,37 +134,23 @@ const SpotLight: React.FC = () => {
         return;
       }
 
-      const currentPage = paginationState[activeFilter];
-
       // Perform searches for all filters simultaneously
       setIsLoading(true);
       try {
         if (filters.includes(SpotLightFilter.OBJECT)) {
-          setObjectResponse(
-            await fetchObjects(
-              activeFilter === SpotLightFilter.OBJECT ? currentPage : 0,
-              ITEMS_PER_PAGE,
-              query
-            )
-          );
+          setObjectResponse(await fetchObjects(0, ITEMS_PER_PAGE, query));
         }
       } catch (e) {}
       try {
         if (filters.includes(SpotLightFilter.FACT)) {
-          setFactResponse(
-            await listFact(
-              SpotLightFilter.FACT ? currentPage : 0,
-              ITEMS_PER_PAGE,
-              query
-            )
-          );
+          setFactResponse(await listFact(0, ITEMS_PER_PAGE, query));
         }
       } catch (e) {}
       try {
         if (filters.includes(SpotLightFilter.TASK)) {
           setTaskResponse(
             await listTasks({
-              page: SpotLightFilter.TASK ? currentPage : 0,
+              page: 0,
               pageSize: ITEMS_PER_PAGE,
               search: query,
               status: '',
@@ -180,14 +166,6 @@ const SpotLight: React.FC = () => {
         }
       } catch (e) {}
       setIsLoading(false);
-
-      // Update filter counts
-      setFilterCounts({
-        object: objectResponse?.totalCount || 0,
-        fact: factResponse?.totalCount || 0,
-        task: taskResponse?.totalCount || 0,
-        creator: creatorResponse?.length || 0,
-      });
     }, 300),
     []
   );
@@ -233,6 +211,13 @@ const SpotLight: React.FC = () => {
         totalCount = creatorResponse?.length || 0;
         break;
     }
+    // Update filter counts
+    setFilterCounts({
+      object: objectResponse?.totalCount || 0,
+      fact: factResponse?.totalCount || 0,
+      task: taskResponse?.totalCount || 0,
+      creator: creatorResponse?.length || 0,
+    });
 
     setSearchResults(results);
     setTotalPages((prev) => ({
@@ -250,7 +235,7 @@ const SpotLight: React.FC = () => {
 
   useEffect(() => {
     debouncedSearch(searchQuery);
-  }, [searchQuery, debouncedSearch, paginationState]);
+  }, [searchQuery, debouncedSearch]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
@@ -350,8 +335,32 @@ const SpotLight: React.FC = () => {
     ));
   };
 
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = async (newPage: number) => {
     setPaginationState((prev) => ({ ...prev, [activeFilter]: newPage }));
+    setIsLoading(true);
+    switch (activeFilter) {
+      case SpotLightFilter.OBJECT:
+        setObjectResponse(
+          await fetchObjects(newPage, ITEMS_PER_PAGE, searchQuery)
+        );
+        break;
+      case SpotLightFilter.FACT:
+        setFactResponse(await listFact(newPage, ITEMS_PER_PAGE, searchQuery));
+        break;
+      case SpotLightFilter.TASK:
+        setTaskResponse(
+          await listTasks({
+            page: newPage,
+            pageSize: ITEMS_PER_PAGE,
+            search: searchQuery,
+            status: '',
+            creatorId: authService.getCreatorId() || '',
+            assignedId: authService.getCreatorId() || '',
+          })
+        );
+        break;
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -409,39 +418,41 @@ const SpotLight: React.FC = () => {
                   )
                 )}
               </AnimatePresence>
-              {searchResults.length > 0 && (
-                <HStack justifyContent='space-between' w='100%'>
-                  <Button
-                    onClick={() =>
-                      handlePageChange(
-                        Math.max(paginationState[activeFilter] - 1, 1)
-                      )
-                    }
-                    isDisabled={paginationState[activeFilter] === 1}
-                  >
-                    Previous
-                  </Button>
-                  <Text>
-                    Page {paginationState[activeFilter]} of{' '}
-                    {totalPages[activeFilter]}
-                  </Text>
-                  <Button
-                    onClick={() =>
-                      handlePageChange(
-                        Math.min(
-                          paginationState[activeFilter] + 1,
-                          totalPages[activeFilter]
+              {searchResults.length > 0 &&
+                activeFilter !== SpotLightFilter.CREATOR && (
+                  <HStack justifyContent='space-between' w='100%'>
+                    <Button
+                      onClick={() =>
+                        handlePageChange(
+                          Math.max(paginationState[activeFilter] - 1, 1)
                         )
-                      )
-                    }
-                    isDisabled={
-                      paginationState[activeFilter] === totalPages[activeFilter]
-                    }
-                  >
-                    Next
-                  </Button>
-                </HStack>
-              )}
+                      }
+                      isDisabled={paginationState[activeFilter] === 1}
+                    >
+                      Previous
+                    </Button>
+                    <Text>
+                      Page {paginationState[activeFilter]} of{' '}
+                      {totalPages[activeFilter]}
+                    </Text>
+                    <Button
+                      onClick={() =>
+                        handlePageChange(
+                          Math.min(
+                            paginationState[activeFilter] + 1,
+                            totalPages[activeFilter]
+                          )
+                        )
+                      }
+                      isDisabled={
+                        paginationState[activeFilter] ===
+                        totalPages[activeFilter]
+                      }
+                    >
+                      Next
+                    </Button>
+                  </HStack>
+                )}
             </>
           )}
         </VStack>
