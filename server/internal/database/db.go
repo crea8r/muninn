@@ -192,6 +192,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getObjectTypeByIDStmt, err = db.PrepareContext(ctx, getObjectTypeByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetObjectTypeByID: %w", err)
 	}
+	if q.getObjectTypeValueStmt, err = db.PrepareContext(ctx, getObjectTypeValue); err != nil {
+		return nil, fmt.Errorf("error preparing query GetObjectTypeValue: %w", err)
+	}
 	if q.getObjectsForStepStmt, err = db.PrepareContext(ctx, getObjectsForStep); err != nil {
 		return nil, fmt.Errorf("error preparing query GetObjectsForStep: %w", err)
 	}
@@ -621,6 +624,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getObjectTypeByIDStmt: %w", cerr)
 		}
 	}
+	if q.getObjectTypeValueStmt != nil {
+		if cerr := q.getObjectTypeValueStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getObjectTypeValueStmt: %w", cerr)
+		}
+	}
 	if q.getObjectsForStepStmt != nil {
 		if cerr := q.getObjectsForStepStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getObjectsForStepStmt: %w", cerr)
@@ -956,6 +964,7 @@ type Queries struct {
 	getObjectByIDStringStmt                  *sql.Stmt
 	getObjectDetailsStmt                     *sql.Stmt
 	getObjectTypeByIDStmt                    *sql.Stmt
+	getObjectTypeValueStmt                   *sql.Stmt
 	getObjectsForStepStmt                    *sql.Stmt
 	getOngoingImportTaskStmt                 *sql.Stmt
 	getOrgDetailsStmt                        *sql.Stmt
@@ -1066,6 +1075,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getObjectByIDStringStmt:                  q.getObjectByIDStringStmt,
 		getObjectDetailsStmt:                     q.getObjectDetailsStmt,
 		getObjectTypeByIDStmt:                    q.getObjectTypeByIDStmt,
+		getObjectTypeValueStmt:                   q.getObjectTypeValueStmt,
 		getObjectsForStepStmt:                    q.getObjectsForStepStmt,
 		getOngoingImportTaskStmt:                 q.getOngoingImportTaskStmt,
 		getOrgDetailsStmt:                        q.getOrgDetailsStmt,

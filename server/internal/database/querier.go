@@ -70,6 +70,7 @@ type Querier interface {
 	GetObjectByIDString(ctx context.Context, idString string) (Obj, error)
 	GetObjectDetails(ctx context.Context, arg GetObjectDetailsParams) (GetObjectDetailsRow, error)
 	GetObjectTypeByID(ctx context.Context, id uuid.UUID) (ObjType, error)
+	GetObjectTypeValue(ctx context.Context, arg GetObjectTypeValueParams) (ObjTypeValue, error)
 	GetObjectsForStep(ctx context.Context, arg GetObjectsForStepParams) ([]GetObjectsForStepRow, error)
 	GetOngoingImportTask(ctx context.Context, orgID uuid.UUID) (ImportTask, error)
 	GetOrgDetails(ctx context.Context, id uuid.UUID) (Org, error)

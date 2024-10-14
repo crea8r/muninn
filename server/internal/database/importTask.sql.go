@@ -203,6 +203,33 @@ func (q *Queries) GetObjectByIDString(ctx context.Context, idString string) (Obj
 	return i, err
 }
 
+const getObjectTypeValue = `-- name: GetObjectTypeValue :one
+SELECT id, obj_id, type_id, type_values, created_at, last_updated, deleted_at, search_vector FROM obj_type_value
+WHERE obj_id = $1 AND type_id = $2
+LIMIT 1
+`
+
+type GetObjectTypeValueParams struct {
+	ObjID  uuid.UUID `json:"obj_id"`
+	TypeID uuid.UUID `json:"type_id"`
+}
+
+func (q *Queries) GetObjectTypeValue(ctx context.Context, arg GetObjectTypeValueParams) (ObjTypeValue, error) {
+	row := q.queryRow(ctx, q.getObjectTypeValueStmt, getObjectTypeValue, arg.ObjID, arg.TypeID)
+	var i ObjTypeValue
+	err := row.Scan(
+		&i.ID,
+		&i.ObjID,
+		&i.TypeID,
+		&i.TypeValues,
+		&i.CreatedAt,
+		&i.LastUpdated,
+		&i.DeletedAt,
+		&i.SearchVector,
+	)
+	return i, err
+}
+
 const getOngoingImportTask = `-- name: GetOngoingImportTask :one
 SELECT id, org_id, creator_id, obj_type_id, status, progress, total_rows, processed_rows, error_message, result_summary, file_name, created_at, updated_at FROM import_task
 WHERE org_id = $1 AND status IN ('pending', 'processing')
