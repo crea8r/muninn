@@ -19,7 +19,7 @@ import {
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSpotLight, SearchFilter } from 'src/contexts/SpotLightContext';
-import { debounce, set } from 'lodash';
+import { debounce } from 'lodash';
 import {
   FaSearch,
   FaAddressCard,

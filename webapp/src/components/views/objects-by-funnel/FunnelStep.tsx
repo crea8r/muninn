@@ -12,6 +12,7 @@ import {
 import { ChevronDownIcon, ChevronUpIcon } from '@chakra-ui/icons';
 import { FunnelStep as FunnelStepType, Object } from 'src/types';
 import ObjectCard from './ObjectCard'; // We'll assume this component exists
+import { shortenText } from 'src/utils';
 
 interface FunnelStepProps {
   step: FunnelStepType;
@@ -55,18 +56,16 @@ const FunnelStep: React.FC<FunnelStepProps> = ({
       onDrop={handleDrop}
     >
       <VStack align='stretch' spacing={4} width={'260px'}>
-        <Box>
-          <Heading
-            size='md'
-            mb={2}
-            overflow={'hidden'}
-            whiteSpace={'nowrap'}
-            textOverflow={'ellipsis'}
-          >
-            {step.name}
-          </Heading>
-          <Badge colorScheme='blue'>{objects.length} contacts</Badge>
-        </Box>
+        <Heading
+          size='md'
+          mb={2}
+          overflow={'hidden'}
+          whiteSpace={'nowrap'}
+          textOverflow={'ellipsis'}
+          title={step.name}
+        >
+          {shortenText(step.name, 20)} ({objects.length})
+        </Heading>
         <Button onClick={onToggle} variant='outline' size='sm'>
           {isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
           {isOpen ? 'Collapse' : 'Expand'}
