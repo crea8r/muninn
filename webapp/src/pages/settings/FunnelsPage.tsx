@@ -21,6 +21,7 @@ import {
   useToast,
   InputGroup,
   InputLeftElement,
+  IconButton,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import BreadcrumbComponent from '../../components/Breadcrumb';
@@ -35,6 +36,9 @@ import {
 import { useHistory } from 'react-router-dom';
 import LoadingPanel from 'src/components/LoadingPanel';
 import LoadingModal from 'src/components/LoadingModal';
+import { debounce } from 'lodash';
+import { FaEdit, FaEye, FaTrash } from 'react-icons/fa';
+import { shortenText } from 'src/utils';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -44,6 +48,7 @@ const FunnelsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingFunnelList, setIsLoadingFunnelList] = useState(false);
   const {
     isOpen: isCreateOpen,
     onOpen: onCreateOpen,
@@ -55,16 +60,17 @@ const FunnelsPage: React.FC = () => {
     onClose: onEditClose,
   } = useDisclosure();
   const [editingFunnel, setEditingFunnel] = useState<Funnel | null>(null);
+  // useRef to store the search query
   const toast = useToast();
 
   useEffect(() => {
-    loadFunnels();
+    debounce(loadFunnels, 500)();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchQuery]);
 
   const loadFunnels = async () => {
+    setIsLoadingFunnelList(true);
     try {
-      setIsLoading(true);
       const result = await fetchAllFunnels(
         currentPage,
         ITEMS_PER_PAGE,
@@ -81,7 +87,7 @@ const FunnelsPage: React.FC = () => {
         isClosable: true,
       });
     } finally {
-      setIsLoading(false);
+      setIsLoadingFunnelList(false);
     }
   };
 
@@ -172,6 +178,10 @@ const FunnelsPage: React.FC = () => {
     onEditOpen();
   };
 
+  const handleView = (funnel: Funnel) => {
+    history.push(`/settings/funnels/${funnel.id}/detail`);
+  };
+
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
   const history = useHistory();
 
@@ -186,7 +196,7 @@ const FunnelsPage: React.FC = () => {
           colorScheme='blue'
           bg='var(--color-primary)'
           onClick={onCreateOpen}
-          isDisabled={isLoading}
+          isDisabled={isLoadingFunnelList}
         >
           New Funnel
         </Button>
@@ -199,10 +209,9 @@ const FunnelsPage: React.FC = () => {
           placeholder='Search in name and description'
           value={searchQuery}
           onChange={handleSearchChange}
-          isDisabled={isLoading}
         />
       </InputGroup>
-      {isLoading ? (
+      {isLoadingFunnelList ? (
         <LoadingPanel />
       ) : (
         <>
@@ -229,27 +238,40 @@ const FunnelsPage: React.FC = () => {
                       >
                         {funnel.name}
                       </Text>
-                      <Box>{funnel.description}</Box>
+                      <Box>{shortenText(funnel.description, 30)}</Box>
                     </VStack>
                   </Td>
                   <Td>
                     <UnorderedList>
                       {funnel.steps.map((step, index) => (
-                        <ListItem key={index}>{step.name}</ListItem>
+                        <ListItem key={index}>
+                          {shortenText(step.name, 20)}
+                        </ListItem>
                       ))}
                     </UnorderedList>
                   </Td>
-                  <Td width='200px'>
-                    <Button size='sm' onClick={() => handleEdit(funnel)} mr={2}>
-                      Edit
-                    </Button>
-                    <Button
+                  <Td width='250px'>
+                    <IconButton
+                      icon={<FaEye />}
+                      onClick={() => handleView(funnel)}
+                      aria-label=''
                       size='sm'
-                      colorScheme='red'
+                      mr={2}
+                    />
+                    <IconButton
+                      size='sm'
+                      icon={<FaEdit />}
+                      onClick={() => handleEdit(funnel)}
+                      aria-label={''}
+                      mr={2}
+                    />
+                    <IconButton
+                      icon={<FaTrash />}
+                      size={'sm'}
+                      color={'red'}
+                      aria-label={'Delete'}
                       onClick={() => handleDeleteFunnel(funnel.id)}
-                    >
-                      Delete
-                    </Button>
+                    />
                   </Td>
                 </Tr>
               ))}

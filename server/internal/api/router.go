@@ -83,6 +83,7 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 			r.Use(middleware.Permission)
 			r.Post("/", wrapWithFeed(funnelHandler.CreateFunnel))
 			r.Get("/", funnelHandler.ListFunnels)
+			r.Get("/{id}", funnelHandler.GetFunnel)
 			r.Put("/{id}", funnelHandler.UpdateFunnel)
 			r.Delete("/{id}", funnelHandler.DeleteFunnel)
 			r.Get("/{id}/view", funnelHandler.GetFunnelView)

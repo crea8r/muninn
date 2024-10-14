@@ -265,6 +265,59 @@ func (h *FunnelHandler) ListFunnels(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// GetFunnel handles GET requests to retrieve a funnel by ID
+func (h *FunnelHandler) GetFunnel(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	// Extract the funnel ID from the URL parameters
+	funnelIDStr := chi.URLParam(r, "id")
+	funnelID, err := uuid.Parse(funnelIDStr)
+	if err != nil {
+		http.Error(w, "Invalid funnel ID", http.StatusBadRequest)
+		return
+	}
+	params := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
+	orgId := uuid.MustParse(params.OrgID)
+	
+	// Retrieve the funnel from the database
+	funnel, err := h.db.GetFunnel(ctx, funnelID)
+	if err != nil {
+		http.Error(w, "Error fetching funnel", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if the creator has access to this funnel
+	if funnel.OrgID != orgId {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Fetch steps for the funnel
+	steps, err := h.db.ListStepsByFunnel(ctx, funnelID)
+	if err != nil {
+		http.Error(w, "Error fetching funnel steps", http.StatusInternalServerError)
+		return
+	}
+
+	// Assign steps to the funnel
+	funnelWithStep := ListFunnelsRowWithStep{
+		ID:          funnel.ID,
+		Name:        funnel.Name,
+		Description: funnel.Description,
+		CreatorID:   funnel.CreatorID,
+		CreatedAt:   funnel.CreatedAt,
+		DeletedAt:   utils.NullTime{NullTime: funnel.DeletedAt},
+		OrgID:       funnel.OrgID,
+		ObjectCount: funnel.ObjectCount,
+		Steps:  steps,
+	}
+
+	// Set the Content-Type header and encode the funnel as JSON
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(funnelWithStep); err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+	}
+}
+
 func (h *FunnelHandler) GetFunnelView(w http.ResponseWriter, r *http.Request) {
 	funnelID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
