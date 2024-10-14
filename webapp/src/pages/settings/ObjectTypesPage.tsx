@@ -36,6 +36,7 @@ import { useHistory } from 'react-router-dom';
 import FaIconList from 'src/components/FaIconList';
 import LoadingPanel from 'src/components/LoadingPanel';
 import LoadingModal from 'src/components/LoadingModal';
+import { debounce } from 'lodash';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -45,6 +46,7 @@ const ObjectTypesPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingObjectTypeList, setIsLoadingObjectTypeList] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [editingObjectType, setEditingObjectType] = useState<
     ObjectType | undefined
@@ -53,12 +55,12 @@ const ObjectTypesPage: React.FC = () => {
   const history = useHistory();
 
   useEffect(() => {
-    fetchObjectTypes();
+    debounce(fetchObjectTypes, 500)();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchQuery]);
 
   const fetchObjectTypes = async () => {
-    setIsLoading(true);
+    setIsLoadingObjectTypeList(true);
     try {
       const params: ListObjectTypesParams = {
         page: currentPage,
@@ -77,7 +79,7 @@ const ObjectTypesPage: React.FC = () => {
         isClosable: true,
       });
     }
-    setIsLoading(false);
+    setIsLoadingObjectTypeList(false);
   };
 
   const handleCreateObjectType = async (newObjectType: ObjectType) => {
@@ -192,7 +194,7 @@ const ObjectTypesPage: React.FC = () => {
             setEditingObjectType(undefined);
             onOpen();
           }}
-          isDisabled={isLoading}
+          isDisabled={isLoadingObjectTypeList}
         >
           New Data Type
         </Button>
@@ -206,7 +208,6 @@ const ObjectTypesPage: React.FC = () => {
           placeholder='Search in name, description and field name'
           value={searchQuery}
           onChange={handleSearchChange}
-          isDisabled={isLoading}
         />
       </InputGroup>
       {isLoading ? (

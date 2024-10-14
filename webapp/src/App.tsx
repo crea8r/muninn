@@ -30,6 +30,7 @@ import SpotLight from './components/SpotLight';
 import GlobalImageFallback from 'src/components/GlobalImageFallback';
 import FunnelBoard from './pages/settings/FunnelBoard';
 import ListObjectByTypesPage from './pages/settings/ListObjectByTypesPage';
+import FunnelConfigPage from './pages/settings/funnel-config-page/FunnelConfigPage';
 
 const theme = extendTheme({
   styles: {
@@ -139,6 +140,11 @@ const App: React.FC = () => {
                             exact
                             path='/settings/funnels/:funnelId'
                             component={FunnelBoard}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/settings/funnels/:id/detail'
+                            component={FunnelConfigPage}
                           />
                           <ProtectedRoute
                             exact

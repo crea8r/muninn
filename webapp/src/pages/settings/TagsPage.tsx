@@ -185,7 +185,6 @@ const TagsPage: React.FC = () => {
           placeholder='Search in name and description'
           value={searchQuery}
           onChange={handleSearchChange}
-          isDisabled={isLoading}
         />
       </InputGroup>
 
