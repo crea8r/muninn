@@ -61,3 +61,8 @@ VALUES ($1, $2, $3)
 ON CONFLICT (obj_id, type_id) 
 DO UPDATE SET type_values = EXCLUDED.type_values
 RETURNING *;
+
+-- name: GetObjectTypeValue :one
+SELECT * FROM obj_type_value
+WHERE obj_id = $1 AND type_id = $2
+LIMIT 1;
