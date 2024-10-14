@@ -9,8 +9,8 @@ import {
   IconButton,
   HStack,
 } from '@chakra-ui/react';
-import { FaThumbsUp, FaThumbsDown, FaTrash, FaBookmark } from 'react-icons/fa';
-import { FiPlusCircle, FiRefreshCcw } from 'react-icons/fi';
+import { FaTrash, FaBookmark } from 'react-icons/fa';
+import { FiRefreshCcw } from 'react-icons/fi';
 
 // Mock action suggestions
 const mockActions = [
@@ -86,11 +86,11 @@ const ActionSuggestion: React.FC<ActionSuggestionProps> = ({
     });
   };
 
-  const handleActionClick = (action: string) => {
-    onActionTaken(action);
-    // Remove the taken action from suggestions
-    setSuggestions(suggestions.filter((s) => s !== action));
-  };
+  // const handleActionClick = (action: string) => {
+  //   onActionTaken(action);
+  //   // Remove the taken action from suggestions
+  //   setSuggestions(suggestions.filter((s) => s !== action));
+  // };
 
   return (
     <Box borderWidth={0} p={0}>

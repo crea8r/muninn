@@ -3,7 +3,6 @@ import {
   Box,
   VStack,
   Text,
-  Badge,
   Heading,
   Collapse,
   Button,
