@@ -1,12 +1,13 @@
 import { Object } from 'src/types';
 import { Box, Divider, Tag, Text, Wrap } from '@chakra-ui/react';
-import { Link, useHistory } from 'react-router-dom';
+// import { useHistory } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 type ObjectCardProps = {
   object: Object;
 };
 const ObjectCard = ({ object }: ObjectCardProps) => {
-  const history = useHistory();
+  // const history = useHistory();
   return (
     <Box
       id={object.id}
