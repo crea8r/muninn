@@ -1,6 +1,6 @@
 import { Object } from 'src/types';
 import { Box, Divider, Tag, Text, Wrap } from '@chakra-ui/react';
-import { useHistory } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 
 type ObjectCardProps = {
   object: Object;
@@ -17,16 +17,17 @@ const ObjectCard = ({ object }: ObjectCardProps) => {
       cursor={'move'}
       className='draggable'
     >
-      <Text
-        fontWeight={'bold'}
-        cursor={'pointer'}
-        textDecoration={'underline'}
-        onClick={() => {
-          history.push(`/objects/${object.id}`);
-        }}
-      >
-        {object.name}
-      </Text>
+      <Link to={`/objects/${object.id}`}>
+        <Text
+          fontWeight={'bold'}
+          cursor={'pointer'}
+          textDecoration={'underline'}
+          color={'var(--color-primary)'}
+        >
+          {object.name}
+        </Text>
+      </Link>
+
       {object.tags && (
         <Wrap mt={2}>
           {object.tags

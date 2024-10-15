@@ -13,6 +13,8 @@ import dayjs from 'dayjs';
 import { ObjectType, ObjectTypeFilter } from 'src/types';
 import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 import { MasterFormElement } from 'src/components/rich-object-form/MasterFormElement';
+import { Link } from 'react-router-dom';
+import { shortenText } from 'src/utils';
 
 interface ResizableTableProps {
   objectType: ObjectType;
@@ -149,7 +151,15 @@ const ResizableTable: React.FC<ResizableTableProps> = ({
                 borderStyle='solid'
                 borderColor={'gray.300'}
               >
-                {obj.name}
+                <Link
+                  to={`/objects/${obj.id}`}
+                  style={{
+                    textDecoration: 'underline',
+                    color: 'var(--color-primary)',
+                  }}
+                >
+                  {shortenText(obj.name, 30)}
+                </Link>
               </Box>
               <Box
                 flexShrink={0}

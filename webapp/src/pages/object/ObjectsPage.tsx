@@ -22,7 +22,7 @@ import {
   IconButton,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
-import { useHistory } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import { NewObject, Object, Tag } from 'src/types/';
 import { fetchObjects } from 'src/api/object';
 import ImporterDialog from 'src/components/importer-dialog/ImporterDialog';
@@ -192,7 +192,15 @@ const ObjectsPage: React.FC = () => {
                             style={{ height: '32px' }}
                           />
                         ) : null}
-                        <Text>{shortenText(obj.name, 50)}</Text>
+                        <Link
+                          to={`/objects/${obj.id}`}
+                          style={{
+                            textDecoration: 'underline',
+                            color: 'var(--color-primary)',
+                          }}
+                        >
+                          <Text>{shortenText(obj.name, 50)}</Text>
+                        </Link>
                       </HStack>
                     </Td>
                     <Td>
