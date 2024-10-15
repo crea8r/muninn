@@ -76,6 +76,11 @@ const ObjectDetailPage: React.FC = () => {
     onClose: onCloseNewActivityDialog,
   } = useDisclosure();
   const [imgUrls, setImgUrls] = useState<string[]>([]);
+  const [tabIndex, setTabIndex] = useState(1);
+
+  const handleTabIndexChange = (index: number) => {
+    setTabIndex(index);
+  };
 
   const loadImageUrlsFromObject = (obj: ObjectDetail) => {
     const tmp: string[] = [];
@@ -105,6 +110,13 @@ const ObjectDetailPage: React.FC = () => {
         setFacts(details.facts);
         setTasks(details.tasks);
         setImgUrls(loadImageUrlsFromObject(details));
+        if (
+          details.tasks.filter(
+            (task: any) => task.status !== TaskStatus.COMPLETED
+          ).length > 0
+        ) {
+          setTabIndex(0);
+        }
       } catch (error) {
         toast({
           title: 'Error loading object details',
@@ -248,7 +260,7 @@ const ObjectDetailPage: React.FC = () => {
                 onUpdateSubStatus={handleUpdateSubStatus}
                 stepsAndFunnels={object?.stepsAndFunnels || []}
               />
-              <Tabs>
+              <Tabs index={tabIndex} onChange={handleTabIndexChange}>
                 <TabList>
                   <Tab>
                     Tasks
