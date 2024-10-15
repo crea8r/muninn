@@ -15,6 +15,7 @@ import {
 } from '@chakra-ui/react';
 import { useState } from 'react';
 import { Funnel, StepAndFunnel, FunnelStep } from 'src/types';
+import { shortenText } from 'src/utils';
 
 interface AddObjectStepModalProps {
   isOpen: boolean;
@@ -104,21 +105,23 @@ const AddObjectStepModal = ({
               </Text>
               <Text mt={2}>
                 <strong>Example:</strong>{' '}
-                {
+                {shortenText(
                   availableFunnels
                     .find((f) => f.id === selectedFunnel)
                     ?.steps.find((s: FunnelStep) => s.id === selectedStep)
-                    ?.example
-                }
+                    ?.example || '',
+                  50
+                )}
               </Text>
               <Text mt={2}>
                 <strong>Action to take:</strong>{' '}
-                {
+                {shortenText(
                   availableFunnels
                     .find((f) => f.id === selectedFunnel)
                     ?.steps.find((s: FunnelStep) => s.id === selectedStep)
-                    ?.action
-                }
+                    ?.action || '',
+                  50
+                )}
               </Text>
             </Box>
           )}
