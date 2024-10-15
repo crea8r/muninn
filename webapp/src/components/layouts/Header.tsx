@@ -16,7 +16,7 @@ import { SearchIcon } from '@chakra-ui/icons';
 import { useHistory } from 'react-router-dom';
 import authService from 'src/services/authService';
 // import logo.png from src/assets/logo.png;
-import logo from 'src/assets/logo.png';
+// import logo from 'src/assets/logo.png';
 import { useSpotLight } from 'src/contexts/SpotLightContext';
 import { SpotLightFilter } from '../SpotLight';
 
