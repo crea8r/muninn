@@ -54,13 +54,13 @@ const Header: React.FC = () => {
         justifyContent='space-between'
       >
         <HStack w='250px' paddingLeft='8px'>
-          <img
+          {/* <img
             src={logo}
             alt='Muninn'
             style={{ width: '24px', height: '24px' }}
-          />
-          <Box as='span' fontWeight='bold' fontSize='xl'>
-            Muninn
+          /> */}
+          <Box as='span' fontWeight='bold' fontSize='xl' ml={8}>
+            {details?.orgName || 'Muninn'}
           </Box>
         </HStack>
         <Flex alignItems='center' flex={1}>
