@@ -243,7 +243,7 @@ const FunnelsPage: React.FC = () => {
                   </Td>
                   <Td>
                     <UnorderedList>
-                      {funnel.steps.map((step, index) => (
+                      {funnel.steps?.map((step, index) => (
                         <ListItem key={index}>
                           {shortenText(step.name, 20)}
                         </ListItem>
