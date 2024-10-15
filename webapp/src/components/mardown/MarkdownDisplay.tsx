@@ -5,9 +5,14 @@ import remarkGfm from 'remark-gfm';
 
 interface MarkdownDisplayProps {
   content: string;
+  characterLimit?: number;
 }
 
-const MarkdownDisplay: React.FC<MarkdownDisplayProps> = ({ content }) => {
+const MarkdownDisplay: React.FC<MarkdownDisplayProps> = ({
+  content,
+  characterLimit,
+}) => {
+  const [isExpanded, setIsExpanded] = React.useState(false);
   const renderedContent = useMemo(() => {
     // Replace mentions with links
     const mentionRegex = /@\[([^\]]+)\]\((\w+):([^)]+)\)/g;
@@ -16,6 +21,17 @@ const MarkdownDisplay: React.FC<MarkdownDisplayProps> = ({ content }) => {
       return `[${name}](${path})`;
     });
   }, [content]);
+  const shouldShorten =
+    characterLimit &&
+    characterLimit > 0 &&
+    renderedContent.length > characterLimit;
+  const displayedContent =
+    shouldShorten && !isExpanded
+      ? `${renderedContent.slice(0, characterLimit)}...`
+      : renderedContent;
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   const components = {
     a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
@@ -32,8 +48,22 @@ const MarkdownDisplay: React.FC<MarkdownDisplayProps> = ({ content }) => {
   return (
     <Box sx={markdownStyles}>
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-        {renderedContent}
+        {displayedContent}
       </ReactMarkdown>
+      {shouldShorten && (
+        <button
+          onClick={toggleExpand}
+          style={{
+            color: 'blue',
+            textDecoration: 'underline',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          {isExpanded ? 'See less' : 'See more'}
+        </button>
+      )}
     </Box>
   );
 };

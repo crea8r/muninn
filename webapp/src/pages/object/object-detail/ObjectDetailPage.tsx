@@ -353,7 +353,10 @@ const ObjectDetailPage: React.FC = () => {
 
                 {object?.description && object?.description !== '' && (
                   <>
-                    <MarkdownDisplay content={object.description} />
+                    <MarkdownDisplay
+                      content={object.description}
+                      characterLimit={200}
+                    />
                   </>
                 )}
 

@@ -47,7 +47,11 @@ const ObjectTypeCard: React.FC<ObjectTypeCardProps> = ({
 
   const cardContent = Object.entries(objectTypeValue.type_values)
     .filter(
-      ([, value]) => value !== null && value !== undefined && value !== ''
+      ([, value]) =>
+        value !== null &&
+        value !== undefined &&
+        value !== '' &&
+        !value.includes('http')
     )
     .map(([key, value]) => `${key}: ${value}`)
     .join(', ')
