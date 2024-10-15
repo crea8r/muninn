@@ -39,9 +39,9 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
     undefined
   );
   const groupItemsByDate = (items: Fact[]) => {
-    const grouped: { [date: string]: Fact[] } = {};
+    const grouped: { [date: number]: Fact[] } = {};
     items.forEach((item) => {
-      const date = dayjs(item.happenedAt).toDate().toLocaleDateString();
+      const date = dayjs(item.happenedAt).startOf('day').unix();
       if (!grouped[date]) {
         grouped[date] = [];
       }
@@ -63,11 +63,13 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
       relatedObjects: [],
     };
   });
-  const groupedFacts = groupItemsByDate([
+  let groupedFacts = groupItemsByDate([
     ...factHistoryItems,
     ...stepHistoryItems,
   ]);
-
+  const allDates = window.Object.keys(groupedFacts).sort((a, b) => {
+    return parseInt(b) - parseInt(a);
+  });
   const handlleFactItemClick = (fact: Fact) => {
     const { id } = fact;
     if (id.length > 4) {
@@ -79,22 +81,29 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
   return (
     <Box>
       <VStack align='stretch' spacing={6}>
-        {window.Object.entries(groupedFacts).map(([date, dateItems]) => (
-          <Box key={date}>
-            <Heading size='sm' mb={2}>
-              {date}
-            </Heading>
-            <VStack align='stretch' spacing={4}>
-              {dateItems.map((item, i) => (
-                <FactItem
-                  key={i}
-                  fact={item}
-                  handleClick={() => handlleFactItemClick(item)}
-                />
-              ))}
-            </VStack>
-          </Box>
-        ))}
+        {allDates.map((date) => {
+          const dateItems = groupedFacts[parseInt(date)];
+          return (
+            <Box key={date}>
+              <Heading size='sm' mb={2}>
+                {dayjs(parseInt(date) * 1000).format('MMMM D, YYYY')}
+              </Heading>
+              <VStack align='stretch' spacing={4}>
+                {dateItems
+                  .sort((a: Fact, b: Fact) =>
+                    dayjs(a.happenedAt).isBefore(dayjs(b.happenedAt)) ? 1 : -1
+                  )
+                  .map((item, i) => (
+                    <FactItem
+                      key={i}
+                      fact={item}
+                      handleClick={() => handlleFactItemClick(item)}
+                    />
+                  ))}
+              </VStack>
+            </Box>
+          );
+        })}
       </VStack>
       <Modal isOpen={isFactFormOpen} onClose={closeFactForm}>
         <ModalOverlay />
