@@ -169,7 +169,10 @@ const ResizableTable: React.FC<ResizableTableProps> = ({
                 borderStyle='solid'
                 borderColor={'gray.300'}
               >
-                <MarkdownDisplay content={obj.description} />
+                <MarkdownDisplay
+                  content={obj.description}
+                  characterLimit={200}
+                />
                 {obj.tags?.map((tag: any) => (
                   <ChakraTag
                     key={tag.id}

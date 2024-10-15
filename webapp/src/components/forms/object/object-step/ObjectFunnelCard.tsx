@@ -117,7 +117,10 @@ export const StepDetail = ({
         {content && showingItem === item && (
           <>
             <Divider />
-            <MarkdownDisplay content={content.toString()} />
+            <MarkdownDisplay
+              content={content.toString()}
+              characterLimit={200}
+            />
           </>
         )}
       </VStack>

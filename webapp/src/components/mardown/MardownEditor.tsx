@@ -135,7 +135,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             </Wrap>
           </TabPanel>
           <TabPanel px={0} pt={4} pb={2}>
-            <MarkdownDisplay content={value} />
+            <MarkdownDisplay content={value} characterLimit={200} />
           </TabPanel>
         </TabPanels>
       </Tabs>

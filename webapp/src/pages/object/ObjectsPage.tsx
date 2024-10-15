@@ -206,7 +206,8 @@ const ObjectsPage: React.FC = () => {
                     <Td>
                       <Box mb={1}>
                         <MarkdownDisplay
-                          content={shortenText(obj.description, 50)}
+                          content={obj.description}
+                          characterLimit={100}
                         />
                       </Box>
                       {obj.tags.length > 0 && (

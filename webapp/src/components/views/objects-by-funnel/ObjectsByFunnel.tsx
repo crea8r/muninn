@@ -121,7 +121,10 @@ const ObjectsByFunnel: React.FC<ObjectsByFunnelProps> = ({
 
           {funnel.description && (
             <Alert my={2}>
-              <MarkdownDisplay content={funnel.description} />
+              <MarkdownDisplay
+                content={funnel.description}
+                characterLimit={200}
+              />
             </Alert>
           )}
           <HStack

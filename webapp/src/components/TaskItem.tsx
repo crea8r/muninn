@@ -41,7 +41,7 @@ const TaskItem = ({ task, handleClick }: TaskItemProps) => {
           </Text>
         )}
       </HStack>
-      <MarkdownDisplay content={task.content} />
+      <MarkdownDisplay content={task.content} characterLimit={200} />
       {task.assignedName && (
         <Text fontSize='sm' color='gray.500' mt={2}>
           Assigned to: {task.assignedName}

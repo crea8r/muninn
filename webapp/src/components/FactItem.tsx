@@ -22,7 +22,7 @@ const FactItem = ({ fact, handleClick }: FactItemProps) => {
       cursor='pointer'
       _hover={{ boxShadow: 'md' }}
     >
-      <MarkdownDisplay content={fact.text} />
+      <MarkdownDisplay content={fact.text} characterLimit={200} />
       {fact.location && (
         <Text fontSize='sm' color='gray.500' mt={2}>
           Location: {fact.location}
