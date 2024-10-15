@@ -19,6 +19,7 @@ import {
   Spinner,
   useDisclosure,
   Text,
+  IconButton,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { useHistory } from 'react-router-dom';
@@ -30,6 +31,7 @@ import { createObject } from 'src/api/object';
 import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 import { shortenText } from 'src/utils';
 import SmartImage from 'src/components/SmartImage';
+import { FiRefreshCw } from 'react-icons/fi';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -39,6 +41,7 @@ const ObjectsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [forceUpdate, setForceUpdate] = useState(0);
   // const [objectTypeValues, setObjectTypeValues] = useState<{
   //   [key: string]: ObjectTypeValue[];
   // }>({});
@@ -49,7 +52,7 @@ const ObjectsPage: React.FC = () => {
   useEffect(() => {
     loadObjects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, searchQuery]);
+  }, [currentPage, searchQuery, forceUpdate]);
 
   const loadObjects = async () => {
     setIsLoading(true);
@@ -107,6 +110,11 @@ const ObjectsPage: React.FC = () => {
             >
               New Contact
             </Button>
+            <IconButton
+              aria-label='Refresh'
+              icon={<FiRefreshCw />}
+              onClick={() => setForceUpdate(forceUpdate + 1)}
+            />
           </HStack>
         </HStack>
 
