@@ -146,7 +146,7 @@ func (h *FunnelHandler) UpdateFunnel(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FunnelHandler) DeleteFunnel(w http.ResponseWriter, r *http.Request) {
-	funnelID := r.URL.Query().Get("id")
+	funnelID := chi.URLParam(r, "id")
 	if funnelID == "" {
 		http.Error(w, "Missing funnel ID", http.StatusBadRequest)
 		return

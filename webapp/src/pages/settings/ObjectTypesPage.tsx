@@ -46,7 +46,7 @@ const ObjectTypesPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingObjectTypeList, setIsLoadingObjectTypeList] = useState(false);
+  const [isLoadingObjectTypeList, setIsLoadingObjectTypeList] = useState(true);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [editingObjectType, setEditingObjectType] = useState<
     ObjectType | undefined
@@ -210,7 +210,7 @@ const ObjectTypesPage: React.FC = () => {
           onChange={handleSearchChange}
         />
       </InputGroup>
-      {isLoading ? (
+      {isLoading || isLoadingObjectTypeList ? (
         <LoadingPanel />
       ) : (
         <>

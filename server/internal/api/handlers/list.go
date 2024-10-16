@@ -103,6 +103,11 @@ func (h *ListHandler) DeleteList(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	_, err = h.db.GetListByID(r.Context(), uuid.MustParse(listID))
+	if err == nil {
+		http.Error(w, "List is associated with data", http.StatusBadRequest)
+		return
+	}
 
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -25,22 +25,17 @@ import {
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import BreadcrumbComponent from '../../components/Breadcrumb';
-import { CreateFunnelForm, EditFunnelForm } from '../../components/forms/';
-import { Funnel, NewFunnel, FunnelUpdate } from '../../types/Funnel';
-import {
-  fetchAllFunnels,
-  createFunnel,
-  updateFunnel,
-  deleteFunnel,
-} from 'src/api/funnel';
+import { CreateFunnelForm } from '../../components/forms/';
+import { Funnel, NewFunnel } from '../../types/Funnel';
+import { fetchAllFunnels, createFunnel } from 'src/api/funnel';
 import { useHistory } from 'react-router-dom';
 import LoadingPanel from 'src/components/LoadingPanel';
 import LoadingModal from 'src/components/LoadingModal';
 import { debounce } from 'lodash';
-import { FaEdit, FaEye, FaTrash } from 'react-icons/fa';
+import { FaEdit, FaFunnelDollar } from 'react-icons/fa';
 import { shortenText } from 'src/utils';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 5;
 
 const FunnelsPage: React.FC = () => {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
@@ -48,19 +43,12 @@ const FunnelsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingFunnelList, setIsLoadingFunnelList] = useState(false);
+  const [isLoadingFunnelList, setIsLoadingFunnelList] = useState(true);
   const {
     isOpen: isCreateOpen,
     onOpen: onCreateOpen,
     onClose: onCreateClose,
   } = useDisclosure();
-  const {
-    isOpen: isEditOpen,
-    onOpen: onEditOpen,
-    onClose: onEditClose,
-  } = useDisclosure();
-  const [editingFunnel, setEditingFunnel] = useState<Funnel | null>(null);
-  // useRef to store the search query
   const toast = useToast();
 
   useEffect(() => {
@@ -116,70 +104,17 @@ const FunnelsPage: React.FC = () => {
     }
   };
 
-  const handleUpdateFunnel = async (funnelUpdate: FunnelUpdate) => {
-    try {
-      setIsLoading(true);
-      await updateFunnel(funnelUpdate);
-      onEditClose();
-      setEditingFunnel(null);
-      await loadFunnels();
-      toast({
-        title: 'Funnel updated',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error updating funnel',
-        description: 'Please try again later.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteFunnel = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this funnel?')) {
-      try {
-        setIsLoading(true);
-        await deleteFunnel(id);
-        await loadFunnels();
-        toast({
-          title: 'Funnel deleted',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-      } catch (error) {
-        toast({
-          title: 'Error deleting funnel',
-          description: 'Please try again later.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
     setCurrentPage(1);
   };
 
-  const handleEdit = (funnel: Funnel) => {
-    setEditingFunnel(funnel);
-    onEditOpen();
-  };
-
   const handleView = (funnel: Funnel) => {
     history.push(`/settings/funnels/${funnel.id}/detail`);
+  };
+
+  const handleClickFunnelName = (funnel: Funnel) => {
+    history.push(`/settings/funnels/${funnel.id}`);
   };
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
@@ -188,7 +123,7 @@ const FunnelsPage: React.FC = () => {
   return (
     <Box>
       <BreadcrumbComponent />
-      <HStack justify='space-between' mb={6}>
+      <HStack justify='space-between' mb={3}>
         <Heading as='h1' size='xl' color='var(--color-primary)'>
           Funnels
         </Heading>
@@ -201,7 +136,7 @@ const FunnelsPage: React.FC = () => {
           New Funnel
         </Button>
       </HStack>
-      <InputGroup mb={4}>
+      <InputGroup mb={2}>
         <InputLeftElement pointerEvents='none'>
           <SearchIcon color='gray.300' />
         </InputLeftElement>
@@ -232,9 +167,7 @@ const FunnelsPage: React.FC = () => {
                         fontWeight='bold'
                         textDecoration={'underline'}
                         cursor={'pointer'}
-                        onClick={() =>
-                          history.push(`/settings/funnels/${funnel.id}`)
-                        }
+                        onClick={() => handleClickFunnelName(funnel)}
                       >
                         {funnel.name}
                       </Text>
@@ -252,7 +185,7 @@ const FunnelsPage: React.FC = () => {
                   </Td>
                   <Td width='250px'>
                     <IconButton
-                      icon={<FaEye />}
+                      icon={<FaEdit />}
                       onClick={() => handleView(funnel)}
                       aria-label=''
                       size='sm'
@@ -260,17 +193,10 @@ const FunnelsPage: React.FC = () => {
                     />
                     <IconButton
                       size='sm'
-                      icon={<FaEdit />}
-                      onClick={() => handleEdit(funnel)}
+                      icon={<FaFunnelDollar />}
+                      onClick={() => handleClickFunnelName(funnel)}
                       aria-label={''}
                       mr={2}
-                    />
-                    <IconButton
-                      icon={<FaTrash />}
-                      size={'sm'}
-                      color={'red'}
-                      aria-label={'Delete'}
-                      onClick={() => handleDeleteFunnel(funnel.id)}
                     />
                   </Td>
                 </Tr>
@@ -321,14 +247,6 @@ const FunnelsPage: React.FC = () => {
         onClose={onCreateClose}
         onSave={handleCreateFunnel}
       />
-      {editingFunnel && (
-        <EditFunnelForm
-          isOpen={isEditOpen && !isLoading}
-          onClose={onEditClose}
-          funnel={editingFunnel}
-          onSave={handleUpdateFunnel}
-        />
-      )}
       <LoadingModal isOpen={isLoading} onClose={() => {}} />
     </Box>
   );

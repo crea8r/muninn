@@ -16,14 +16,14 @@ import {
 import { ObjectType } from 'src/types/';
 import { MasterFormElement } from 'src/components/rich-object-form/MasterFormElement';
 
-interface AddObjectTypeModalProps {
+interface AddObjectTypeValueModalProps {
   isOpen: boolean;
   onClose: () => void;
   availableTypes: ObjectType[];
   onAddType: (payload: any) => void;
 }
 
-const AddObjectTypeModal: React.FC<AddObjectTypeModalProps> = ({
+const AddObjectTypeValueModal: React.FC<AddObjectTypeValueModalProps> = ({
   isOpen,
   onClose,
   availableTypes,
@@ -78,10 +78,6 @@ const AddObjectTypeModal: React.FC<AddObjectTypeModalProps> = ({
               </Select>
             </FormControl>
             {Object.entries(typeValues).map(([field, value]) => {
-              console.log(
-                'selectedType: ',
-                availableTypes.find((t) => t.id === selectedType)?.fields[field]
-              );
               const dataType = availableTypes.find((t) => t.id === selectedType)
                 ?.fields[field];
               return (
@@ -111,4 +107,4 @@ const AddObjectTypeModal: React.FC<AddObjectTypeModalProps> = ({
   );
 };
 
-export default AddObjectTypeModal;
+export default AddObjectTypeValueModal;

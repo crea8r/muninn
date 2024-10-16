@@ -118,7 +118,9 @@ const ResizableFunnelTable: React.FC<ResizableFunnelTableProps> = ({
             cursor='pointer'
             onClick={() => onStepNameClick(step)}
           >
-            <Text fontWeight='bold'>{step.name}</Text>
+            <Text fontWeight='bold' title='Click to Edit'>
+              {step.name}
+            </Text>
           </Box>
           <Box
             flexShrink={0}

@@ -30,7 +30,7 @@ import { FiRefreshCw } from 'react-icons/fi';
 import queryString from 'query-string';
 import debounce from 'lodash/debounce';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 5;
 const DEBOUNCE_DELAY = 300; // ms
 
 const ObjectsPage: React.FC = () => {
@@ -100,7 +100,6 @@ const ObjectsPage: React.FC = () => {
       setObjects(objects);
       setTotalCount(totalCount);
     } catch (error) {
-      console.error('Error loading objects:', error);
       toast({
         title: 'Error loading objects',
         description: 'Please try again later.',
@@ -137,7 +136,6 @@ const ObjectsPage: React.FC = () => {
       const newObject = await createObject(data);
       history.push('/objects/' + newObject.id);
     } catch (e) {
-      console.error('Error creating object:', e);
       toast({
         title: 'Error creating object',
         description: 'Please try again later.',
@@ -152,10 +150,10 @@ const ObjectsPage: React.FC = () => {
 
   return (
     <Box height='100%' display='flex' flexDirection='column'>
-      <Box p={4}>
+      <Box px={2}>
         <Flex
           justify='space-between'
-          mb={6}
+          mb={4}
           direction={{
             base: 'column',
             md: 'row',
@@ -191,7 +189,7 @@ const ObjectsPage: React.FC = () => {
           </HStack>
         </Flex>
 
-        <InputGroup mb={4}>
+        <InputGroup mb={2}>
           <InputLeftElement pointerEvents='none'>
             <SearchIcon color='gray.300' />
           </InputLeftElement>
@@ -203,7 +201,7 @@ const ObjectsPage: React.FC = () => {
         </InputGroup>
       </Box>
 
-      <Box flex='1' overflowY='auto' px={4}>
+      <Box flex='1' overflowY='auto' px={2}>
         <Flex direction='column' gap={4}>
           <Flex width={'100%'} fontWeight={'bold'}>
             <Box width={'20%'}>Name</Box>
@@ -222,13 +220,7 @@ const ObjectsPage: React.FC = () => {
               <Spinner size='xl' />
             </Flex>
           ) : objects.length > 0 ? (
-            objects.map((obj) => (
-              <ObjectRow
-                key={obj.id}
-                obj={obj}
-                onRowClick={() => history.push(`/objects/${obj.id}`)}
-              />
-            ))
+            objects.map((obj) => <ObjectRow key={obj.id} obj={obj} />)
           ) : (
             <Flex justifyContent='center' alignItems='center' py={8}>
               <Text>No objects found. Try adjusting your search.</Text>
@@ -237,7 +229,7 @@ const ObjectsPage: React.FC = () => {
         </Flex>
       </Box>
 
-      <Flex justifyContent='space-between' alignItems='center' p={4}>
+      <Flex justifyContent='space-between' alignItems='center' p={2}>
         <Text>
           {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
           {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of {totalCount}
@@ -282,81 +274,74 @@ const ObjectsPage: React.FC = () => {
 };
 
 // Separate component for rendering each object row
-const ObjectRow: React.FC<{ obj: Object; onRowClick: () => void }> = React.memo(
-  ({ obj, onRowClick }) => {
-    let str: string[] = [];
-    let imgUrls: string[] = [];
-    obj.typeValues.forEach((otv) => {
-      window.Object.entries(otv.type_values).forEach(([_, value]) => {
-        if (typeof value === 'string') {
-          if (value.startsWith('http://') || value.startsWith('https://')) {
-            imgUrls.push(value);
-          } else if (value !== '') {
-            str.push(value);
-          }
+const ObjectRow: React.FC<{ obj: Object }> = React.memo(({ obj }) => {
+  let str: string[] = [];
+  let imgUrls: string[] = [];
+  obj.typeValues.forEach((otv) => {
+    window.Object.entries(otv.type_values).forEach(([_, value]) => {
+      if (typeof value === 'string') {
+        if (value.startsWith('http://') || value.startsWith('https://')) {
+          imgUrls.push(value);
+        } else if (value !== '') {
+          str.push(value);
         }
-      });
+      }
     });
-    let type_values = shortenText(str.join(', ') || 'No type values', 50);
+  });
+  let type_values = shortenText(str.join(', ') || 'No type values', 50);
 
-    return (
-      <Flex
-        onClick={onRowClick}
-        _hover={{ bg: 'gray.100', cursor: 'pointer' }}
-        p={4}
-        borderWidth={1}
-        borderRadius={'md'}
-        alignItems={'left'}
-        justifyContent={'space-between'}
-        direction={{
-          base: 'column',
-          md: 'row',
-        }}
-      >
-        <HStack width={{ base: '100%', md: '20%' }} overflow={'clip'}>
-          {imgUrls.length > 0 && (
-            <SmartImage
-              src={imgUrls}
-              alt={obj.name}
-              style={{ height: '32px' }}
-            />
-          )}
-          <Link
-            to={`/objects/${obj.id}`}
-            style={{
-              textDecoration: 'underline',
-              color: 'var(--color-primary)',
-            }}
-          >
-            <Text>{shortenText(obj.name, 15)}</Text>
-          </Link>
-        </HStack>
-        <VStack width={{ base: '100%', md: '40%' }} pr={1}>
-          <MarkdownDisplay
-            content={obj.description}
-            characterLimit={100}
-            style={{ width: '100%' }}
-          />
-          {obj.tags.length > 0 && (
-            <Box alignItems={'left'} width='100%' mb={1} mt={'-16px'}>
-              {obj.tags.map((tag: Tag) => (
-                <ChakraTag
-                  key={tag.id}
-                  title={tag.description}
-                  textColor={tag.color_schema.text}
-                  background={tag.color_schema.background}
-                  mr={1}
-                >
-                  {tag.name}
-                </ChakraTag>
-              ))}
-            </Box>
-          )}
-        </VStack>
-        <Box width={{ base: '100%', md: '40%' }}>{type_values}</Box>
-      </Flex>
-    );
-  }
-);
+  return (
+    <Flex
+      _hover={{ bg: 'gray.100' }}
+      p={2}
+      borderWidth={1}
+      borderRadius={'md'}
+      alignItems={'left'}
+      justifyContent={'space-between'}
+      direction={{
+        base: 'column',
+        md: 'row',
+      }}
+    >
+      <HStack width={{ base: '100%', md: '20%' }} overflow={'clip'}>
+        {imgUrls.length > 0 && (
+          <SmartImage src={imgUrls} alt={obj.name} style={{ height: '32px' }} />
+        )}
+        <Link
+          to={`/objects/${obj.id}`}
+          style={{
+            textDecoration: 'underline',
+            color: 'var(--color-primary)',
+          }}
+        >
+          <Text>{shortenText(obj.name, 15)}</Text>
+        </Link>
+      </HStack>
+      <VStack width={{ base: '100%', md: '40%' }} pr={1}>
+        <MarkdownDisplay
+          content={obj.description}
+          characterLimit={100}
+          style={{ width: '100%' }}
+        />
+        {obj.tags.length > 0 && (
+          <Box alignItems={'left'} width='100%' mb={1} mt={'-16px'}>
+            {obj.tags.map((tag: Tag) => (
+              <ChakraTag
+                key={tag.id}
+                title={tag.description}
+                textColor={tag.color_schema.text}
+                background={tag.color_schema.background}
+                mr={1}
+              >
+                {tag.name}
+              </ChakraTag>
+            ))}
+          </Box>
+        )}
+      </VStack>
+      <Box width={{ base: '100%', md: '40%' }}>{type_values}</Box>
+    </Flex>
+  );
+});
 
 export default ObjectsPage;

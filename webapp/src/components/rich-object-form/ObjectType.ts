@@ -1,5 +1,6 @@
 import { ElString } from './elements/ElString';
 import { ElImage } from './elements/ElImage';
+import { CSSProperties } from 'react';
 // obj_type_value.type_values: key -> value
 // obj_type.fields: field name -> field type and its configuration
 // e.g:{
@@ -37,6 +38,7 @@ export type MasterFormElementProps = {
   dataType: any;
   value: string;
   onChange?: (value: any) => void;
+  style?: CSSProperties;
 };
 
 // datetime: {

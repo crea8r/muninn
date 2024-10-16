@@ -1,50 +1,21 @@
 // ObjectTypeCard.tsx
 import React from 'react';
-import {
-  Box,
-  Heading,
-  Text,
-  Button,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  VStack,
-  HStack,
-  useToast,
-} from '@chakra-ui/react';
+import { Box, Heading, Text } from '@chakra-ui/react';
 import { ObjectType, ObjectTypeValue } from 'src/types/';
-import { MasterFormElement } from 'src/components/rich-object-form/MasterFormElement';
 import FaIconList from 'src/components/FaIconList';
 import { IconType } from 'react-icons';
 
 interface ObjectTypeCardProps {
+  objectType: ObjectType | undefined;
   objectTypeValue: ObjectTypeValue;
-  objectType?: ObjectType;
-  onUpdate: (payload: any) => void;
-  onDelete: () => void;
+  onOpen: (objectType: ObjectType, objectTypeValue: ObjectTypeValue) => void;
 }
 
-const ObjectTypeCard: React.FC<ObjectTypeCardProps> = ({
+const ObjectTypeCard = ({
   objectTypeValue,
   objectType,
-  onUpdate,
-  onDelete,
-}) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [editedValues, setEditedValues] = React.useState(
-    objectTypeValue.type_values
-  );
-  // allFields are fields combining from objectType and editedValues
-  const allFields = Object.keys({
-    ...objectType?.fields,
-    ...editedValues,
-  });
-  const toast = useToast();
-
+  onOpen,
+}: ObjectTypeCardProps) => {
   const cardContent = Object.entries(objectTypeValue.type_values)
     .filter(
       ([, value]) =>
@@ -57,40 +28,13 @@ const ObjectTypeCard: React.FC<ObjectTypeCardProps> = ({
     .join(', ')
     .slice(0, 200);
 
-  const handleUpdate = async () => {
-    try {
-      await onUpdate({ type_values: editedValues });
-      toast({
-        title: 'Success',
-        description: 'Object type value updated',
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      });
-    } catch (e) {
-      handleReset();
-      toast({
-        title: 'Error',
-        description: 'Failed to update object type value',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      onClose();
-    }
-  };
-
-  const handleReset = () => {
-    setEditedValues(objectTypeValue.type_values);
-  };
   return (
     <>
       <Box
         borderWidth={1}
         borderRadius='md'
         p={4}
-        onClick={onOpen}
+        onClick={() => onOpen(objectType as ObjectType, objectTypeValue)}
         cursor='pointer'
       >
         <Heading size='sm' display={'flex'} alignItems={'center'}>
@@ -99,46 +43,6 @@ const ObjectTypeCard: React.FC<ObjectTypeCardProps> = ({
         </Heading>
         <Text noOfLines={3}>{cardContent}</Text>
       </Box>
-
-      <Modal
-        isOpen={isOpen}
-        onClose={() => {
-          handleReset();
-          onClose();
-        }}
-        size='xl'
-      >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>{objectType?.name || 'Unknown Type'}</ModalHeader>
-          <ModalBody>
-            <VStack spacing={4} align='stretch'>
-              {allFields.map((key) => (
-                <MasterFormElement
-                  key={key}
-                  field={key}
-                  value={editedValues[key]}
-                  onChange={(value) =>
-                    setEditedValues({ ...editedValues, [key]: value })
-                  }
-                  dataType={objectType?.fields[key]}
-                />
-              ))}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <HStack spacing={2}>
-              <Button onClick={handleReset}>Reset</Button>
-              <Button colorScheme='blue' onClick={handleUpdate}>
-                Update
-              </Button>
-              <Button colorScheme='red' onClick={onDelete}>
-                Delete
-              </Button>
-            </HStack>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </>
   );
 };

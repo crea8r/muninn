@@ -3,7 +3,9 @@ import {
   Badge,
   Box,
   Button,
+  Flex,
   HStack,
+  IconButton,
   Spacer,
   useToast,
   VStack,
@@ -13,23 +15,27 @@ import {
   createCreatorList,
   listCreatorListsByCreatorID,
   listListsByOrgID,
+  deleteList,
 } from 'src/api/list';
 import { useEffect, useState } from 'react';
 import { CreatorList, List } from 'src/types';
 import { useHistory } from 'react-router-dom';
 import LoadingPanel from 'src/components/LoadingPanel';
+import { DeleteIcon } from '@chakra-ui/icons';
 
 type ListItemProps = {
   item: List;
   creatorList: CreatorList | undefined;
   openView: (id: string) => void;
   createView: (id: string) => void;
+  onDelete: (id: string) => void;
 };
 const ListItem = ({
   item,
   creatorList,
   openView,
   createView,
+  onDelete,
 }: ListItemProps) => {
   return (
     <Box
@@ -48,11 +54,23 @@ const ListItem = ({
           <Box color={'gray.500'}>{item.description}</Box>
         </Box>
         <Spacer />
-        {creatorList ? (
-          <Button onClick={() => openView(creatorList.id)}>Open view</Button>
-        ) : (
-          <Button onClick={() => createView(item.id)}>Use</Button>
-        )}
+        <Flex direction={'row'}>
+          {creatorList ? (
+            <Button onClick={() => openView(creatorList.id)} mr={2}>
+              Open view
+            </Button>
+          ) : (
+            <Button onClick={() => createView(item.id)} mr={2}>
+              Use
+            </Button>
+          )}
+          <IconButton
+            aria-label='delete'
+            colorScheme='red'
+            icon={<DeleteIcon />}
+            onClick={() => onDelete(item.id)}
+          />
+        </Flex>
       </HStack>
     </Box>
   );
@@ -86,6 +104,30 @@ const ListsPage = () => {
         duration: 9000,
         isClosable: true,
       });
+    }
+  };
+  const handleDeteleList = async (id: string) => {
+    setIsLoading(true);
+    console.log('delete list', id);
+    try {
+      await deleteList(id);
+      toast({
+        title: 'List deleted',
+        status: 'success',
+        duration: 9000,
+        isClosable: true,
+      });
+      await loadData();
+    } catch (e) {
+      toast({
+        title: 'Error',
+        description: 'List is still in use, cannot delete',
+        status: 'error',
+        duration: 9000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
   const loadData = async () => {
@@ -132,6 +174,7 @@ const ListsPage = () => {
                 key={k}
                 openView={handleOpenView}
                 createView={handleCreateCreatorList}
+                onDelete={handleDeteleList}
               />
             );
           })}

@@ -179,6 +179,7 @@ WHERE funnel.id = $1 AND deleted_at IS NULL
     SELECT 1 FROM obj_step os
     JOIN step s ON s.id = os.step_id
     WHERE s.funnel_id = $1
+    AND os.deleted_at IS NULL
   );
 
 -- name: CreateStep :one

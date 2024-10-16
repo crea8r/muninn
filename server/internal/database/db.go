@@ -180,6 +180,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getImportTaskHistoryStmt, err = db.PrepareContext(ctx, getImportTaskHistory); err != nil {
 		return nil, fmt.Errorf("error preparing query GetImportTaskHistory: %w", err)
 	}
+	if q.getListByIDStmt, err = db.PrepareContext(ctx, getListByID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetListByID: %w", err)
+	}
 	if q.getObjStepStmt, err = db.PrepareContext(ctx, getObjStep); err != nil {
 		return nil, fmt.Errorf("error preparing query GetObjStep: %w", err)
 	}
@@ -604,6 +607,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getImportTaskHistoryStmt: %w", cerr)
 		}
 	}
+	if q.getListByIDStmt != nil {
+		if cerr := q.getListByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getListByIDStmt: %w", cerr)
+		}
+	}
 	if q.getObjStepStmt != nil {
 		if cerr := q.getObjStepStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getObjStepStmt: %w", cerr)
@@ -960,6 +968,7 @@ type Queries struct {
 	getFunnelStmt                            *sql.Stmt
 	getImportTaskStmt                        *sql.Stmt
 	getImportTaskHistoryStmt                 *sql.Stmt
+	getListByIDStmt                          *sql.Stmt
 	getObjStepStmt                           *sql.Stmt
 	getObjectByIDStringStmt                  *sql.Stmt
 	getObjectDetailsStmt                     *sql.Stmt
@@ -1071,6 +1080,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getFunnelStmt:                            q.getFunnelStmt,
 		getImportTaskStmt:                        q.getImportTaskStmt,
 		getImportTaskHistoryStmt:                 q.getImportTaskHistoryStmt,
+		getListByIDStmt:                          q.getListByIDStmt,
 		getObjStepStmt:                           q.getObjStepStmt,
 		getObjectByIDStringStmt:                  q.getObjectByIDStringStmt,
 		getObjectDetailsStmt:                     q.getObjectDetailsStmt,

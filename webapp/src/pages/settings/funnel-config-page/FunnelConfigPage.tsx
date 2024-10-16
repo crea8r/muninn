@@ -4,18 +4,23 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
+  Flex,
+  IconButton,
+  Spacer,
   useDisclosure,
   useToast,
   VStack,
 } from '@chakra-ui/react';
-import { useParams } from 'react-router-dom';
-import { Funnel, FunnelStep } from 'src/types';
-import { getFunnel, updateFunnel } from 'src/api/funnel';
+import { useHistory, useParams } from 'react-router-dom';
+import { Funnel, FunnelStep, FunnelUpdate } from 'src/types';
+import { deleteFunnel, getFunnel, updateFunnel } from 'src/api/funnel';
 import ResizableFunnelTable from './ResizableFunnelTable';
 import EditStepNameDialog from './EditStepNameDialog';
 import MarkdownModal from './MarkdownModal';
 import ReactMarkdown from 'react-markdown';
 import LoadingPanel from 'src/components/LoadingPanel';
+import { DeleteIcon, EditIcon } from '@chakra-ui/icons';
+import { EditFunnelForm } from 'src/components/forms';
 
 const FunnelConfigPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +43,12 @@ const FunnelConfigPage: React.FC = () => {
     onOpen: onContentOpen,
     onClose: onContentClose,
   } = useDisclosure();
+  const {
+    isOpen: isAdvancedEditFunnelOpen,
+    onOpen: onAdvancedEditFunnelOpen,
+    onClose: onAdvancedEdiFunnelClose,
+  } = useDisclosure();
+  const history = useHistory();
 
   useEffect(() => {
     const loadFunnel = async () => {
@@ -91,6 +102,62 @@ const FunnelConfigPage: React.FC = () => {
     }
   };
 
+  const handleUpdateFunnel = async (funnelUpdate: FunnelUpdate) => {
+    try {
+      setIsLoading(true);
+      await updateFunnel(funnelUpdate);
+      setForcedUpdate(forcedUpdate + 1);
+      onEditClose();
+      toast({
+        title: 'Funnel updated',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error updating funnel',
+        description: 'Please try again later.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClickEditFunnel = () => {
+    onAdvancedEditFunnelOpen();
+  };
+
+  const handleDeleteFunnel = async () => {
+    if (!funnel) return;
+    if (window.confirm('Are you sure you want to delete this funnel?')) {
+      try {
+        setIsLoading(true);
+        await deleteFunnel(funnel.id);
+        toast({
+          title: 'Funnel deleted',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        history.replace('/settings/funnels');
+      } catch (error) {
+        toast({
+          title: 'Error deleting funnel',
+          description: 'Might being used in some objects.',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   return (
     <Box p={4}>
       {isLoading || !funnel ? (
@@ -98,27 +165,49 @@ const FunnelConfigPage: React.FC = () => {
       ) : (
         <>
           <VStack align='stretch' spacing={4}>
-            <Breadcrumb>
-              <BreadcrumbItem>
-                <BreadcrumbLink href='/'>Home</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbItem>
-                <BreadcrumbLink href='/settings'>Setting</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbItem>
-                <BreadcrumbLink href='/settings/funnels'>
-                  Funnels
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbItem
-                isCurrentPage
-                p={0.5}
-                background={'yellow.100'}
-                fontWeight={'bold'}
-              >
-                <BreadcrumbLink href='#'>{funnel.name}</BreadcrumbLink>
-              </BreadcrumbItem>
-            </Breadcrumb>
+            <Flex direction='row'>
+              <Breadcrumb>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href='/'>Home</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href='/settings'>Setting</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href='/settings/funnels'>
+                    Funnels
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbItem
+                  isCurrentPage
+                  p={0.5}
+                  background={'yellow.100'}
+                  fontWeight={'bold'}
+                >
+                  <BreadcrumbLink href='#'>{funnel.name}</BreadcrumbLink>
+                </BreadcrumbItem>
+              </Breadcrumb>
+              <Spacer />
+              <Box>
+                <IconButton
+                  colorScheme='blue'
+                  variant={'outline'}
+                  aria-label='Edit funnel'
+                  icon={<EditIcon />}
+                  onClick={handleClickEditFunnel}
+                  mr={2}
+                  isDisabled={isLoading || !funnel}
+                />
+                <IconButton
+                  colorScheme='red'
+                  variant={'outline'}
+                  aria-label='Delete funnel'
+                  icon={<DeleteIcon />}
+                  onClick={handleDeleteFunnel}
+                  isDisabled={isLoading || !funnel}
+                />
+              </Box>
+            </Flex>
 
             <ReactMarkdown>{funnel.description}</ReactMarkdown>
             <ResizableFunnelTable
@@ -143,6 +232,13 @@ const FunnelConfigPage: React.FC = () => {
             onClose={onContentClose}
             title={selectedContent?.title || ''}
             content={selectedContent?.content || ''}
+          />
+
+          <EditFunnelForm
+            isOpen={isAdvancedEditFunnelOpen && !isLoading}
+            onClose={onAdvancedEdiFunnelClose}
+            funnel={funnel}
+            onSave={handleUpdateFunnel}
           />
         </>
       )}

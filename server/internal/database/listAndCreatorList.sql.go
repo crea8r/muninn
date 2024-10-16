@@ -98,9 +98,13 @@ func (q *Queries) DeleteCreatorList(ctx context.Context, id uuid.UUID) error {
 }
 
 const deleteList = `-- name: DeleteList :exec
-UPDATE list
-SET deleted_at = CURRENT_TIMESTAMP
-WHERE id = $1 AND deleted_at IS NULL
+DELETE FROM list
+WHERE list.id = $1
+AND NOT EXISTS (
+  SELECT 1
+  FROM creator_list
+  WHERE creator_list.list_id = $1
+)
 `
 
 func (q *Queries) DeleteList(ctx context.Context, id uuid.UUID) error {
@@ -142,6 +146,18 @@ func (q *Queries) GetCreatorListByID(ctx context.Context, id uuid.UUID) (GetCrea
 		&i.ListFilterSetting,
 	)
 	return i, err
+}
+
+const getListByID = `-- name: GetListByID :one
+SELECT l.id
+FROM list l
+WHERE l.id = $1 AND l.deleted_at IS NULL
+`
+
+func (q *Queries) GetListByID(ctx context.Context, id uuid.UUID) (uuid.UUID, error) {
+	row := q.queryRow(ctx, q.getListByIDStmt, getListByID, id)
+	err := row.Scan(&id)
+	return id, err
 }
 
 const listCreatorListsByCreatorID = `-- name: ListCreatorListsByCreatorID :many

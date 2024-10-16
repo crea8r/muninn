@@ -15,9 +15,18 @@ WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
 -- name: DeleteList :exec
-UPDATE list
-SET deleted_at = CURRENT_TIMESTAMP
-WHERE id = $1 AND deleted_at IS NULL;
+DELETE FROM list
+WHERE list.id = $1
+AND NOT EXISTS (
+  SELECT 1
+  FROM creator_list
+  WHERE creator_list.list_id = $1
+);
+
+-- name: GetListByID :one
+SELECT l.id
+FROM list l
+WHERE l.id = $1 AND l.deleted_at IS NULL;
 
 -- name: UpdateCreatorList :one
 UPDATE creator_list

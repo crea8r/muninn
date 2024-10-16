@@ -66,6 +66,7 @@ type Querier interface {
 	GetFunnel(ctx context.Context, id uuid.UUID) (GetFunnelRow, error)
 	GetImportTask(ctx context.Context, id uuid.UUID) (ImportTask, error)
 	GetImportTaskHistory(ctx context.Context, arg GetImportTaskHistoryParams) ([]ImportTask, error)
+	GetListByID(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
 	GetObjStep(ctx context.Context, id uuid.UUID) (ObjStep, error)
 	GetObjectByIDString(ctx context.Context, idString string) (Obj, error)
 	GetObjectDetails(ctx context.Context, arg GetObjectDetailsParams) (GetObjectDetailsRow, error)

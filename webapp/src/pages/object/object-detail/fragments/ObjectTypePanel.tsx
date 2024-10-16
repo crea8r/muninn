@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   VStack,
@@ -10,8 +10,9 @@ import {
 import { ObjectType, ObjectTypeValue } from 'src/types/';
 import { listObjectTypes } from 'src/api/objType';
 import ObjectTypeCard from 'src/components/forms/object/object-type/ObjectTypeCard';
-import AddObjectTypeModal from 'src/components/forms/object/object-type/AddObjectTypeModal';
+import AddObjectTypeValueModal from 'src/components/forms/object/object-type/AddObjectTypeValueModal';
 import LoadingPanel from 'src/components/LoadingPanel';
+import EditObjectTypeValueModal from 'src/components/forms/object/object-type/EditObjectTypeModal';
 
 interface ObjectTypePanelProps {
   objectId: string;
@@ -34,8 +35,19 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
 }) => {
   const [availableTypes, setAvailableTypes] = useState<ObjectType[]>([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isEditOpen,
+    onOpen: onEditOpen,
+    onClose: onEditClose,
+  } = useDisclosure();
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [currentObjectTypeValue, setCurrentObjectTypeValue] = useState<
+    ObjectTypeValue | undefined
+  >();
+  const [currentObjectType, setCurrentObjectType] = useState<
+    ObjectType | undefined
+  >();
 
   useEffect(() => {
     const loadObjectTypes = async () => {
@@ -83,6 +95,21 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
     }
   };
 
+  const handleClickObjectCard = useCallback(
+    (objectType: ObjectType, objectTypeValue: ObjectTypeValue) => {
+      setCurrentObjectTypeValue(objectTypeValue);
+      setCurrentObjectType(objectType);
+      onEditOpen();
+    },
+    [onEditOpen]
+  );
+
+  const handleCloseEditModal = useCallback(() => {
+    setCurrentObjectTypeValue(undefined);
+    setCurrentObjectType(undefined);
+    onEditClose();
+  }, [onEditClose]);
+
   return (
     <Box>
       {isLoading ? (
@@ -93,14 +120,11 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
             {objectTypes.map((typeValue) => (
               <ObjectTypeCard
                 key={typeValue.id}
-                objectTypeValue={typeValue}
                 objectType={availableTypes.find(
                   (type) => type.id === typeValue.objectTypeId
                 )}
-                onUpdate={(payload) =>
-                  onUpdateObjectTypeValue(objectId, typeValue.id, payload)
-                }
-                onDelete={() => onRemoveObjectTypeValue(objectId, typeValue.id)}
+                objectTypeValue={typeValue}
+                onOpen={handleClickObjectCard}
               />
             ))}
           </SimpleGrid>
@@ -108,12 +132,30 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
         </VStack>
       )}
 
-      <AddObjectTypeModal
+      <AddObjectTypeValueModal
         isOpen={isOpen}
         onClose={onClose}
         availableTypes={availableTypes}
         onAddType={handleAddType}
       />
+      {currentObjectType && currentObjectTypeValue && (
+        <EditObjectTypeValueModal
+          isOpen={isEditOpen}
+          onClose={handleCloseEditModal}
+          objectType={currentObjectType}
+          objectTypeValue={currentObjectTypeValue}
+          onUpdate={(payload) =>
+            onUpdateObjectTypeValue(
+              objectId,
+              currentObjectTypeValue.id,
+              payload
+            )
+          }
+          onDelete={() =>
+            onRemoveObjectTypeValue(objectId, currentObjectTypeValue.id)
+          }
+        />
+      )}
     </Box>
   );
 };
