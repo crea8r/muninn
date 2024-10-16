@@ -1,9 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import {
   Modal,
   ModalOverlay,
   ModalContent,
-  Input,
   VStack,
   HStack,
   Text,
@@ -14,19 +19,12 @@ import {
   Badge,
   Icon,
   Button,
-  InputGroup,
-  InputLeftElement,
+  useToast,
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSpotLight, SearchFilter } from 'src/contexts/SpotLightContext';
 import { debounce } from 'lodash';
-import {
-  FaSearch,
-  FaAddressCard,
-  FaFileAlt,
-  FaTasks,
-  FaUser,
-} from 'react-icons/fa';
+import { FaAddressCard, FaFileAlt, FaTasks, FaUser } from 'react-icons/fa';
 import { fetchObjects } from 'src/api/object';
 import { listTasks } from 'src/api/task';
 import { listOrgMembers } from 'src/api/orgMember';
@@ -34,11 +32,13 @@ import { listFact } from 'src/api/fact';
 import { Object, Task, OrgMember, Fact } from 'src/types';
 import authService from 'src/services/authService';
 import NoImage from 'src/assets/NoImage.jpg';
-import TaskItem from './TaskItem';
-import FactItem from './FactItem';
-import LoadingPanel from './LoadingPanel';
+import TaskItem from '../TaskItem';
+import FactItem from '../FactItem';
+import LoadingPanel from '../LoadingPanel';
+import SearchInput from './SearchInput';
 
 const ITEMS_PER_PAGE = 6;
+const MIN_SEARCH_DELAY = 1000;
 
 interface SearchResult {
   type: SearchFilter;
@@ -100,19 +100,81 @@ const SpotLight: React.FC = () => {
     task: 0,
     creator: 0,
   });
-  const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [objectResponse, setObjectResponse] = useState<any>();
   const [factResponse, setFactResponse] = useState<any>();
   const [taskResponse, setTaskResponse] = useState<any>();
   const [creatorResponse, setCreatorResponse] = useState<any>();
+  const [lastSearchTime, setLastSearchTime] = useState(0);
+  const toast = useToast();
 
   const {
     isOpen: modalIsOpen,
     onOpen: openModal,
     onClose: closeModal,
   } = useDisclosure();
+
+  const performSearch = useCallback(
+    async (query: string) => {
+      const now = Date.now();
+      if (now - lastSearchTime < MIN_SEARCH_DELAY) {
+        // Prevent searching more than once per second
+        return;
+      }
+
+      setIsLoading(true);
+      setLastSearchTime(now);
+
+      try {
+        const searchPromises = [];
+
+        if (filters.includes(SpotLightFilter.OBJECT)) {
+          searchPromises.push(fetchObjects(0, ITEMS_PER_PAGE, query));
+        }
+        if (filters.includes(SpotLightFilter.FACT)) {
+          searchPromises.push(listFact(0, ITEMS_PER_PAGE, query));
+        }
+        if (filters.includes(SpotLightFilter.TASK)) {
+          searchPromises.push(
+            listTasks({
+              page: 0,
+              pageSize: ITEMS_PER_PAGE,
+              search: query,
+              status: '',
+              creatorId: authService.getCreatorId() || '',
+              assignedId: authService.getCreatorId() || '',
+            })
+          );
+        }
+        if (filters.includes(SpotLightFilter.CREATOR)) {
+          searchPromises.push(listOrgMembers(query));
+        }
+
+        const [objectRes, factRes, taskRes, creatorRes] =
+          await Promise.allSettled(searchPromises);
+
+        if (objectRes.status === 'fulfilled')
+          setObjectResponse(objectRes.value);
+        if (factRes.status === 'fulfilled') setFactResponse(factRes.value);
+        if (taskRes.status === 'fulfilled') setTaskResponse(taskRes.value);
+        if (creatorRes.status === 'fulfilled')
+          setCreatorResponse(creatorRes.value);
+      } catch (error) {
+        console.error('Error performing search:', error);
+        toast({
+          title: 'Error performing search',
+          description: 'Please try again later.',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [filters, lastSearchTime, toast]
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -126,48 +188,17 @@ const SpotLight: React.FC = () => {
   }, [isOpen, openModal, closeModal]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedSearch = useCallback(
-    debounce(async (query: string) => {
-      if (query.length < 2) {
-        setSearchResults([]);
-        setFilterCounts({ object: 0, fact: 0, task: 0, creator: 0 });
-        return;
-      }
-
-      // Perform searches for all filters simultaneously
-      setIsLoading(true);
-      try {
-        if (filters.includes(SpotLightFilter.OBJECT)) {
-          setObjectResponse(await fetchObjects(0, ITEMS_PER_PAGE, query));
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((query: string) => {
+        if (query.length < 2) {
+          setSearchResults([]);
+          setFilterCounts({ object: 0, fact: 0, task: 0, creator: 0 });
+          return;
         }
-      } catch (e) {}
-      try {
-        if (filters.includes(SpotLightFilter.FACT)) {
-          setFactResponse(await listFact(0, ITEMS_PER_PAGE, query));
-        }
-      } catch (e) {}
-      try {
-        if (filters.includes(SpotLightFilter.TASK)) {
-          setTaskResponse(
-            await listTasks({
-              page: 0,
-              pageSize: ITEMS_PER_PAGE,
-              search: query,
-              status: '',
-              creatorId: authService.getCreatorId() || '',
-              assignedId: authService.getCreatorId() || '',
-            })
-          );
-        }
-      } catch (e) {}
-      try {
-        if (filters.includes(SpotLightFilter.CREATOR)) {
-          setCreatorResponse(await listOrgMembers(query));
-        }
-      } catch (e) {}
-      setIsLoading(false);
-    }, 300),
-    []
+        performSearch(query);
+      }, 300),
+    [performSearch]
   );
 
   useEffect(() => {
@@ -236,14 +267,6 @@ const SpotLight: React.FC = () => {
   useEffect(() => {
     debouncedSearch(searchQuery);
   }, [searchQuery, debouncedSearch]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    switch (e.key) {
-      case 'Escape':
-        closeSpotLight();
-        break;
-    }
-  };
 
   const renderSearchResult = (result: any, index: number) => {
     switch (result.type) {
@@ -336,31 +359,51 @@ const SpotLight: React.FC = () => {
   };
 
   const handlePageChange = async (newPage: number) => {
+    const now = Date.now();
+    if (now - lastSearchTime < MIN_SEARCH_DELAY) {
+      // Prevent page changes more than once per second
+      return;
+    }
+
     setPaginationState((prev) => ({ ...prev, [activeFilter]: newPage }));
     setIsLoading(true);
-    switch (activeFilter) {
-      case SpotLightFilter.OBJECT:
-        setObjectResponse(
-          await fetchObjects(newPage, ITEMS_PER_PAGE, searchQuery)
-        );
-        break;
-      case SpotLightFilter.FACT:
-        setFactResponse(await listFact(newPage, ITEMS_PER_PAGE, searchQuery));
-        break;
-      case SpotLightFilter.TASK:
-        setTaskResponse(
-          await listTasks({
-            page: newPage,
-            pageSize: ITEMS_PER_PAGE,
-            search: searchQuery,
-            status: '',
-            creatorId: authService.getCreatorId() || '',
-            assignedId: authService.getCreatorId() || '',
-          })
-        );
-        break;
+    setLastSearchTime(now);
+
+    try {
+      switch (activeFilter) {
+        case SpotLightFilter.OBJECT:
+          setObjectResponse(
+            await fetchObjects(newPage, ITEMS_PER_PAGE, searchQuery)
+          );
+          break;
+        case SpotLightFilter.FACT:
+          setFactResponse(await listFact(newPage, ITEMS_PER_PAGE, searchQuery));
+          break;
+        case SpotLightFilter.TASK:
+          setTaskResponse(
+            await listTasks({
+              page: newPage,
+              pageSize: ITEMS_PER_PAGE,
+              search: searchQuery,
+              status: '',
+              creatorId: authService.getCreatorId() || '',
+              assignedId: authService.getCreatorId() || '',
+            })
+          );
+          break;
+      }
+    } catch (error) {
+      console.error('Error changing page:', error);
+      toast({
+        title: 'Error changing page',
+        description: 'Please try again later.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (
@@ -374,19 +417,11 @@ const SpotLight: React.FC = () => {
         transition={{ duration: '0.3' }}
       >
         <VStack spacing={4} p={4}>
-          <InputGroup>
-            <InputLeftElement>
-              <Icon as={FaSearch} color='gray.300' />
-            </InputLeftElement>
-            <Input
-              ref={inputRef}
-              placeholder='Search...'
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              autoFocus
-            />
-          </InputGroup>
+          <SearchInput
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            closeSpotLight={closeSpotLight}
+          />
           {isLoading ? (
             <LoadingPanel />
           ) : (

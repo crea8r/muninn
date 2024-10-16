@@ -21,7 +21,7 @@ import {
 import { CalendarIcon, EditIcon } from '@chakra-ui/icons';
 import MarkdownEditor from 'src/components/mardown/MardownEditor';
 import { Fact, Object } from 'src/types/';
-import { SpotLightFilter } from '../SpotLight';
+import { SpotLightFilter } from '../spot-light/SpotLight';
 import { getInitialValueFromMentionItem } from 'src/components/mardown/utils';
 import { FactToUpdate, FactToCreate } from 'src/api/fact';
 import dayjs from 'dayjs';

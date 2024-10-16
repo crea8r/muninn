@@ -14,7 +14,7 @@ import {
   TabPanel,
 } from '@chakra-ui/react';
 import MarkdownDisplay from './MarkdownDisplay';
-import { SpotLightFilter } from 'src/components/SpotLight';
+import { SpotLightFilter } from 'src/components/spot-light/SpotLight';
 import { extractRelatedItems } from './utils';
 
 interface MarkdownEditorProps {

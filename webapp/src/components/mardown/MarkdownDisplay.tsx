@@ -6,11 +6,13 @@ import remarkGfm from 'remark-gfm';
 interface MarkdownDisplayProps {
   content: string;
   characterLimit?: number;
+  style?: React.CSSProperties;
 }
 
 const MarkdownDisplay: React.FC<MarkdownDisplayProps> = ({
   content,
   characterLimit,
+  style,
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const renderedContent = useMemo(() => {
@@ -46,7 +48,7 @@ const MarkdownDisplay: React.FC<MarkdownDisplayProps> = ({
     ),
   };
   return (
-    <Box sx={markdownStyles}>
+    <Box sx={markdownStyles} style={style}>
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {displayedContent}
       </ReactMarkdown>

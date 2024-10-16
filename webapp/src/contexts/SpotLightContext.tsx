@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { SpotLightFilter } from 'src/components/SpotLight';
+import { SpotLightFilter } from 'src/components/spot-light/SpotLight';
 
 export type SearchFilter = 'object' | 'fact' | 'task' | 'creator';
 

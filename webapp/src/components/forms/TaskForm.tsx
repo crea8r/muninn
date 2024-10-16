@@ -20,7 +20,7 @@ import { TaskStatus, Task, NewTask, UpdateTask } from 'src/types/';
 import MarkdownEditor from 'src/components/mardown/MardownEditor';
 import dayjs from 'dayjs';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
-import { SpotLightFilter } from '../SpotLight';
+import { SpotLightFilter } from '../spot-light/SpotLight';
 
 interface TaskFormProps {
   isOpen: boolean;

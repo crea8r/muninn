@@ -61,7 +61,7 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
   const [importHistory, setImportHistory] = useState<ImportTask[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
   const [isLoading, setIsLoading] = useState(false);
   const [defaultFact, setDefaultFact] = useState<FactToCreate>();
   const toast = useToast();

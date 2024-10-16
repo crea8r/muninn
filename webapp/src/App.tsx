@@ -26,7 +26,7 @@ import './styles/tailwind.css';
 import authService from './services/authService';
 import { GlobalProvider } from './contexts/GlobalContext';
 import { SpotLightProvider } from './contexts/SpotLightContext';
-import SpotLight from './components/SpotLight';
+import SpotLight from './components/spot-light/SpotLight';
 import GlobalImageFallback from 'src/components/GlobalImageFallback';
 import FunnelBoard from './pages/settings/FunnelBoard';
 import ListObjectByTypesPage from './pages/settings/ListObjectByTypesPage';
