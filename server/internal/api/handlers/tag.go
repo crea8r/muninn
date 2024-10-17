@@ -42,17 +42,13 @@ func (h *TagHandler) CreateTag(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
-	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
-	if err != nil {
-		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
-		return
-	}
+	orgId := uuid.MustParse(claims.OrgID)
 	
 	tag, err := h.DB.CreateTag(r.Context(), database.CreateTagParams{
 		Name:        req.Name,
 		Description: req.Description,
 		ColorSchema: req.ColorSchema,
-		OrgID:       creator.OrgID,
+		OrgID:       orgId,
 	})
 
 	if err != nil {
@@ -120,11 +116,7 @@ func (h *TagHandler) DeleteTag(w http.ResponseWriter, r *http.Request) {
 
 func (h *TagHandler) ListTags(w http.ResponseWriter, r *http.Request) {
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
-	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
-	if err != nil {
-		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
-		return
-	}
+	orgId := uuid.MustParse(claims.OrgID)
 
 	query := r.URL.Query().Get("q")
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -140,7 +132,7 @@ func (h *TagHandler) ListTags(w http.ResponseWriter, r *http.Request) {
 	offset := (page - 1) * pageSize
 
 	tags, err := h.DB.ListTags(r.Context(), database.ListTagsParams{
-		OrgID:  creator.OrgID,
+		OrgID:  orgId,
 		Column2:  query,
 		Limit:  int32(pageSize),
 		Offset: int32(offset),
@@ -152,7 +144,7 @@ func (h *TagHandler) ListTags(w http.ResponseWriter, r *http.Request) {
 	}
 
 	totalCount, err := h.DB.CountTags(r.Context(), database.CountTagsParams{
-		OrgID: creator.OrgID,
+		OrgID: orgId,
 		Column2: query,
 	})
 
