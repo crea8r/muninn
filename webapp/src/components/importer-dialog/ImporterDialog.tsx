@@ -54,6 +54,7 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
   const [fileName, setFileName] = useState<string>('');
   const [fieldMapping, setFieldMapping] = useState<Record<string, string>>({});
   const [idStringColumn, setIdStringColumn] = useState<string>('');
+  const [nameColumn, setNameColumn] = useState<string>('');
   const [importTaskId, setImportTaskId] = useState<string | null>(null);
   const [currentImportTask, setCurrentImportTask] = useState<ImportTask | null>(
     null
@@ -191,6 +192,7 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
       file_name: fileName,
       rows: csvData.slice(1).map((row) => {
         const idStringIndex = csvData[0].indexOf(idStringColumn);
+        const nameIndex = csvData[0].indexOf(nameColumn);
         const values: { [key: string]: string } = {};
         Object.entries(fieldMapping).forEach(([field, column]) => {
           const columnIndex = csvData[0].indexOf(column);
@@ -200,6 +202,7 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
         });
         return {
           id_string: row[idStringIndex],
+          name: row[nameIndex] || row[idStringIndex],
           values: values,
         };
       }),
@@ -216,7 +219,7 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
         duration: 5000,
         isClosable: true,
       });
-      // await fetchImportHistory();
+      await fetchImportHistory();
     } catch (error) {
       console.error('Error starting import:', error);
       toast({
@@ -324,6 +327,8 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
                           idStringColumn={idStringColumn}
                           setIdStringColumn={setIdStringColumn}
                           selectedObjectType={selectedObjectType}
+                          nameColumn={nameColumn}
+                          setNameColumn={setNameColumn}
                         />
                       )}
                       {step === 4 && <Step4 setDefaultFact={setDefaultFact} />}

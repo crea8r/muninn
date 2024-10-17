@@ -123,6 +123,8 @@ interface Step3Props {
   setFieldMapping: (value: any) => void;
   idStringColumn: string;
   setIdStringColumn: (value: string) => void;
+  nameColumn: string;
+  setNameColumn: (value: string) => void;
 }
 const Step3 = ({
   selectedObjectType,
@@ -131,6 +133,8 @@ const Step3 = ({
   idStringColumn,
   setFieldMapping,
   setIdStringColumn,
+  nameColumn,
+  setNameColumn,
 }: Step3Props) => {
   return (
     <VStack spacing={4} align='stretch'>
@@ -168,6 +172,20 @@ const Step3 = ({
         value={idStringColumn}
         onChange={(e) => setIdStringColumn(e.target.value)}
         placeholder='Select ID string column'
+      >
+        {csvData[0]?.map((column: any, index: any) => (
+          <option key={index} value={column}>
+            {column}
+          </option>
+        ))}
+      </Select>
+      <Text fontWeight='bold' mt={4}>
+        If new object is created, select Name column:
+      </Text>
+      <Select
+        value={nameColumn}
+        onChange={(e) => setNameColumn(e.target.value)}
+        placeholder='Select object Name column'
       >
         {csvData[0]?.map((column: any, index: any) => (
           <option key={index} value={column}>

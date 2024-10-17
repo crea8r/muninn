@@ -37,6 +37,7 @@ type ImportRequest struct {
 
 type ImportDataRow struct {
 	IDString string            `json:"id_string"`
+	Name		 string						 `json:"name"`
 	Values   map[string]string `json:"values"`
 }
 
@@ -162,7 +163,7 @@ func (h *ImportTaskHandler) processBatch(ctx context.Context, taskID uuid.UUID, 
 		if err == sql.ErrNoRows {
 			// Create new object
 			obj, err = qtx.CreateObject(ctx, database.CreateObjectParams{
-				Name: 	row.IDString,
+				Name: 	row.Name,
 				IDString:    row.IDString,
 				Description: fmt.Sprintf("Imported from %s", fileName),
 				CreatorID:  creatorId,
