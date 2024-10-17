@@ -16,7 +16,6 @@ import {
   IconButton,
   VStack,
   useToast,
-  border,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { Link, useHistory, useLocation } from 'react-router-dom';
