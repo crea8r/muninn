@@ -43,6 +43,7 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 	// Public routes
 	r.Post("/auth/signup", handlers.SignUp(queries))
 	r.Post("/auth/login", handlers.Login(queries))
+	r.Post("/auth/robotlogin", handlers.RobotLogin(queries))
 	r.Get("/stats",handlers.HealthCheck(queries))
 
 	// Protected routes

@@ -117,3 +117,52 @@ func Login(db *database.Queries) http.HandlerFunc {
 		json.NewEncoder(w).Encode(authResponse{Token: signedToken})
 	}
 }
+
+// create login for robot, expire in 100 years
+func RobotLogin(db *database.Queries) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req loginRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		// Get creator
+		creator, err := db.GetCreatorByUsername(r.Context(), database.GetCreatorByUsernameParams{
+			Username: req.Username,
+			Active:   true,
+		})
+		if err != nil {
+			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+			return
+		}
+
+		// Check password
+		if err := bcrypt.CompareHashAndPassword([]byte(creator.Pwd), []byte(req.Password)); err != nil {
+			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+			return
+		}
+
+		// Create JWT token
+		claims := &middleware.Claims{
+			CreatorID: creator.ID.String(),
+			Name:      creator.Username, // Assuming the username is used as the name. Adjust if there's a separate name field.
+			OrgID:     creator.OrgID.String(),
+			OrgName:  creator.Orgname,
+			Role:      creator.Role,
+			Profile:  creator.Profile,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(100 * 365 * 24 * time.Hour)),
+			},
+		}
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		signedToken, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+		if err != nil {
+			http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+			return
+		}
+
+		json.NewEncoder(w).Encode(authResponse{Token: signedToken})
+	}
+}

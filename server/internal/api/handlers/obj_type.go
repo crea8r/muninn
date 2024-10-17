@@ -118,8 +118,6 @@ func (h *ObjectTypeHandler) DeleteObjectType(w http.ResponseWriter, r *http.Requ
 
 func (h *ObjectTypeHandler) ListObjectTypes(w http.ResponseWriter, r *http.Request) {
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
-	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
-
 	query := r.URL.Query().Get("q")
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	pageSize, _ := strconv.Atoi(r.URL.Query().Get("page_size"))
@@ -134,7 +132,7 @@ func (h *ObjectTypeHandler) ListObjectTypes(w http.ResponseWriter, r *http.Reque
 	offset := (page - 1) * pageSize
 
 	objectTypes, err := h.DB.ListObjectTypes(r.Context(), database.ListObjectTypesParams{
-		OrgID:  creator.OrgID,
+		OrgID:  uuid.MustParse(claims.OrgID),
 		Column2:  query,
 		Limit:  int32(pageSize),
 		Offset: int32(offset),
@@ -146,7 +144,7 @@ func (h *ObjectTypeHandler) ListObjectTypes(w http.ResponseWriter, r *http.Reque
 	}
 
 	totalCount, err := h.DB.CountObjectTypes(r.Context(), database.CountObjectTypesParams{
-		OrgID: creator.OrgID,
+		OrgID: uuid.MustParse(claims.OrgID),
 		Column2: query,
 	})
 
