@@ -212,6 +212,7 @@ const ResizableTable: React.FC<ResizableTableProps> = ({
                     field={field}
                     dataType={objectType.fields[field]}
                     value={obj.typeValues?.[field]}
+                    style={{ width: '100%' }}
                   />
                 </Box>
               ))}

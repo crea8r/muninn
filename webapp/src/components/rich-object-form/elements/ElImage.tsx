@@ -6,7 +6,7 @@ import SmartImage from 'src/components/SmartImage';
 export const ElImage: React.FC<MasterFormElementProps> = (
   props: MasterFormElementProps
 ) => {
-  const { field, value, onChange, dataType } = props;
+  const { field, value, onChange, dataType, style } = props;
   return onChange ? (
     <FormControl key={field}>
       <FormLabel>{field}</FormLabel>
@@ -24,7 +24,7 @@ export const ElImage: React.FC<MasterFormElementProps> = (
     <SmartImage
       src={value}
       alt={field}
-      style={{ maxHeight: '200px', maxWidth: '200px' }}
+      style={{ maxHeight: '200px', maxWidth: '200px', ...style }}
     />
   );
 };

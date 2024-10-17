@@ -242,13 +242,16 @@ const ObjectDetailPage: React.FC = () => {
               <HStack>
                 <Heading as='h1' size='xl'>
                   <HStack>
-                    <SmartImage
-                      src={imgUrls}
-                      alt={object?.name || ''}
-                      style={{
-                        height: '32px',
-                      }}
-                    />
+                    <Box style={{ borderRadius: '100%', overflow: 'hidden' }}>
+                      <SmartImage
+                        src={imgUrls}
+                        alt={object?.name || ''}
+                        style={{
+                          height: '32px',
+                        }}
+                      />
+                    </Box>
+
                     <Text>{object?.name}</Text>
                   </HStack>
                 </Heading>

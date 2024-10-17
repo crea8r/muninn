@@ -1,6 +1,7 @@
 import { ElString } from './elements/ElString';
 import { ElImage } from './elements/ElImage';
 import { CSSProperties } from 'react';
+import { ElObject } from './elements/ElObject';
 // obj_type_value.type_values: key -> value
 // obj_type.fields: field name -> field type and its configuration
 // e.g:{
@@ -24,13 +25,14 @@ import { CSSProperties } from 'react';
 export const ObjectTypeElement: any = {
   string: ElString,
   number: ElString,
-  percent: ElString,
-  url: ElString,
-  long_text: ElString,
-  phone: ElString,
-  email: ElString,
+  // percent: ElString,
+  // url: ElString,
+  // long_text: ElString,
+  // phone: ElString,
+  // email: ElString,
   datetime: ElString,
   image: ElImage,
+  object: ElObject,
 };
 
 export type MasterFormElementProps = {

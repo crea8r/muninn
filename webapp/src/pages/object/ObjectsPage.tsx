@@ -16,6 +16,7 @@ import {
   IconButton,
   VStack,
   useToast,
+  border,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { Link, useHistory, useLocation } from 'react-router-dom';
@@ -29,6 +30,7 @@ import SmartImage from 'src/components/SmartImage';
 import { FiRefreshCw } from 'react-icons/fi';
 import queryString from 'query-string';
 import debounce from 'lodash/debounce';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const ITEMS_PER_PAGE = 5;
 const DEBOUNCE_DELAY = 300; // ms
@@ -36,8 +38,6 @@ const DEBOUNCE_DELAY = 300; // ms
 const ObjectsPage: React.FC = () => {
   const [objects, setObjects] = useState<Object[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [lastLoadTime, setLastLoadTime] = useState(0);
@@ -46,10 +46,19 @@ const ObjectsPage: React.FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isCreatingObject, setIsCreatingObject] = useState(false);
   const toast = useToast();
+  const params = queryString.parse(location.search);
+  const [currentPage, setCurrentPage] = useState(Number(params.page) || 1);
+  const [searchQuery, setSearchQuery] = useState(
+    (params.query as string) || ''
+  );
+  const [itemsPerPage, setItemsPerPage] = useState(
+    Number(params.perPage) || ITEMS_PER_PAGE
+  );
 
   // Parse URL params
   useEffect(() => {
     const params = queryString.parse(location.search);
+    setItemsPerPage(Number(params.perPage) || ITEMS_PER_PAGE);
     setCurrentPage(Number(params.page) || 1);
     setSearchQuery((params.query as string) || '');
     setInputValue((params.query as string) || '');
@@ -57,11 +66,16 @@ const ObjectsPage: React.FC = () => {
 
   // Update URL when state changes
   const updateUrl = useCallback(
-    (page: number, query: string) => {
+    (page: number, perPage: number, query: string) => {
       const currentParams = queryString.parse(location.search);
-      const newParams = { ...currentParams, page: String(page), query };
+      const newParams = {
+        ...currentParams,
+        page: String(page),
+        perPage: String(perPage),
+        query,
+      };
       const search = queryString.stringify(newParams);
-
+      console.log('search:', search);
       if (search !== location.search) {
         history.push({ search });
       }
@@ -75,9 +89,10 @@ const ObjectsPage: React.FC = () => {
       debounce((query: string) => {
         setSearchQuery(query);
         setCurrentPage(1);
-        updateUrl(1, query);
+        setItemsPerPage(itemsPerPage);
+        updateUrl(1, itemsPerPage, query);
       }, DEBOUNCE_DELAY),
-    [updateUrl]
+    [updateUrl, itemsPerPage]
   );
 
   // Load objects with fail-safe
@@ -94,7 +109,7 @@ const ObjectsPage: React.FC = () => {
     try {
       const { objects, totalCount } = await fetchObjects(
         currentPage,
-        ITEMS_PER_PAGE,
+        itemsPerPage,
         searchQuery
       );
       setObjects(objects);
@@ -110,7 +125,7 @@ const ObjectsPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, searchQuery, lastLoadTime, toast]);
+  }, [itemsPerPage, currentPage, searchQuery, lastLoadTime, toast]);
 
   // Load objects when page or search query changes
   useEffect(() => {
@@ -126,7 +141,16 @@ const ObjectsPage: React.FC = () => {
   const handlePageChange = useCallback(
     (newPage: number) => {
       setCurrentPage(newPage);
-      updateUrl(newPage, searchQuery);
+      updateUrl(newPage, itemsPerPage, searchQuery);
+    },
+    [searchQuery, itemsPerPage, updateUrl]
+  );
+
+  const handlePerPageChange = useCallback(
+    (perPage: number) => {
+      console.log('perPage', perPage);
+      setItemsPerPage(perPage);
+      updateUrl(1, perPage, searchQuery);
     },
     [searchQuery, updateUrl]
   );
@@ -146,7 +170,7 @@ const ObjectsPage: React.FC = () => {
     }
   };
 
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   return (
     <Box height='100%' display='flex' flexDirection='column'>
@@ -230,36 +254,51 @@ const ObjectsPage: React.FC = () => {
       </Box>
 
       <Flex justifyContent='space-between' alignItems='center' p={2}>
-        <Text>
-          {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
-          {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of {totalCount}
+        <Text
+          display={{
+            base: 'none',
+            md: 'block',
+          }}
+        >
+          {(currentPage - 1) * itemsPerPage + 1} to{' '}
+          {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount}
         </Text>
         <HStack>
-          <Button
-            onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
-            disabled={currentPage === 1 || isLoading}
+          <Select
+            onChange={(e) => handlePerPageChange(parseInt(e.target.value))}
+            value={itemsPerPage}
+            isDisabled={isLoading}
           >
-            Previous
-          </Button>
+            <option value={5}>5 items per Page</option>
+            <option value={10}>10 items per Page</option>
+            <option value={20}>20 items per Page</option>
+            <option value={50}>50 items per Page</option>
+          </Select>
+          <IconButton
+            icon={<FaChevronLeft />}
+            aria-label='Previous page'
+            onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+            isDisabled={currentPage === 1 || isLoading}
+          />
           <Select
             value={currentPage}
             onChange={(e) => handlePageChange(Number(e.target.value))}
-            disabled={isLoading}
+            isDisabled={isLoading}
           >
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <option key={page} value={page}>
-                Page {page}
+                {page}
               </option>
             ))}
           </Select>
-          <Button
+          <IconButton
+            icon={<FaChevronRight />}
+            aria-label='Next page'
             onClick={() =>
               handlePageChange(Math.min(currentPage + 1, totalPages))
             }
-            disabled={currentPage === totalPages || isLoading}
-          >
-            Next
-          </Button>
+            isDisabled={currentPage === totalPages || isLoading}
+          />
         </HStack>
       </Flex>
 
@@ -305,7 +344,13 @@ const ObjectRow: React.FC<{ obj: Object }> = React.memo(({ obj }) => {
     >
       <HStack width={{ base: '100%', md: '20%' }} overflow={'clip'}>
         {imgUrls.length > 0 && (
-          <SmartImage src={imgUrls} alt={obj.name} style={{ height: '32px' }} />
+          <Box style={{ borderRadius: '100%', overflow: 'hidden' }}>
+            <SmartImage
+              src={imgUrls}
+              alt={obj.name}
+              style={{ height: '32px' }}
+            />
+          </Box>
         )}
         <Link
           to={`/objects/${obj.id}`}

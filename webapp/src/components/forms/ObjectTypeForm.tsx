@@ -32,6 +32,7 @@ import { ObjectType } from 'src/types';
 import MarkdownEditor from '../mardown/MardownEditor';
 import { IconType } from 'react-icons';
 import FaIconList from '../FaIconList';
+import { ObjectTypeElement } from '../rich-object-form/ObjectType';
 
 // Define the props for the ObjectTypeForm component
 interface ObjectTypeFormProps {
@@ -203,10 +204,11 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
                         }
                       >
                         {/* Use the rich-object-form ObjectType */}
-                        <option value='string'>String</option>
-                        <option value='number'>Number</option>
-                        <option value='datetime'>Datetime</option>
-                        <option value='image'>Image</option>
+                        {window.Object.keys(ObjectTypeElement).map((key) => (
+                          <option key={key} value={key}>
+                            {key.charAt(0).toUpperCase() + key.slice(1)}
+                          </option>
+                        ))}
                       </Select>
                     </Td>
                     <Td>

@@ -6,6 +6,7 @@ const createDynamicComponent = (
   component: React.ComponentType<any>,
   props: any
 ) => {
+  console.log('props:', props);
   return React.createElement(component, props);
 };
 
@@ -14,6 +15,7 @@ export const MasterFormElement = ({
   dataType,
   value,
   onChange,
+  style,
 }: MasterFormElementProps) => {
   let ElementType = dataType;
   if (typeof dataType === 'string') {
@@ -26,6 +28,7 @@ export const MasterFormElement = ({
     value,
     onChange,
     dataType,
+    style,
   });
   return <>{dynamicElm}</>;
 };
