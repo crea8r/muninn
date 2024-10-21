@@ -38,13 +38,9 @@ func (h *ObjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
-	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
-	if err != nil {
-		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
-		return
-	}
+	creatorId := uuid.MustParse(claims.CreatorID)
 
-	object, err := h.ObjectModel.Create(r.Context(), input.Name, input.Description, input.IDString, creator.ID)
+	object, err := h.ObjectModel.Create(r.Context(), input.Name, input.Description, input.IDString, creatorId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -101,13 +97,8 @@ func (h *ObjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 func (h *ObjectHandler) List(w http.ResponseWriter, r *http.Request) {
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
-	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
+	orgId := uuid.MustParse(claims.OrgID)
 	
-	if err != nil {
-		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
-		return
-	}
-
 	search := r.URL.Query().Get("search")
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
@@ -121,7 +112,7 @@ func (h *ObjectHandler) List(w http.ResponseWriter, r *http.Request) {
 	offset := int32((page - 1) * pageSize)
 	limit := int32(pageSize)
 	
-	objects, totalCount, err := h.ObjectModel.List(r.Context(), creator.OrgID, search, limit, offset)
+	objects, totalCount, err := h.ObjectModel.List(r.Context(), orgId, search, limit, offset)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -149,13 +140,9 @@ func (h *ObjectHandler) GetDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
-	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
-	if err != nil {
-		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
-		return
-	}
+	orgId := uuid.MustParse(claims.OrgID)
 
-	objectDetails, err := h.ObjectModel.GetDetails(r.Context(), id, creator.OrgID)
+	objectDetails, err := h.ObjectModel.GetDetails(r.Context(), id, orgId)
 	if err != nil {
 		http.Error(w, "Object not found", http.StatusNotFound)
 		return
@@ -183,13 +170,9 @@ func (h *ObjectHandler) AddTag(w http.ResponseWriter, r *http.Request) {
 	}
 
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
-	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
-	if err != nil {
-		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
-		return
-	}
-
-	err = h.ObjectModel.AddTag(r.Context(), objectID, input.TagID, creator.OrgID)
+	orgId := uuid.MustParse(claims.OrgID)
+	
+	err = h.ObjectModel.AddTag(r.Context(), objectID, input.TagID, orgId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -212,13 +195,9 @@ func (h *ObjectHandler) RemoveTag(w http.ResponseWriter, r *http.Request) {
 	}
 
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
-	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
-	if err != nil {
-		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
-		return
-	}
+	orgId := uuid.MustParse(claims.OrgID)	
 
-	err = h.ObjectModel.RemoveTag(r.Context(), objectID, tagID, creator.OrgID)
+	err = h.ObjectModel.RemoveTag(r.Context(), objectID, tagID, orgId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -248,13 +227,9 @@ func (h *ObjectHandler) AddObjectTypeValue(w http.ResponseWriter, r *http.Reques
 	defer r.Body.Close()
 
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
-	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
-	if err != nil {
-		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
-		return
-	}
+	orgId := uuid.MustParse(claims.OrgID)
 	
-	typeValue, err := h.ObjectModel.AddObjectTypeValue(r.Context(), objectID, input.TypeID, input.Values, creator.OrgID)
+	typeValue, err := h.ObjectModel.AddObjectTypeValue(r.Context(), objectID, input.TypeID, input.Values, orgId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -271,13 +246,9 @@ func (h *ObjectHandler) RemoveObjectTypeValue(w http.ResponseWriter, r *http.Req
 		return
 	}
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
-	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
-	if err != nil {
-		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
-		return
-	}
-
-	err = h.ObjectModel.RemoveObjectTypeValue(r.Context(), typeValueID, creator.OrgID)
+	orgId := uuid.MustParse(claims.OrgID)
+	
+	err = h.ObjectModel.RemoveObjectTypeValue(r.Context(), typeValueID, orgId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
