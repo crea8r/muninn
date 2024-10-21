@@ -3,11 +3,25 @@ import authService from 'src/services/authService';
 
 export const axiosWithAuth = () => {
   const token = authService.getToken();
-  return axios.create({
+  const instance = axios.create({
     baseURL: process.env.REACT_APP_API_URL,
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
   });
+
+  // Add a response interceptor
+  instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response && error.response.status === 401) {
+        // Redirect to login page
+        window.location.href = '/login';
+      }
+      return Promise.reject(error);
+    }
+  );
+
+  return instance;
 };
