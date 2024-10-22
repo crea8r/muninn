@@ -54,6 +54,7 @@ type Task struct {
 	Status    string         `json:"status"`
 	CreatedAt time.Time      `json:"createdAt"`
 	AssignedID utils.NullUUID `json:"assignedId"`
+	DeletedAt utils.NullTime  `json:"deletedAt"`
 }
 
 type StepAndFunnel struct {

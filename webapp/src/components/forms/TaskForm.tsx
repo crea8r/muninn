@@ -15,6 +15,7 @@ import {
   HStack,
   Button,
   Spacer,
+  Spinner,
 } from '@chakra-ui/react';
 import { TaskStatus, Task, NewTask, UpdateTask } from 'src/types/';
 import MarkdownEditor from 'src/components/mardown/MardownEditor';
@@ -26,7 +27,9 @@ interface TaskFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (task: NewTask | UpdateTask) => void;
+  onDelete?: (task: Task) => void;
   initialTask?: Task;
+  defaultContent?: string;
 }
 
 interface EditingTaskType {
@@ -39,13 +42,15 @@ interface EditingTaskType {
 }
 
 const converTaskToNewOrUpdateTask = (
-  task: Task | undefined
+  task: Task | undefined,
+  defaultContent: string | undefined
 ): EditingTaskType => {
   if (!task) {
     // new task
     return {
-      content: '',
+      content: defaultContent ? defaultContent : '',
       status: TaskStatus.TODO,
+      deadline: dayjs().add(1, 'day').toISOString(),
       objectIds: [],
     };
   } else {
@@ -68,17 +73,23 @@ const TaskForm: React.FC<TaskFormProps> = ({
   isOpen,
   onClose,
   onSave,
+  onDelete,
   initialTask,
+  defaultContent,
 }) => {
   const { globalData } = useGlobalContext();
   const [formData, setFormData] = useState<EditingTaskType>(
-    converTaskToNewOrUpdateTask(initialTask)
+    converTaskToNewOrUpdateTask(initialTask, defaultContent)
   );
   const toast = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
-    const convertedTask = converTaskToNewOrUpdateTask(initialTask);
+    const convertedTask = converTaskToNewOrUpdateTask(
+      initialTask,
+      defaultContent
+    );
     setFormData(convertedTask);
-  }, [initialTask, isOpen]);
+  }, [initialTask, isOpen, defaultContent]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -106,6 +117,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
     updatedTask.deadline = updatedTask.deadline
       ? dayjs(updatedTask.deadline).toISOString()
       : undefined;
+    setIsLoading(true);
     try {
       await onSave(
         initialTask ? { ...updatedTask, id: initialTask.id } : updatedTask
@@ -125,6 +137,28 @@ const TaskForm: React.FC<TaskFormProps> = ({
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (initialTask && onDelete) {
+      setIsLoading(true);
+      try {
+        await onDelete(initialTask);
+        onClose();
+      } catch (e: any) {
+        toast({
+          title: 'Error deleting task',
+          description: typeof e === 'string' ? e : 'Cannot delete task',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -149,13 +183,13 @@ const TaskForm: React.FC<TaskFormProps> = ({
     };
     handleCreateOrUpdateTask(toSubmitTask);
   };
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} size='xl'>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
           {initialTask ? 'Edit Task' : 'Create New Task'}
+          {isLoading && <Spinner size='sm' ml={2} />}
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={6}>
@@ -166,6 +200,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                 name='status'
                 value={formData.status}
                 onChange={handleInputChange}
+                isDisabled={isLoading}
               >
                 {Object.values(TaskStatus).map((status) => (
                   <option key={status} value={status}>
@@ -181,6 +216,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                 name='deadline'
                 value={dayjs(formData.deadline).format('YYYY-MM-DDTHH:mm')}
                 onChange={handleInputChange}
+                isDisabled={isLoading}
               />
             </FormControl>
             <FormControl>
@@ -190,6 +226,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                 value={formData.assignedId || ''}
                 onChange={handleInputChange}
                 placeholder='Enter username or email'
+                isDisabled={isLoading}
               >
                 {globalData &&
                   globalData.members.map((member) => (
@@ -219,15 +256,30 @@ const TaskForm: React.FC<TaskFormProps> = ({
                     : [];
                   setFormData((prev) => ({ ...prev, objectIds: objIds }));
                 }}
+                isDisabled={isLoading}
               />
             </FormControl>
           </VStack>
           <HStack height={4} mt={3}>
-            <Button colorScheme='gray' onClick={onClose}>
+            <Button colorScheme='gray' onClick={onClose} isDisabled={isLoading}>
               Reset
             </Button>
             <Spacer />
-            <Button colorScheme='blue' onClick={handleSave}>
+            {initialTask && (
+              <Button
+                colorScheme='red'
+                onClick={handleDelete}
+                isDisabled={isLoading}
+              >
+                Delete
+              </Button>
+            )}
+
+            <Button
+              colorScheme='blue'
+              onClick={handleSave}
+              isDisabled={isLoading}
+            >
               Submit
             </Button>
           </HStack>

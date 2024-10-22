@@ -6,40 +6,51 @@ import {
   useToast,
   Alert,
   AlertIcon,
+  Button,
 } from '@chakra-ui/react';
-import { Task, TaskStatus } from 'src/types/';
+import { NewTask, Task, TaskStatus, UpdateTask } from 'src/types/';
 import { TaskForm } from 'src/components/forms/';
 import TaskItem from 'src/components/TaskItem';
 
 interface TaskPanelProps {
   objectId: string;
+  objectName: string;
   tasks: Task[];
+  onAddTask: (task: NewTask) => void;
+  onUpdateTask: (task: UpdateTask) => void;
+  onDeleteTask: (taskId: string) => void;
 }
 
-const TaskPanel: React.FC<TaskPanelProps> = ({ objectId, tasks }) => {
-  const { isOpen, onClose } = useDisclosure();
-  const toast = useToast();
+const TaskPanel: React.FC<TaskPanelProps> = ({
+  objectId,
+  objectName,
+  tasks,
+  onAddTask,
+  onUpdateTask,
+  onDeleteTask,
+}) => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [selectedTask, setSelectedTask] = React.useState<Task | undefined>(
+    undefined
+  );
 
-  const handleAddTask = async (newTask: Task) => {
+  const handleSaveTask = async (task: NewTask | UpdateTask) => {
     try {
-      // const addedTask = await addTask(objectId, newTask);
-      // setTasks([...tasks, addedTask]);
+      if ('id' in task) {
+        await onUpdateTask(task as UpdateTask);
+      } else {
+        await onAddTask(task as NewTask);
+      }
       onClose();
-      toast({
-        title: 'Task added',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
     } catch (error) {
-      toast({
-        title: 'Error adding task',
-        description: 'Please try again later.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+    } finally {
+      setSelectedTask(undefined);
     }
+  };
+
+  const handleDeleteTask = async (task: Task) => {
+    await onDeleteTask(task.id);
+    onClose();
   };
 
   return (
@@ -56,7 +67,14 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ objectId, tasks }) => {
           tasks
             .filter((task) => task.status !== TaskStatus.COMPLETED)
             .map((task) => (
-              <TaskItem key={task.id} task={task} handleClick={() => {}} />
+              <TaskItem
+                key={task.id}
+                task={task}
+                handleClick={() => {
+                  setSelectedTask(task);
+                  onOpen();
+                }}
+              />
             ))
         ) : (
           <Alert status='success'>
@@ -64,13 +82,16 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ objectId, tasks }) => {
             All tasks completed!
           </Alert>
         )}
-        {/* <Button onClick={onOpen}>Add New Task</Button> */}
+        <Button onClick={onOpen}>Add New Task</Button>
       </VStack>
 
       <TaskForm
-        onSave={() => handleAddTask}
+        onSave={handleSaveTask}
         onClose={onClose}
         isOpen={isOpen}
+        initialTask={selectedTask}
+        defaultContent={`@[${objectName}](object:${objectId})`}
+        onDelete={handleDeleteTask}
       />
     </Box>
   );

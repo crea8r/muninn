@@ -16,7 +16,7 @@ import {
 import { SearchIcon } from '@chakra-ui/icons';
 import { TaskForm } from 'src/components/forms';
 import { Task, NewTask, TaskStatus, UpdateTask } from 'src/types/Task';
-import { createTask, listTasks, updateTask } from 'src/api';
+import { createTask, deleteTask, listTasks, updateTask } from 'src/api';
 import authService from 'src/services/authService';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -89,6 +89,13 @@ const TasksPage: React.FC = () => {
   const handleEditTask = (task: Task) => {
     setSelectedTask(task);
     onOpen();
+  };
+
+  const handleDeleteTask = async (task: Task) => {
+    if (task) {
+      await deleteTask(task.id);
+      setForceUpdate(forceUpdate + 1);
+    }
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -210,6 +217,7 @@ const TasksPage: React.FC = () => {
           setSelectedTask(null);
         }}
         onSave={handleSaveTask}
+        onDelete={handleDeleteTask}
         initialTask={selectedTask || undefined}
       />
     </Box>

@@ -192,7 +192,6 @@ type updateTaskRequest struct {
 
 func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req createTaskRequest
-	fmt.Println("Request: ", req);
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		fmt.Println("Error: ", err);
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -211,7 +210,6 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	fmt.Println("Deadline: ", req.Deadline);
 	task, err := h.db.CreateTask(r.Context(), database.CreateTaskParams{
 		Content:    req.Content,
 		Deadline:   sql.NullTime{Time: req.Deadline.Time, Valid: req.Deadline.Valid},
@@ -319,9 +317,8 @@ func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := r.Context().Value(middleware.UserClaimsKey).(middleware.Claims)
+	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
 	CreatorId := uuid.MustParse(claims.CreatorID)
-
 	// Validate that the task belongs to the organization
 	task, err := h.db.GetTaskByID(r.Context(), taskID)
 	if err != nil {

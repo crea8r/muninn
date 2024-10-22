@@ -25,6 +25,8 @@ export interface Task {
   // creator
   creatorId?: string;
   creatorName?: string;
+  // delete
+  deletedAt?: string;
 }
 
 export interface NewTask {

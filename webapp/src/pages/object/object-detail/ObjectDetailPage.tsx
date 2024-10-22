@@ -34,12 +34,22 @@ import {
   ActivityFeed,
 } from 'src/pages/object/object-detail/fragments';
 import { FactForm, ObjectForm } from 'src/components/forms';
-import { Fact, Task, TaskStatus, UpdateObject } from 'src/types/';
+import {
+  Fact,
+  NewTask,
+  Task,
+  TaskStatus,
+  UpdateObject,
+  UpdateTask,
+} from 'src/types/';
 import {
   fetchObjectDetails,
   updateObject,
   createFact,
   updateFact,
+  createTask,
+  updateTask,
+  deleteTask,
 } from 'src/api';
 import { useParams } from 'react-router-dom';
 import {
@@ -58,6 +68,7 @@ import { FactToCreate, FactToUpdate } from 'src/api/fact';
 import BreadcrumbComponent from 'src/components/Breadcrumb';
 import LoadingModal from 'src/components/LoadingModal';
 import SmartImage from 'src/components/SmartImage';
+import { useGlobalContext } from 'src/contexts/GlobalContext';
 
 const ObjectDetailPage: React.FC = () => {
   const { objectId } = useParams<{ objectId: string }>();
@@ -70,6 +81,7 @@ const ObjectDetailPage: React.FC = () => {
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [isLargerThan1280] = useMediaQuery('(min-width: 1280px)');
   const [isLoading, setIsLoading] = useState(false);
+  const { refreshGlobalData } = useGlobalContext();
   const {
     isOpen: isOpenNewActivityDialog,
     onOpen: onOpenNewActivityDialog,
@@ -108,7 +120,7 @@ const ObjectDetailPage: React.FC = () => {
         const details = await fetchObjectDetails(objectId);
         setObject(details);
         setFacts(details.facts);
-        setTasks(details.tasks);
+        setTasks(details.tasks.filter((task: Task) => task.deletedAt === null));
         setImgUrls(loadImageUrlsFromObject(details));
         if (
           details.tasks.filter(
@@ -218,6 +230,30 @@ const ObjectDetailPage: React.FC = () => {
     setIsLoading(false);
   };
 
+  const handleAddTask = async (task: NewTask) => {
+    setIsLoading(true);
+    await createTask(task);
+    setForceUpdate(forceUpdate + 1);
+    refreshGlobalData();
+    setIsLoading(false);
+  };
+
+  const handleUpdateTask = async (task: UpdateTask) => {
+    setIsLoading(true);
+    await updateTask(task.id, task);
+    setForceUpdate(forceUpdate + 1);
+    refreshGlobalData();
+    setIsLoading(false);
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    setIsLoading(true);
+    await deleteTask(taskId);
+    setForceUpdate(forceUpdate + 1);
+    refreshGlobalData();
+    setIsLoading(false);
+  };
+
   return isLoading ? (
     <LoadingModal isOpen={isLoading} onClose={() => {}} />
   ) : (
@@ -286,7 +322,14 @@ const ObjectDetailPage: React.FC = () => {
                 </TabList>
                 <TabPanels>
                   <TabPanel>
-                    <TaskPanel objectId={objectId} tasks={tasks} />
+                    <TaskPanel
+                      objectId={objectId}
+                      tasks={tasks}
+                      objectName={object.name}
+                      onAddTask={handleAddTask}
+                      onUpdateTask={handleUpdateTask}
+                      onDeleteTask={handleDeleteTask}
+                    />
                   </TabPanel>
                   <TabPanel>
                     <Box flexGrow={1} overflowY='auto'>

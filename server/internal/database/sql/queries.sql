@@ -325,7 +325,8 @@ WITH object_data AS (
                'deadline', task.deadline,
                'status', task.status,
                'createdAt', task.created_at,
-               'assignedId', task.assigned_id
+               'assignedId', task.assigned_id,
+               'deletedAt', task.deleted_at
            )) FILTER (WHERE task.id IS NOT NULL), '[]')
            AS tasks,
            coalesce(json_agg(DISTINCT jsonb_build_object(
@@ -780,7 +781,9 @@ WHERE creator_id = $1 AND seen = false;
 
 -- name: CountOngoingTask :one
 SELECT COUNT(*) c FROM task
-WHERE assigned_id = $1 OR creator_id = $1 AND status in ('todo', 'doing');
+WHERE deleted_at IS NULL AND ( assigned_id = $1 
+OR creator_id = $1 )
+AND status in ('todo', 'doing');
 
 -- Add these new queries to your existing queries.sql file
 
