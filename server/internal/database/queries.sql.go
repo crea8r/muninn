@@ -16,12 +16,26 @@ import (
 )
 
 const addObjectTypeValue = `-- name: AddObjectTypeValue :one
+WITH org_check AS (
+  SELECT
+    o.id AS obj_id,
+    ot.id AS obj_type_id
+  FROM
+    obj o
+  JOIN
+    creator c_obj ON o.creator_id = c_obj.id -- Join the creator of obj
+  JOIN
+    obj_type ot ON ot.id = $2               -- obj_type_id parameter
+  JOIN
+    creator c_ot ON ot.creator_id = c_ot.id -- Join the creator of obj_type
+  WHERE
+    c_obj.org_id = c_ot.org_id              -- Ensure both creators belong to the same org
+    AND o.id = $1                           -- obj_id parameter
+)
 INSERT INTO obj_type_value (obj_id, type_id, type_values)
 SELECT $1, $2, $3::jsonb
-FROM obj o
-JOIN creator c ON o.creator_id = c.id
-JOIN obj_type ot ON ot.creator_id = c.id
-WHERE o.id = $1 AND ot.id = $2 AND c.org_id = $4
+FROM
+  org_check
 RETURNING id, obj_id, type_id, type_values, created_at, last_updated, deleted_at, search_vector
 `
 
@@ -29,16 +43,10 @@ type AddObjectTypeValueParams struct {
 	ObjID   uuid.UUID       `json:"obj_id"`
 	TypeID  uuid.UUID       `json:"type_id"`
 	Column3 json.RawMessage `json:"column_3"`
-	OrgID   uuid.UUID       `json:"org_id"`
 }
 
 func (q *Queries) AddObjectTypeValue(ctx context.Context, arg AddObjectTypeValueParams) (ObjTypeValue, error) {
-	row := q.queryRow(ctx, q.addObjectTypeValueStmt, addObjectTypeValue,
-		arg.ObjID,
-		arg.TypeID,
-		arg.Column3,
-		arg.OrgID,
-	)
+	row := q.queryRow(ctx, q.addObjectTypeValueStmt, addObjectTypeValue, arg.ObjID, arg.TypeID, arg.Column3)
 	var i ObjTypeValue
 	err := row.Scan(
 		&i.ID,

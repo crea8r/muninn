@@ -228,7 +228,7 @@ func (h *ObjectHandler) AddObjectTypeValue(w http.ResponseWriter, r *http.Reques
 
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
 	orgId := uuid.MustParse(claims.OrgID)
-	
+	// TODO: orgId is unused in model, need to check it somewhere
 	typeValue, err := h.ObjectModel.AddObjectTypeValue(r.Context(), objectID, input.TypeID, input.Values, orgId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

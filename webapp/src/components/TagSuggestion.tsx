@@ -53,7 +53,10 @@ const TagSuggestion = ({
       } catch (error) {
         toast({
           title: 'Error adding tag.',
-          description: 'There was an error adding the tag.',
+          description:
+            typeof error === 'string'
+              ? error
+              : 'There was an error adding the tag.',
           status: 'error',
           duration: 3000,
           isClosable: true,

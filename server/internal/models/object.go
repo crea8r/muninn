@@ -275,7 +275,6 @@ func (m *ObjectModel) AddObjectTypeValue(ctx context.Context, objectID, typeID u
 		ObjID:  objectID,
 		TypeID: typeID,
 		Column3: values,
-		OrgID:  orgID,
 	})
 	if err != nil {
 		return nil, err

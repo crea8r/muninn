@@ -77,6 +77,8 @@ const FunnelPanel: React.FC<FunnelPanelProps> = ({
       toast({
         title: errorTitle,
         status: 'error',
+        description:
+          typeof error === 'string' ? error : 'Please try again later.',
         duration: 5000,
         isClosable: true,
       });

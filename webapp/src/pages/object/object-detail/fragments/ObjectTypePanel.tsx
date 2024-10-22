@@ -87,7 +87,8 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
     } catch (error) {
       toast({
         title: 'Error adding object type',
-        description: 'Please try again later.',
+        description:
+          typeof error === 'string' ? error : 'Please try again later.',
         status: 'error',
         duration: 5000,
         isClosable: true,
