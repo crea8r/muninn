@@ -143,6 +143,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
   };
 
   const handleDelete = async () => {
+    const cfm = window.confirm('Are you sure you want to delete this task?');
+    if (!cfm) return;
     if (initialTask && onDelete) {
       setIsLoading(true);
       try {

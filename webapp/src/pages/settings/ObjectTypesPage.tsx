@@ -144,6 +144,10 @@ const ObjectTypesPage: React.FC = () => {
   };
 
   const handleDeleteObjectType = async (id: string) => {
+    const cfm = window.confirm(
+      'Are you sure you want to delete this object type?'
+    );
+    if (!cfm) return;
     try {
       setIsLoading(true);
       await deleteObjectType(id);

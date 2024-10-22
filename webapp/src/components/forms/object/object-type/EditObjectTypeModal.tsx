@@ -49,6 +49,13 @@ const EditObjectTypeValueModal = ({
   const handleReset = () => {
     setEditedValues(objectTypeValue.type_values);
   };
+  const handleDelete = () => {
+    const cfm = window.confirm(
+      'Are you sure you want to delete this object type value?'
+    );
+    if (!cfm) return;
+    onDelete();
+  };
   const handleUpdate = async () => {
     try {
       await onUpdate({ type_values: editedValues });
@@ -129,7 +136,7 @@ const EditObjectTypeValueModal = ({
               <Button colorScheme='blue' onClick={handleUpdate}>
                 Update
               </Button>
-              <Button colorScheme='red' onClick={onDelete}>
+              <Button colorScheme='red' onClick={handleDelete}>
                 Delete
               </Button>
             </HStack>

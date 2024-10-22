@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   Badge,
   Box,
   Button,
@@ -26,6 +25,7 @@ import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 import LoadingPanel from 'src/components/LoadingPanel';
 import { FunnelStep as FunnelStepType } from 'src/types';
 import { StepDetail } from 'src/components/forms/object/object-step/ObjectFunnelCard';
+import { shortenText } from 'src/utils';
 
 type ObjectsByFunnelProps = {
   funnelId: string;
@@ -112,7 +112,7 @@ const ObjectsByFunnel: React.FC<ObjectsByFunnelProps> = ({
                     onStepOpen();
                   }}
                 >
-                  {orderedStep.step.name}
+                  {shortenText(orderedStep.step.name, 10)}
                 </Badge>
                 {k < orderedSteps.length - 1 && <Text>→</Text>}
               </HStack>
@@ -120,12 +120,17 @@ const ObjectsByFunnel: React.FC<ObjectsByFunnelProps> = ({
           </HStack>
 
           {funnel.description && (
-            <Alert my={2}>
-              <MarkdownDisplay
-                content={funnel.description}
-                characterLimit={200}
-              />
-            </Alert>
+            <MarkdownDisplay
+              content={funnel.description}
+              characterLimit={200}
+              style={{
+                padding: '8px',
+                border: '1px solid #eee',
+                marginBottom: '12px',
+                marginTop: '8px',
+                backgroundColor: '#fff',
+              }}
+            />
           )}
           <HStack
             spacing={4}

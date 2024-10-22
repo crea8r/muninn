@@ -69,6 +69,13 @@ import BreadcrumbComponent from 'src/components/Breadcrumb';
 import LoadingModal from 'src/components/LoadingModal';
 import SmartImage from 'src/components/SmartImage';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
+import { shortenText } from 'src/utils';
+
+const extractFunnelSteps = (object: ObjectDetail) => {
+  const stepsAndFunnels = object.stepsAndFunnels;
+  const steps = stepsAndFunnels.map((step) => step.stepName);
+  return steps;
+};
 
 const ObjectDetailPage: React.FC = () => {
   const { objectId } = useParams<{ objectId: string }>();
@@ -292,6 +299,20 @@ const ObjectDetailPage: React.FC = () => {
                   </HStack>
                 </Heading>
               </HStack>
+              <Flex>
+                {extractFunnelSteps(object).map((step, index) => (
+                  <Badge
+                    variant={'outline'}
+                    size={'sm'}
+                    key={index}
+                    mr={2}
+                    colorScheme='blue'
+                    title={step}
+                  >
+                    {shortenText(step, 10)}
+                  </Badge>
+                ))}
+              </Flex>
               <FunnelPanel
                 objectId={objectId}
                 onAddOrMoveObjectInFunnel={handleAddOrMoveObjectInFunnel}

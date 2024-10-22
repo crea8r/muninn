@@ -2,6 +2,7 @@ import { Object } from 'src/types';
 import { Box, Divider, Tag, Text, Wrap } from '@chakra-ui/react';
 // import { useHistory } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 
 type ObjectCardProps = {
   object: Object;
@@ -45,7 +46,7 @@ const ObjectCard = ({ object }: ObjectCardProps) => {
         </Wrap>
       )}
       <Divider my={2} />
-      <Text>{object.description}</Text>
+      <MarkdownDisplay content={object.description} characterLimit={50} />
     </Box>
   );
 };
