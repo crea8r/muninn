@@ -117,10 +117,19 @@ const OrganisationPage: React.FC = () => {
             <Tbody>
               {members.map((member) => (
                 <Tr key={member.id}>
-                  <Td>{member.profile?.fullname}</Td>
+                  <Td>
+                    <Box>{member.profile?.fullname}</Box>
+                    <Box color={'gray.500'}>{member.username}</Box>
+                  </Td>
                   <Td>{member.profile?.email}</Td>
                   <Td>
-                    <Badge>{member.role}</Badge>
+                    <Badge
+                      variant={'outline'}
+                      colorScheme={member.role === 'admin' ? 'red' : 'gray'}
+                      textTransform={'none'}
+                    >
+                      {member.role}
+                    </Badge>
                   </Td>
                   <Td>
                     <Menu>

@@ -302,6 +302,7 @@ const ObjectDetailPage: React.FC = () => {
               <Flex>
                 {extractFunnelSteps(object).map((step, index) => (
                   <Badge
+                    textTransform={'none'}
                     variant={'outline'}
                     size={'sm'}
                     key={index}
@@ -386,7 +387,6 @@ const ObjectDetailPage: React.FC = () => {
             top={0}
             bottom={0}
             bg='gray.50'
-            zIndex={100}
             boxShadow={
               isLargerThan1280
                 ? 'none'
@@ -402,7 +402,6 @@ const ObjectDetailPage: React.FC = () => {
               left={isRightPanelOpen ? '0' : '0'}
               top='0'
               onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
-              zIndex={2}
             />
             {isRightPanelOpen && (
               <VStack align='stretch' spacing={4} height='100%' mt={10}>
