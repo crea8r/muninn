@@ -30,6 +30,7 @@ import { Step1, Step3, StepController, StepNavigation } from './Steps';
 import Step2 from './Step2';
 import Step4 from './Step4';
 import { ImportHistory, ImportingNotification } from './ImportHistory';
+import { trim } from 'lodash';
 
 interface ImporterDialogProps {
   isOpen: boolean;
@@ -212,12 +213,12 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
         Object.entries(fieldMapping).forEach(([field, column]) => {
           const columnIndex = csvData[0].indexOf(column);
           if (columnIndex !== -1) {
-            values[field] = row[columnIndex];
+            values[field] = trim(row[columnIndex]);
           }
         });
         return {
           id_string: row[idStringIndex],
-          name: row[nameIndex] || row[idStringIndex],
+          name: trim(row[nameIndex] || row[idStringIndex]),
           values: values,
           fact: buildFact(row),
         };
