@@ -76,46 +76,7 @@ const Step1 = ({
     </VStack>
   );
 };
-interface Step2Props {
-  handleFileChange: (e: any) => void;
-  fileInputRef: any;
-  fileName: string;
-  csvData: any[];
-}
-const Step2 = ({
-  handleFileChange,
-  fileInputRef,
-  fileName,
-  csvData,
-}: Step2Props) => {
-  return (
-    <VStack spacing={4} align='stretch'>
-      <Text fontWeight='bold'>Step 2: Upload CSV File</Text>
-      <Divider />
-      <Button
-        as='label'
-        htmlFor='file-upload'
-        colorScheme='blue'
-        cursor='pointer'
-      >
-        Choose File
-      </Button>
-      <Input
-        id='file-upload'
-        type='file'
-        accept='.csv'
-        onChange={handleFileChange}
-        ref={fileInputRef}
-        display='none'
-      />
-      {fileName && (
-        <Text>
-          {fileName} ({csvData.length - 1} rows)
-        </Text>
-      )}
-    </VStack>
-  );
-};
+
 interface Step3Props {
   selectedObjectType: any;
   csvData: any[];
@@ -294,4 +255,4 @@ const StepNavigation = ({
     </Stepper>
   );
 };
-export { Step1, Step2, Step3, Step4, StepController, StepNavigation };
+export { Step1, Step3, Step4, StepController, StepNavigation };

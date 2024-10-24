@@ -26,14 +26,8 @@ import LoadingPanel from '../LoadingPanel';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { FactToCreate } from 'src/api/fact';
-import {
-  Step1,
-  Step2,
-  Step3,
-  Step4,
-  StepController,
-  StepNavigation,
-} from './Steps';
+import { Step1, Step3, Step4, StepController, StepNavigation } from './Steps';
+import Step2 from './Step2';
 import { ImportHistory, ImportingNotification } from './ImportHistory';
 
 interface ImporterDialogProps {
@@ -151,18 +145,8 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
     fetchObjectTypes();
   }, [toast]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setFileName(file.name);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        const rows = text.split('\n').map((row) => row.split(','));
-        setCsvData(rows);
-      };
-      reader.readAsText(file);
-    }
+  const handleFileChange = (data: string[][]) => {
+    setCsvData(data);
   };
 
   const handleObjectTypeSelect = (objectType: ObjectType) => {

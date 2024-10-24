@@ -8,11 +8,13 @@ interface GlobalData {
   members: OrgMember[];
   unseenFeedsCount: number;
   tasksCount: number;
+  perPage: number;
 }
 
 interface GlobalContextType {
   globalData: GlobalData | null;
   refreshGlobalData: () => Promise<void>;
+  setGlobalPerPage: (perPage: number) => void;
 }
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -21,6 +23,16 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [globalData, setGlobalData] = useState<GlobalData | null>(null);
+
+  const setGlobalPerPage = (perPage: number) => {
+    setGlobalData((prev) => {
+      if (prev) {
+        return { ...prev, perPage };
+      }
+      return null;
+    });
+    localStorage.setItem('perPage', perPage.toString());
+  };
 
   const refreshGlobalData = async () => {
     try {
@@ -31,6 +43,7 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
           members,
           unseenFeedsCount: pS.unseen,
           tasksCount: pS.ongoingTask,
+          perPage: parseInt(localStorage.getItem('perPage') || '5'),
         });
       }
     } catch (error) {
@@ -43,7 +56,9 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   return (
-    <GlobalContext.Provider value={{ globalData, refreshGlobalData }}>
+    <GlobalContext.Provider
+      value={{ globalData, refreshGlobalData, setGlobalPerPage }}
+    >
       {children}
     </GlobalContext.Provider>
   );

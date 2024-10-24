@@ -30,11 +30,14 @@ import { FiRefreshCw } from 'react-icons/fi';
 import queryString from 'query-string';
 import debounce from 'lodash/debounce';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { useGlobalContext } from 'src/contexts/GlobalContext';
 
 const ITEMS_PER_PAGE = 5;
 const DEBOUNCE_DELAY = 300; // ms
 
 const ObjectsPage: React.FC = () => {
+  const { globalData, setGlobalPerPage } = useGlobalContext();
+
   const [objects, setObjects] = useState<Object[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [inputValue, setInputValue] = useState('');
@@ -50,18 +53,21 @@ const ObjectsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState(
     (params.query as string) || ''
   );
+  console.log('globalData.perPage:', globalData?.perPage);
   const [itemsPerPage, setItemsPerPage] = useState(
-    Number(params.perPage) || ITEMS_PER_PAGE
+    Number(params.perPage) || globalData?.perPage || ITEMS_PER_PAGE
   );
 
   // Parse URL params
   useEffect(() => {
     const params = queryString.parse(location.search);
-    setItemsPerPage(Number(params.perPage) || ITEMS_PER_PAGE);
+    setItemsPerPage(
+      Number(params.perPage) || globalData?.perPage || ITEMS_PER_PAGE
+    );
     setCurrentPage(Number(params.page) || 1);
     setSearchQuery((params.query as string) || '');
     setInputValue((params.query as string) || '');
-  }, [location.search]);
+  }, [location.search, globalData?.perPage]);
 
   // Update URL when state changes
   const updateUrl = useCallback(
@@ -74,7 +80,6 @@ const ObjectsPage: React.FC = () => {
         query,
       };
       const search = queryString.stringify(newParams);
-      console.log('search:', search);
       if (search !== location.search) {
         history.push({ search });
       }
@@ -98,17 +103,21 @@ const ObjectsPage: React.FC = () => {
   const loadObjects = useCallback(async () => {
     const now = Date.now();
     if (now - lastLoadTime < 1000) {
-      // Prevent loading more than once per second
-      return;
+      if (globalData && itemsPerPage !== globalData?.perPage) {
+        // make an exception for perPage change
+      } else {
+        // Prevent loading more than once per second
+        return;
+      }
     }
 
     setIsLoading(true);
     setLastLoadTime(now);
-
+    const defaultPerPage = globalData?.perPage || itemsPerPage;
     try {
       const { objects, totalCount } = await fetchObjects(
         currentPage,
-        itemsPerPage,
+        defaultPerPage,
         searchQuery
       );
       setObjects(objects);
@@ -124,7 +133,7 @@ const ObjectsPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [itemsPerPage, currentPage, searchQuery, lastLoadTime, toast]);
+  }, [itemsPerPage, currentPage, searchQuery, lastLoadTime, toast, globalData]);
 
   // Load objects when page or search query changes
   useEffect(() => {
@@ -149,9 +158,10 @@ const ObjectsPage: React.FC = () => {
     (perPage: number) => {
       console.log('perPage', perPage);
       setItemsPerPage(perPage);
+      setGlobalPerPage(perPage);
       updateUrl(1, perPage, searchQuery);
     },
-    [searchQuery, updateUrl]
+    [searchQuery, updateUrl, setGlobalPerPage]
   );
 
   const handleAddNewObject = async (data: NewObject) => {
@@ -358,7 +368,7 @@ const ObjectRow: React.FC<{ obj: Object }> = React.memo(({ obj }) => {
             color: 'var(--color-primary)',
           }}
         >
-          <Text>{shortenText(obj.name, 15)}</Text>
+          <Text>{shortenText(obj.name, 25)}</Text>
         </Link>
       </HStack>
       <VStack width={{ base: '100%', md: '40%' }} pr={1}>
