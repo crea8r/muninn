@@ -84,7 +84,7 @@ const AddObjectStepModal = ({
               >
                 {availableFunnels
                   .find((funnel) => funnel.id === selectedFunnel)
-                  ?.steps.map((step: FunnelStep) => (
+                  ?.steps?.map((step: FunnelStep) => (
                     <option key={step.id} value={step.id}>
                       {step.name}
                     </option>

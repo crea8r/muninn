@@ -148,7 +148,7 @@ const ObjectFunnelCard: React.FC<ObjectFunnelCardProps> = ({
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedStepId, setSelectedStepId] = React.useState(currentStep.id);
   const isLastStep =
-    funnel.steps[funnel.steps.length - 1].id === currentStep.id;
+    (funnel.steps || [])[funnel.steps.length - 1].id === currentStep.id;
   const handleReset = () => {
     setSelectedStepId(currentStep.id);
   };
@@ -156,10 +156,10 @@ const ObjectFunnelCard: React.FC<ObjectFunnelCardProps> = ({
   if (isLastStep && !showComplete) {
     return null;
   }
-  const nextStep = funnel.steps.find(
+  const nextStep = (funnel.steps || []).find(
     (step: FunnelStep) => step.step_order === currentStep.step_order + 1
   );
-  const tmpStep = funnel.steps.find(
+  const tmpStep = (funnel.steps || []).find(
     (step: FunnelStep) => step.id === selectedStepId
   );
   dayjs.extend(relativeTime);

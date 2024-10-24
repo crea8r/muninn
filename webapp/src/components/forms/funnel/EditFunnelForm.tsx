@@ -77,7 +77,7 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
       setDescription(tmpFunnel.description);
       let tmpExistingSteps: FunnelStep[] = [],
         tmpNewSteps: FunnelStep[] = [];
-      tmpFunnel.steps.forEach((step) => {
+      (tmpFunnel.steps || []).forEach((step) => {
         tmpExistingSteps.push(structuredClone(step));
         tmpNewSteps.push({ ...structuredClone(step), id: `new-${step.id}` });
       });
@@ -85,7 +85,7 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
       setNewSteps(tmpNewSteps);
       setStepMapping(
         Object.fromEntries(
-          tmpFunnel.steps.map((step) => [step.id, `new-${step.id}`])
+          (tmpFunnel.steps || []).map((step) => [step.id, `new-${step.id}`])
         )
       );
     }
@@ -200,7 +200,6 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
         .map((step) => step.id.toString()),
       step_mapping: processedMapping,
     };
-    console.log('editedFunnel: ', editedFunnel);
     onSave(editedFunnel);
     onClose();
   };

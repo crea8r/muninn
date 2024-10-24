@@ -81,7 +81,7 @@ const FunnelConfigPage: React.FC = () => {
     try {
       await updateFunnel({
         ...funnel,
-        steps_update: funnel.steps.map((step) =>
+        steps_update: (funnel.steps || []).map((step) =>
           step.id === selectedStep?.id ? { ...step, name: newName } : step
         ),
         steps_create: [],
@@ -211,7 +211,7 @@ const FunnelConfigPage: React.FC = () => {
 
             <ReactMarkdown>{funnel.description}</ReactMarkdown>
             <ResizableFunnelTable
-              steps={funnel.steps}
+              steps={funnel.steps || []}
               onStepNameClick={handleStepNameClick}
               onContentClick={handleContentClick}
             />
