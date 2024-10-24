@@ -19,8 +19,6 @@ import {
   HStack,
 } from '@chakra-ui/react';
 import React from 'react';
-import { FactForm } from '../forms';
-import { FactToCreate } from 'src/api/fact';
 import { ObjectType } from 'src/types';
 
 interface Step1Props {
@@ -157,23 +155,6 @@ const Step3 = ({
     </VStack>
   );
 };
-interface Step4Props {
-  setDefaultFact: (fact: FactToCreate) => void;
-}
-const Step4 = ({ setDefaultFact }: Step4Props) => {
-  return (
-    <>
-      <Text fontWeight='bold'>Step 4: Add new fact for each object</Text>
-      <Divider />
-      <FactForm
-        onChange={(fact) => {
-          setDefaultFact(fact as FactToCreate);
-        }}
-        showPanel={false}
-      />
-    </>
-  );
-};
 interface StepControllerProps {
   step: number;
   setStep: (value: number) => void;
@@ -255,4 +236,4 @@ const StepNavigation = ({
     </Stepper>
   );
 };
-export { Step1, Step3, Step4, StepController, StepNavigation };
+export { Step1, Step3, StepController, StepNavigation };

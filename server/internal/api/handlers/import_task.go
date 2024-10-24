@@ -32,13 +32,14 @@ type ImportRequest struct {
 	ObjTypeID string          `json:"obj_type_id"`
 	FileName  string          `json:"file_name"`
 	Rows      []ImportDataRow `json:"rows"`
-	Fact FactToCreate `json:"fact"`
+	Tags 		  []string        `json:"tags"`
 }
 
 type ImportDataRow struct {
 	IDString string            `json:"id_string"`
 	Name		 string						 `json:"name"`
 	Values   map[string]string `json:"values"`
+	Fact 	   FactToCreate      `json:"fact"`
 }
 
 func (h *ImportTaskHandler) CreateImportTask(w http.ResponseWriter, r *http.Request) {
@@ -103,8 +104,7 @@ func (h *ImportTaskHandler) processImportTask(taskID uuid.UUID, req ImportReques
 			end = totalRows
 		}
 		batch := req.Rows[i:end]
-
-		err := h.processBatch(ctx, taskID, req.ObjTypeID, batch, fileName, creatorId, req.Fact, orgId)
+		err := h.processBatch(ctx, taskID, req.ObjTypeID, batch, fileName, creatorId, orgId, req.Tags)
 		if err != nil {
 			h.logImportError(ctx, taskID, "Failed to process batch", err)
 			return
@@ -141,7 +141,7 @@ func (h *ImportTaskHandler) processImportTask(taskID uuid.UUID, req ImportReques
 }
 
 func (h *ImportTaskHandler) processBatch(ctx context.Context, taskID uuid.UUID, objTypeID string, batch []ImportDataRow, 
-	fileName string, creatorId uuid.UUID, fact FactToCreate, OrgId uuid.UUID) error {
+	fileName string, creatorId uuid.UUID, OrgId uuid.UUID, tagIds []string) error {
     // Start a transaction
 	tx, err := h.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -215,7 +215,7 @@ func (h *ImportTaskHandler) processBatch(ctx context.Context, taskID uuid.UUID, 
 		if err != nil {
 			return fmt.Errorf("failed to upsert object type value: %w", err)
 		}
-
+		fact := row.Fact
 		newFact, err := qtx.CreateFact(ctx, database.CreateFactParams{
 			Text:       fact.Text,
 			HappenedAt: sql.NullTime{
@@ -241,6 +241,16 @@ func (h *ImportTaskHandler) processBatch(ctx context.Context, taskID uuid.UUID, 
 			FactID: newFact.ID,
 			OrgID: OrgId,
 		})
+
+		for _, id := range tagIds {
+			tagUUID := uuid.MustParse(id)
+			qtx.AddTagToObject(ctx, database.AddTagToObjectParams{
+				ObjID: obj.ID,
+				TagID: tagUUID,
+				OrgID: OrgId,
+			})
+		}
+		
 		if err != nil {
 			return fmt.Errorf("failed to add objects to fact: %w", err)
 		}

@@ -53,7 +53,6 @@ const ObjectsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState(
     (params.query as string) || ''
   );
-  console.log('globalData.perPage:', globalData?.perPage);
   const [itemsPerPage, setItemsPerPage] = useState(
     Number(params.perPage) || globalData?.perPage || ITEMS_PER_PAGE
   );

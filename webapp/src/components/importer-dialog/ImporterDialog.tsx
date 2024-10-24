@@ -26,8 +26,9 @@ import LoadingPanel from '../LoadingPanel';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { FactToCreate } from 'src/api/fact';
-import { Step1, Step3, Step4, StepController, StepNavigation } from './Steps';
+import { Step1, Step3, StepController, StepNavigation } from './Steps';
 import Step2 from './Step2';
+import Step4 from './Step4';
 import { ImportHistory, ImportingNotification } from './ImportHistory';
 
 interface ImporterDialogProps {
@@ -58,7 +59,13 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [isLoading, setIsLoading] = useState(false);
-  const [defaultFact, setDefaultFact] = useState<FactToCreate>();
+  const [defaultFact, setDefaultFact] = useState<FactToCreate>({
+    text: '',
+    happenedAt: dayjs().toISOString(),
+    location: '',
+    objectIds: [],
+  });
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const toast = useToast();
 
   const fetchImportHistory = useCallback(async () => {
@@ -154,6 +161,30 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
     setObjectTypeInput('');
   };
 
+  const buildFact = useCallback(
+    (row: string[]) => {
+      let rs: FactToCreate = { ...defaultFact };
+      if (!rs.text.includes('{{')) {
+        return rs;
+      } else {
+        const columns = csvData[0];
+        const matchedColumns = columns.filter((c) =>
+          rs.text.includes(`{{${c}}`)
+        );
+        if (matchedColumns.length > 0) {
+          matchedColumns.forEach((column) => {
+            rs.text = rs.text.replace(
+              `{{${column}}}`,
+              row[columns.indexOf(column)]
+            );
+          });
+        }
+      }
+      return rs;
+    },
+    [csvData, defaultFact]
+  );
+
   const handleImport = async () => {
     if (
       !selectedObjectType ||
@@ -188,9 +219,10 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
           id_string: row[idStringIndex],
           name: row[nameIndex] || row[idStringIndex],
           values: values,
+          fact: buildFact(row),
         };
       }),
-      fact: defaultFact,
+      tags: selectedTags,
     };
     try {
       setIsLoading(true);
@@ -315,7 +347,15 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
                           setNameColumn={setNameColumn}
                         />
                       )}
-                      {step === 4 && <Step4 setDefaultFact={setDefaultFact} />}
+                      {step === 4 && (
+                        <Step4
+                          setDefaultFact={setDefaultFact}
+                          setSelectedTags={setSelectedTags}
+                          selectedTags={selectedTags}
+                          columns={csvData[0] || []}
+                          defaultFact={defaultFact}
+                        />
+                      )}
                       {!currentImportTask && (
                         <StepController
                           step={step}

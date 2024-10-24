@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
   Flex,
@@ -30,7 +30,7 @@ interface FactFormProps {
   onSave?: (fact: FactToUpdate | FactToCreate) => void;
   onChange?: (fact: FactToUpdate | FactToCreate) => void;
   requireObject?: Object;
-  fact?: Fact;
+  fact?: Fact | FactToCreate;
   showPanel?: boolean;
 }
 
@@ -43,17 +43,22 @@ interface FactFormData {
 }
 
 const parseInitialFact = (
-  initialFact: Fact | undefined,
+  initialFact: Fact | FactToCreate | undefined,
   object: Object | undefined
 ): FactFormData | undefined => {
   if (initialFact) {
-    return {
-      id: initialFact.id,
+    let tmp: any = {
       text: initialFact.text,
       happenedAt: initialFact.happenedAt,
       location: initialFact.location,
-      objectIds: (initialFact.relatedObjects || []).map((obj) => obj.id),
     };
+    if ('id' in initialFact) {
+      tmp['id'] = initialFact.id;
+    }
+    if ('relatedObjects' in initialFact) {
+      tmp['objectIds'] = initialFact.relatedObjects.map((obj) => obj.id);
+    }
+    return tmp;
   }
   if (object) {
     return {
@@ -93,6 +98,9 @@ const FactForm: React.FC<FactFormProps> = ({
   const datePickerRef = useRef<HTMLInputElement>(null);
   const [tempLocation, setTempLocation] = useState('');
   const toast = useToast();
+  useEffect(() => {
+    setFact(parseInitialFact(initialFact, requireObject));
+  }, [initialFact, requireObject]);
 
   const handleChange = (name: string, value: string) => {
     if (fact) {
@@ -118,8 +126,12 @@ const FactForm: React.FC<FactFormProps> = ({
       });
       return;
     }
-    const exisitingObjectIds =
-      initialFact?.relatedObjects?.map((obj) => obj.id) || [];
+    let exisitingObjectIds: any[] = [];
+    if (initialFact && 'relatedObjects' in initialFact) {
+      exisitingObjectIds =
+        initialFact?.relatedObjects?.map((obj) => obj.id) || [];
+    }
+
     const toAddObjectIds = relatedObjectIds.filter(
       (id: string) => !exisitingObjectIds.includes(id)
     );

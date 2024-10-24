@@ -10,8 +10,9 @@ export interface ImportRequest {
   rows: Array<{
     id_string: string;
     values: Record<string, string>;
+    fact: FactToCreate;
   }>;
-  fact: FactToCreate;
+  tags: string[];
 }
 
 export interface ImportTask {
