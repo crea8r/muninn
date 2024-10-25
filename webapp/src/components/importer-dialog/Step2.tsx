@@ -188,7 +188,11 @@ const Step2: React.FC<Step2Props> = ({
     <VStack spacing={4} align='stretch'>
       <HStack>
         <Text fontWeight='bold'>Step 2: Upload CSV File</Text>
-        {fileName && <Badge colorScheme='blue'>{fileName}</Badge>}
+        {fileName && (
+          <Badge colorScheme='blue' title={fileName}>
+            {shortenText(fileName, 30)}
+          </Badge>
+        )}
       </HStack>
       <Divider />
 

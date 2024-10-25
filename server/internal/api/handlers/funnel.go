@@ -376,7 +376,7 @@ func (h *FunnelHandler) GetFunnelView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FunnelHandler) getObjectsForStep(ctx context.Context, stepID uuid.UUID, page int, searchQuery string) ([]ObjectSummary, int64, error) {
-	limit := 20 // Objects per page
+	limit := 5 // Objects per page
 	offset := (page - 1) * limit
 
 	// Create a new query to fetch objects for a specific step with pagination and search

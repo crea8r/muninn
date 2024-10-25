@@ -9,8 +9,8 @@ import { Funnel } from 'src/types';
 const FunnelBoard = () => {
   const { funnelId } = useParams<{ funnelId: string }>();
   const [funnel, setFunnel] = useState<Funnel | undefined>();
-  const handleFetchFunnel = async (funnelId: string) => {
-    const response = await getFunnelView(funnelId);
+  const handleFetchFunnel = async (params: any) => {
+    const response = await getFunnelView(params);
     setFunnel(response.funnel);
     return response;
   };

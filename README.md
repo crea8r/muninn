@@ -44,3 +44,7 @@ REACT_APP_API_URL=[your server | http://localhost:8080]
 ```
 
 - [ ] Step 3: Run `npm start`
+
+### How big is the project?
+
+Run this command `git ls-files --exclude-standard -- ':!:**/*.[pjs][npv]g' ':!:**/*.ai' ':!:.idea' ':!:**/*.eslintrc' ':!:*.json' | xargs wc -l`

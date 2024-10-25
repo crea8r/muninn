@@ -55,7 +55,7 @@ const ObjectsByFunnel: React.FC<ObjectsByFunnelProps> = ({
     const initFunnelViewData = async () => {
       setIsLoading(true);
       try {
-        setFunnelViewData(await getFunnelView(funnelId));
+        setFunnelViewData(await getFunnelView({ id: funnelId }));
       } catch (e) {
         toast({
           title: 'Error',
@@ -71,12 +71,26 @@ const ObjectsByFunnel: React.FC<ObjectsByFunnelProps> = ({
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [funnelId]);
+  const handlePageChange = async (stepId: string, page: number) => {
+    setIsLoading(true);
+    const query: any = {};
+    query['page_' + stepId] = page;
+    console.log(query);
+    try {
+      setFunnelViewData(await getFunnelView({ id: funnelId, query }));
+    } catch (e) {
+      toast({
+        title: 'Error',
+        description: 'Failed to change page',
+        status: 'error',
+        duration: 2000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const funnel = funnelViewData?.funnel || {};
   const steps = funnelViewData?.steps || [];
-  let total = 0;
-  steps.forEach((s: any) => {
-    total += s.objects?.length || 0;
-  });
   let orderedSteps = steps.sort(
     (a, b) => a.step.step_order - b.step.step_order
   );
@@ -84,7 +98,8 @@ const ObjectsByFunnel: React.FC<ObjectsByFunnelProps> = ({
     <Box overflowX='auto'>
       <HStack>
         <HStack fontSize={'large'} fontWeight={'bold'}>
-          <Text>{funnel.name}</Text> {total ? <Text>({total})</Text> : null}
+          <Text>{funnel.name}</Text>{' '}
+          {funnel.object_count ? <Text>({funnel.object_count})</Text> : null}
         </HStack>
         {!isLoading && (
           <Button
@@ -144,6 +159,9 @@ const ObjectsByFunnel: React.FC<ObjectsByFunnelProps> = ({
                 step={stepInfo.step}
                 objects={stepInfo.objects || []}
                 onObjectMove={() => {}}
+                currentPage={stepInfo.currentPage}
+                totalCount={stepInfo.totalCount}
+                onPageChange={handlePageChange}
               />
             ))}
           </HStack>

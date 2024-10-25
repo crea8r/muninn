@@ -7,6 +7,7 @@ import {
   Collapse,
   Button,
   useDisclosure,
+  Flex,
 } from '@chakra-ui/react';
 import { ChevronDownIcon, ChevronUpIcon } from '@chakra-ui/icons';
 import { FunnelStep as FunnelStepType, Object } from 'src/types';
@@ -16,21 +17,21 @@ import { shortenText } from 'src/utils';
 interface FunnelStepProps {
   step: FunnelStepType;
   objects: Object[];
+  currentPage: number;
+  totalCount: number;
   onObjectMove: (objectId: string, newStepId: string) => void;
+  onPageChange: (stepId: string, page: number) => void;
 }
 
 const FunnelStep: React.FC<FunnelStepProps> = ({
   step,
   objects,
   onObjectMove,
+  currentPage,
+  totalCount,
+  onPageChange,
 }) => {
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
-  // const [groupedObjects, setGroupedObjects] = useState<{
-  //   [key: string]: Object[];
-  // }>({
-  //   ungrouped: objects,
-  // });
-
   const handleDragStart = (e: React.DragEvent, objectId: string) => {
     e.dataTransfer.setData('text/plain', objectId);
   };
@@ -94,6 +95,36 @@ const FunnelStep: React.FC<FunnelStepProps> = ({
                 })}
               </Box>
             ))}
+            <Flex
+              width={'100%'}
+              alignItems={'center'}
+              justifyContent={'space-between'}
+            >
+              <Button
+                size='sm'
+                onClick={() => {
+                  onPageChange(step.id, currentPage - 1);
+                }}
+                isDisabled={currentPage === 1}
+              >
+                Prev
+              </Button>
+              {totalCount > 0 && (
+                <Text>
+                  {currentPage} of {Math.ceil(totalCount / 10)}
+                </Text>
+              )}
+
+              <Button
+                size='sm'
+                onClick={() => {
+                  onPageChange(step.id, currentPage + 1);
+                }}
+                isDisabled={totalCount <= currentPage * 10}
+              >
+                Next
+              </Button>
+            </Flex>
           </VStack>
         </Collapse>
       </VStack>

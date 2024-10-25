@@ -65,10 +65,22 @@ export type FunnelViewType = {
   }[];
 };
 
-export const getFunnelView = async (id: string): Promise<FunnelViewType> => {
+export const getFunnelView = async (params: {
+  id: string;
+  query?: any;
+}): Promise<FunnelViewType> => {
+  // turn query into a string
+  const { id, query } = params;
+  let queryString;
+  if (query) {
+    queryString =
+      '?' +
+      window.Object.keys(query)
+        .map((key) => `${key}=${query[key]}`)
+        .join('&');
+  }
   const response = await axiosWithAuth().get(
-    `${API_URL}/setting/funnels/${id}/view`
+    `${API_URL}/setting/funnels/${id}/view${queryString || ''}`
   );
-  console.log(response.data);
   return response.data;
 };
