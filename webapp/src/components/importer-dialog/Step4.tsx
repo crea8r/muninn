@@ -38,7 +38,7 @@ const Step4: React.FC<Step4Props> = ({
       try {
         setIsLoading(true);
         const response = await listTags({ page: 1, pageSize: 100 });
-        setAvailableTags(response.tags);
+        setAvailableTags(response.tags || []);
       } catch (error) {
         console.error('Error fetching tags:', error);
       } finally {
