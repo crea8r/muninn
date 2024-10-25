@@ -28,7 +28,7 @@ import Papa from 'papaparse';
 import { shortenText } from 'src/utils';
 
 interface Step2Props {
-  handleFileChange: (data: string[][]) => void;
+  handleFileChange: (data: string[][], filename: string) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   fileName: string;
   csvData: string[][];
@@ -110,7 +110,7 @@ const Step2: React.FC<Step2Props> = ({
               hasHeader: true,
             });
             setTotalRows((results.data as string[][]).length - 1); // Subtract header row
-            handleFileChange(results.data as string[][]);
+            handleFileChange(results.data as string[][], file.name);
             setIsAnalyzing(false);
           },
           error: (error: any) => {
@@ -155,7 +155,7 @@ const Step2: React.FC<Step2Props> = ({
             data: results.data as string[][],
           });
           setTotalRows((results.data as string[][]).length - 1);
-          handleFileChange(results.data as string[][]);
+          handleFileChange(results.data as string[][], file.name);
         },
         error: (error: any) => {
           setParsingError(error.message);

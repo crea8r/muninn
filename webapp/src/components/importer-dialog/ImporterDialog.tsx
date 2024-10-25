@@ -153,8 +153,9 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
     fetchObjectTypes();
   }, [toast]);
 
-  const handleFileChange = (data: string[][]) => {
+  const handleFileChange = (data: string[][], filename: string) => {
     setCsvData(data);
+    setFileName(filename);
   };
 
   const handleObjectTypeSelect = (objectType: ObjectType) => {
