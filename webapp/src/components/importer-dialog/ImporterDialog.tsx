@@ -218,7 +218,7 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
           }
         });
         return {
-          id_string: row[idStringIndex],
+          id_string: trim(row[idStringIndex]),
           name: trim(row[nameIndex] || row[idStringIndex]),
           values: values,
           fact: buildFact(row),

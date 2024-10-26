@@ -46,17 +46,26 @@ const parseInitialFact = (
   initialFact: Fact | FactToCreate | undefined,
   object: Object | undefined
 ): FactFormData | undefined => {
+  const objstr = `@[${object?.name}](object:${object?.id})`;
   if (initialFact) {
+    let text = initialFact.text;
+    if (object && !text.includes(objstr)) {
+      text = `${objstr} ${text}`;
+    }
     let tmp: any = {
-      text: initialFact.text,
+      text,
       happenedAt: initialFact.happenedAt,
       location: initialFact.location,
+      objectIds: [],
     };
     if ('id' in initialFact) {
       tmp['id'] = initialFact.id;
     }
     if ('relatedObjects' in initialFact) {
       tmp['objectIds'] = initialFact.relatedObjects.map((obj) => obj.id);
+    }
+    if (object && !tmp['objectIds'].includes(object.id)) {
+      tmp['objectIds'].push(object.id);
     }
     return tmp;
   }
@@ -114,12 +123,13 @@ const FactForm: React.FC<FactFormProps> = ({
   const handleReset = () => {
     setFact(parseInitialFact(initialFact, requireObject));
   };
+
   const handleSave = async () => {
     const relatedObjectIds = fact.objectIds;
-    if (requireObject && !relatedObjectIds.includes(requireObject.id)) {
+    if (requireObject && !relatedObjectIds?.includes(requireObject.id)) {
       toast({
         title: 'Error adding fact',
-        description: `Fail to include ${requireObject.name}`,
+        description: `Please include ${requireObject.name} in the fact.`,
         status: 'error',
         duration: 5000,
         isClosable: true,
