@@ -171,6 +171,11 @@ func (h *FactHandler) List(w http.ResponseWriter, r *http.Request) {
 	if pageSize < 1 {
 		pageSize = 10
 	}
+	type RelatedObjectStruct struct{
+		ID   uuid.UUID `json:"id"`
+		Name string    `json:"name"`
+		Description string `json:"description"`
+	}
 
 	facts, err := h.db.ListFactsByOrgID(r.Context(), database.ListFactsByOrgIDParams{
 		OrgID:  uuid.MustParse(orgID),
@@ -178,7 +183,6 @@ func (h *FactHandler) List(w http.ResponseWriter, r *http.Request) {
 		Limit:  int32(pageSize),
 		Offset: int32((page - 1) * pageSize),
 	})
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -201,10 +205,14 @@ func (h *FactHandler) List(w http.ResponseWriter, r *http.Request) {
 		CreatorID      uuid.UUID    `json:"creatorId"`
 		CreatorName    string       `json:"creatorName"`
 		CreatedAt      time.Time    `json:"createdAt"`
-		RelatedObjects interface{}  `json:"relatedObjects"`
+		RelatedObjects []RelatedObjectStruct  `json:"relatedObjects"`
 	}
 	returningFacts := make([]FactType, len(facts))
+	
 	for i, fact := range facts {
+		relatedObjects := make([]RelatedObjectStruct, 0)
+		relatedObjectsBytes,_ := fact.RelatedObjects.([]byte)
+		json.Unmarshal(relatedObjectsBytes, &relatedObjects)
 		returningFacts[i] = FactType{
 			ID:             fact.ID,
 			Text:           fact.Text,
@@ -215,7 +223,7 @@ func (h *FactHandler) List(w http.ResponseWriter, r *http.Request) {
 			CreatorID:      fact.CreatorID,
 			CreatorName:    fact.CreatorName,
 			CreatedAt:      fact.CreatedAt,
-			RelatedObjects: fact.RelatedObjects,
+			RelatedObjects: relatedObjects,
 		}
 	}
 

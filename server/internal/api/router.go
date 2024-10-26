@@ -171,7 +171,9 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 
 		r.Route("/feeds", func(r chi.Router) {
 			r.Use(middleware.Permission)
-			r.Get("/", feedHandler.ListFeeds)
+			// r.Get("/", feedHandler.ListFeeds)
+			// change to fact since feed logic is not clear
+			r.Get("/", factHandler.List)
 			r.Post("/seen", feedHandler.MarkFeedsAsSeen)
 		})
 
