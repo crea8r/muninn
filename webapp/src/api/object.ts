@@ -1,10 +1,12 @@
 import { Object, NewObject, UpdateObject } from 'src/types/';
 import { axiosWithAuth } from './utils';
+import { trim } from 'lodash';
+import { ListObjectsRow } from 'src/types/Object';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 export interface ListObjectResponse {
-  objects: Object[];
+  objects: ListObjectsRow[];
   totalCount: number;
   page: number;
   pageSize: number;
@@ -15,8 +17,10 @@ export const fetchObjects = async (
   pageSize: number,
   search?: string
 ): Promise<ListObjectResponse> => {
+  let searchQuery = search ? trim(search) : '';
+  searchQuery = searchQuery.replaceAll(' ', '&');
   const response = await axiosWithAuth().get(`${API_URL}/objects`, {
-    params: { page, pageSize, search },
+    params: { page, pageSize, search: searchQuery },
   });
   return response.data;
 };
@@ -35,6 +39,13 @@ export const updateObject = async (object: UpdateObject) => {
   const response = await axiosWithAuth().put(
     `${API_URL}/objects/${object.id}`,
     object
+  );
+  return response.data;
+};
+
+export const deleteObject = async (objectId: string) => {
+  const response = await axiosWithAuth().delete(
+    `${API_URL}/objects/${objectId}`
   );
   return response.data;
 };

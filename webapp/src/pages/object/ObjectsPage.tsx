@@ -19,18 +19,19 @@ import {
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { Link, useHistory, useLocation } from 'react-router-dom';
-import { NewObject, Object, Tag } from 'src/types/';
+import { NewObject, Tag } from 'src/types/';
 import { fetchObjects, createObject } from 'src/api/object';
 import ImporterDialog from 'src/components/importer-dialog/ImporterDialog';
 import { ObjectForm } from 'src/components/forms/';
 import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 import { shortenText } from 'src/utils';
 import SmartImage from 'src/components/SmartImage';
-import { FiRefreshCw } from 'react-icons/fi';
+import { FiGitMerge, FiRefreshCw } from 'react-icons/fi';
 import queryString from 'query-string';
 import debounce from 'lodash/debounce';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
+import { ListObjectsRow } from 'src/types/Object';
 
 const ITEMS_PER_PAGE = 5;
 const DEBOUNCE_DELAY = 300; // ms
@@ -38,7 +39,7 @@ const DEBOUNCE_DELAY = 300; // ms
 const ObjectsPage: React.FC = () => {
   const { globalData, setGlobalPerPage } = useGlobalContext();
 
-  const [objects, setObjects] = useState<Object[]>([]);
+  const [objects, setObjects] = useState<ListObjectsRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -218,6 +219,11 @@ const ObjectsPage: React.FC = () => {
               icon={<FiRefreshCw />}
               onClick={loadObjects}
             />
+            <IconButton
+              aria-label='Merge objects'
+              icon={<FiGitMerge />}
+              onClick={() => history.push('/merge')}
+            />
           </HStack>
         </Flex>
 
@@ -321,7 +327,7 @@ const ObjectsPage: React.FC = () => {
 };
 
 // Separate component for rendering each object row
-const ObjectRow: React.FC<{ obj: Object }> = React.memo(({ obj }) => {
+const ObjectRow: React.FC<{ obj: ListObjectsRow }> = React.memo(({ obj }) => {
   let str: string[] = [];
   let imgUrls: string[] = [];
   obj.typeValues.forEach((otv) => {
@@ -336,7 +342,20 @@ const ObjectRow: React.FC<{ obj: Object }> = React.memo(({ obj }) => {
     });
   });
   let type_values = shortenText(str.join(', ') || 'No type values', 50);
-
+  let reason = '';
+  switch (obj.matchSource) {
+    case 'object_content':
+      reason = obj.objHeadline;
+      break;
+    case 'type_values':
+      reason = obj.typeValueHeadline;
+      break;
+    case 'related_facts':
+      reason = obj.factHeadline;
+      break;
+    default:
+      break;
+  }
   return (
     <Flex
       _hover={{ bg: 'gray.100' }}
@@ -392,7 +411,13 @@ const ObjectRow: React.FC<{ obj: Object }> = React.memo(({ obj }) => {
           </Box>
         )}
       </VStack>
-      <Box width={{ base: '100%', md: '40%' }}>{type_values}</Box>
+      <Box width={{ base: '100%', md: '40%' }}>
+        <Text>{type_values}</Text>
+        <div
+          dangerouslySetInnerHTML={{ __html: reason }}
+          style={{ fontWeight: 'lighter' }}
+        />
+      </Box>
     </Flex>
   );
 });

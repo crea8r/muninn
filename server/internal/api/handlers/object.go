@@ -118,7 +118,7 @@ func (h *ObjectHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response := struct {
-		Objects    []models.Object `json:"objects"`
+		Objects    []models.ListObjectsByOrgIdRow `json:"objects"`
 		TotalCount int64           `json:"totalCount"`
 		Page       int             `json:"page"`
 		PageSize   int             `json:"pageSize"`

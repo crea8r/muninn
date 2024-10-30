@@ -117,6 +117,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
               }}
               fact={editingFact}
               requireObject={object}
+              mode='preview'
             />
           </ModalBody>
         </ModalContent>

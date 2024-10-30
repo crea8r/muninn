@@ -22,6 +22,7 @@ interface MarkdownEditorProps {
   onChange: (content: string, relatedItems: any[]) => void;
   filters?: SpotLightFilter[];
   isDisabled?: boolean;
+  mode?: 'edit' | 'preview';
 }
 
 const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
@@ -34,12 +35,15 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     SpotLightFilter.TASK,
   ],
   isDisabled = false,
+  mode = 'edit',
 }) => {
   const [value, setValue] = useState(initialValue);
   const [relatedItems, setRelatedItems] = useState<any[]>([]);
   const { openSpotLight } = useSpotLight();
   const editorRef = useRef<any>(null);
-
+  const [selectedTabIndex, setSelectedTabIndex] = useState(
+    mode === 'edit' ? 0 : 1
+  );
   useEffect(() => {
     setValue(initialValue);
     const newRelatedItems = extractRelatedItems(initialValue);
@@ -99,7 +103,12 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
   return (
     <Box mt={2} mb={2}>
-      <Tabs>
+      <Tabs
+        index={selectedTabIndex}
+        onChange={(e) => {
+          setSelectedTabIndex(selectedTabIndex === 0 ? 1 : 0);
+        }}
+      >
         <TabList>
           <Tab>Write</Tab>
           <Tab>Preview</Tab>

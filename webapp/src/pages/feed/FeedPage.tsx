@@ -20,7 +20,6 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import LoadingPanel from 'src/components/LoadingPanel';
 import FactItem from 'src/components/FactItem';
 import { Fact } from 'src/types';
-import { useHistory } from 'react-router-dom';
 
 // const FeedItemSwitch = (data: any) => {
 //   const response = data.details.response;
@@ -56,7 +55,6 @@ const FeedPage: React.FC = () => {
   const [feedItems, setFeedItems] = useState<Fact[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
-  const history = useHistory();
   const loadFeed = async () => {
     try {
       setIsLoading(true);
@@ -115,16 +113,7 @@ const FeedPage: React.FC = () => {
               //     {dayjs(item.createdAt).fromNow()}
               //   </Text>
               // </Box>
-              <FactItem
-                key={item.id}
-                fact={item as Fact}
-                handleClick={(fact: Fact) => {
-                  const relatedObjects = fact.relatedObjects;
-                  if (typeof relatedObjects === 'string') {
-                    history.push(`/objects/${relatedObjects}`);
-                  }
-                }}
-              />
+              <FactItem key={item.id} fact={item as Fact} />
             );
           })}
         </VStack>

@@ -6,6 +6,13 @@ export const normalizeToTagStyle = (text: string) => {
     .replace(/[^\w-]/g, ''); // Remove all non-alphanumeric characters except hyphens
 };
 
+export const normalizeToIdStyle = (text: string) => {
+  return text
+    .toLowerCase() // Convert to lowercase
+    .trim() // Remove leading/trailing spaces
+    .replace(/\s+/g, '-'); // Replace spaces with hyphens
+};
+
 export const generateRandomPassword = () => {
   const randomPassword = Math.random().toString(36).slice(-8);
   return randomPassword;

@@ -11,6 +11,7 @@ import {
   addTagToObject,
   removeTagFromObject,
   updateObjectStepSubStatus,
+  deleteObject,
 } from './object';
 import {
   createTask,
@@ -36,6 +37,7 @@ export {
   fetchObjects,
   fetchObjectDetails,
   updateObject,
+  deleteObject,
   addObjectTypeValue,
   addOrMoveObjectInFunnel,
   deleteObjectFromFunnel,

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Box } from '@chakra-ui/react';
+import { Box, Button } from '@chakra-ui/react';
 import remarkGfm from 'remark-gfm';
 
 interface MarkdownDisplayProps {
@@ -53,18 +53,17 @@ const MarkdownDisplay: React.FC<MarkdownDisplayProps> = ({
         {displayedContent}
       </ReactMarkdown>
       {shouldShorten && (
-        <button
+        <Button
           onClick={toggleExpand}
+          color={'blue.300'}
+          variant={'link'}
+          padding={0}
           style={{
-            color: 'blue',
             textDecoration: 'underline',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
           }}
         >
           {isExpanded ? 'See less' : 'See more'}
-        </button>
+        </Button>
       )}
     </Box>
   );

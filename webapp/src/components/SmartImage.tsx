@@ -30,9 +30,8 @@ const SmartImage = ({ src, alt, style = {} }: SmartImageProps) => {
         alt={''}
         style={style}
         onError={(e) => {
-          if (currentSmartImageIndex < src.length) {
+          if (currentSmartImageIndex < src.length - 1) {
             setCurrentSmartImageIndex(currentSmartImageIndex + 1);
-            console.log(src[currentSmartImageIndex]);
           } else {
             e.currentTarget.src = NoImage;
           }
@@ -40,7 +39,7 @@ const SmartImage = ({ src, alt, style = {} }: SmartImageProps) => {
       />
     );
   }
-  return <img src='https://via.placeholder.com/150' alt='placeholder' />;
+  return <></>;
 };
 
 export default SmartImage;

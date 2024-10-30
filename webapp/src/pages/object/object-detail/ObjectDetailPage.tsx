@@ -50,8 +50,9 @@ import {
   createTask,
   updateTask,
   deleteTask,
+  deleteObject,
 } from 'src/api';
-import { useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import {
   addObjectTypeValue,
   addTagToObject,
@@ -96,6 +97,7 @@ const ObjectDetailPage: React.FC = () => {
   } = useDisclosure();
   const [imgUrls, setImgUrls] = useState<string[]>([]);
   const [tabIndex, setTabIndex] = useState(1);
+  const history = useHistory();
 
   const handleTabIndexChange = (index: number) => {
     setTabIndex(index);
@@ -170,6 +172,13 @@ const ObjectDetailPage: React.FC = () => {
     setIsLoading(true);
     await updateObject(updatedObject);
     setForceUpdate(forceUpdate + 1);
+    setIsLoading(false);
+  };
+
+  const handleDeleteObject = async (id: string) => {
+    setIsLoading(true);
+    await deleteObject(id);
+    history.push('/objects');
     setIsLoading(false);
   };
 
@@ -449,6 +458,7 @@ const ObjectDetailPage: React.FC = () => {
               isOpen={showEditObject}
               onClose={() => setShowEditObject(false)}
               onUpdateObject={handleUpdateObject}
+              onDeleteObject={handleDeleteObject}
             />
           )}
 

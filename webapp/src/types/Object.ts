@@ -11,6 +11,23 @@ export interface Object {
   typeValues: ObjectTypeValue[];
 }
 
+export interface ListObjectsRow {
+  id: any;
+  name: string;
+  idString: string;
+  description: string;
+  tags: Tag[];
+  createdAt: string;
+  updatedAt: string;
+  typeValues: ObjectTypeValue[];
+
+  searchRank: number;
+  matchSource: string;
+  objHeadline: string;
+  typeValueHeadline: string;
+  factHeadline: string;
+}
+
 export type NewObject = Omit<
   Object,
   'id' | 'createdAt' | 'updatedAt' | 'tags' | 'typeValues'

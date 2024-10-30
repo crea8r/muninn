@@ -36,6 +36,8 @@ import TaskItem from '../TaskItem';
 import FactItem from '../FactItem';
 import LoadingPanel from '../LoadingPanel';
 import SearchInput from './SearchInput';
+import { shortenText } from 'src/utils';
+import { ListObjectsRow } from 'src/types/Object';
 
 const ITEMS_PER_PAGE = 6;
 const MIN_SEARCH_DELAY = 1000;
@@ -274,7 +276,7 @@ const SpotLight: React.FC = () => {
         return (
           <Box
             key={result.id}
-            p={2}
+            p={1}
             borderRadius='md'
             cursor='pointer'
             _hover={{ bg: 'blue.100' }}
@@ -312,6 +314,44 @@ const SpotLight: React.FC = () => {
             fact={result as Fact}
             handleClick={() => {}}
           />
+        );
+      case 'object':
+        const r = result as ListObjectsRow;
+        let reason = '';
+        switch (r.matchSource) {
+          case 'object_content':
+            reason = r.objHeadline;
+            break;
+          case 'type_values':
+            reason = r.typeValueHeadline;
+            break;
+          case 'related_facts':
+            reason = r.factHeadline;
+            break;
+          default:
+            break;
+        }
+        return (
+          <Flex
+            key={result.id}
+            p={1}
+            borderRadius='md'
+            cursor='pointer'
+            _hover={{ bg: 'blue.100' }}
+            onClick={() => {
+              onSelect({
+                type: result.type,
+                payload: result,
+              });
+            }}
+            direction='column'
+          >
+            <Text>{shortenText(result.name, 25)}</Text>
+            <div
+              dangerouslySetInnerHTML={{ __html: reason }}
+              style={{ fontWeight: 'lighter' }}
+            />
+          </Flex>
         );
       default:
         return (

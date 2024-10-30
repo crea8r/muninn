@@ -20,6 +20,8 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { NewObject, UpdateObject } from 'src/types';
 import MarkdownEditor from 'src/components/mardown/MardownEditor';
+import { normalizeToIdStyle } from 'src/utils/text';
+import authService from 'src/services/authService';
 
 interface ObjectFormProps {
   isOpen: boolean;
@@ -27,6 +29,7 @@ interface ObjectFormProps {
   onCreateObject?: (newObject: NewObject) => Promise<void>;
   initialObject?: UpdateObject; // Optional prop for editing an existing object
   onUpdateObject?: (updatedObject: UpdateObject) => Promise<void>; // Optional prop for updating an existing object
+  onDeleteObject?: (objectId: string) => Promise<void>; // Optional prop for deleting an existing object
 }
 
 const ObjectForm: React.FC<ObjectFormProps> = ({
@@ -35,6 +38,7 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
   onCreateObject,
   initialObject,
   onUpdateObject,
+  onDeleteObject,
 }) => {
   const [name, setName] = useState(initialObject?.name || '');
   const [idString, setIDString] = useState(initialObject?.idString || uuidv4());
@@ -147,12 +151,14 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
                 <FormHelperText>
                   Use unique ID string to import object data from csv or any
                   thirdparty system. You can let the system generate one for you
-                  or create one yourself.
+                  or create one yourself. Use '-' to replace space.
                 </FormHelperText>
                 <InputGroup marginTop={4}>
                   <Input
                     value={idString}
-                    onChange={(e) => setIDString(e.target.value)}
+                    onChange={(e) =>
+                      setIDString(normalizeToIdStyle(e.target.value))
+                    }
                     placeholder='Object id string, useful for adding info from csv'
                     isDisabled={isSubmitting}
                   />
@@ -187,6 +193,30 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
             <Button colorScheme='blue' type='submit' isLoading={isSubmitting}>
               {initialObject ? 'Edit' : 'Create'}
             </Button>
+            {authService.hasRole('admin') &&
+              onDeleteObject &&
+              initialObject && (
+                <Button
+                  ml={3}
+                  colorScheme='red'
+                  onClick={() => {
+                    const cfm = window.confirm(
+                      'Are you sure you want to delete this object?'
+                    );
+                    if (!cfm) {
+                      return;
+                    }
+                    onDeleteObject(initialObject.id);
+                    onClose();
+                    toast({
+                      title: 'Object deleted',
+                      description: 'The object',
+                    });
+                  }}
+                >
+                  Delete
+                </Button>
+              )}
           </ModalFooter>
         </form>
       </ModalContent>

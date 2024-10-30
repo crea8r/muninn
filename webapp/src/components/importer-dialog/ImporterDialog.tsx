@@ -31,6 +31,7 @@ import Step2 from './Step2';
 import Step4 from './Step4';
 import { ImportHistory, ImportingNotification } from './ImportHistory';
 import { trim } from 'lodash';
+import { normalizeToIdStyle } from 'src/utils/text';
 
 interface ImporterDialogProps {
   isOpen: boolean;
@@ -218,7 +219,7 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
           }
         });
         return {
-          id_string: trim(row[idStringIndex]),
+          id_string: normalizeToIdStyle(row[idStringIndex]),
           name: trim(row[nameIndex] || row[idStringIndex]),
           values: values,
           fact: buildFact(row),

@@ -32,6 +32,7 @@ interface FactFormProps {
   requireObject?: Object;
   fact?: Fact | FactToCreate;
   showPanel?: boolean;
+  mode?: 'edit' | 'preview';
 }
 
 interface FactFormData {
@@ -99,6 +100,7 @@ const FactForm: React.FC<FactFormProps> = ({
   fact: initialFact,
   showPanel = true,
   onChange,
+  mode = 'edit',
 }) => {
   const [fact, setFact] = useState<any>(
     parseInitialFact(initialFact, requireObject)
@@ -228,6 +230,7 @@ const FactForm: React.FC<FactFormProps> = ({
       <MarkdownEditor
         initialValue={fact.text}
         filters={[SpotLightFilter.OBJECT]}
+        mode={mode}
         onChange={(content: string, relatedItems) => {
           let newFact = { ...fact };
           try {

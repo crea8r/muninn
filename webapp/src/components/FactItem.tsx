@@ -7,7 +7,7 @@ import { shortenText } from 'src/utils';
 
 type FactItemProps = {
   fact: Fact;
-  handleClick: (f: Fact) => void;
+  handleClick?: (f: Fact) => void;
 };
 
 const FactItem = ({ fact, handleClick }: FactItemProps) => {
@@ -20,8 +20,8 @@ const FactItem = ({ fact, handleClick }: FactItemProps) => {
       bg='white'
       borderRadius='md'
       boxShadow='sm'
-      onClick={() => handleClick(fact)}
-      cursor='pointer'
+      onClick={() => (handleClick ? handleClick(fact) : null)}
+      cursor={handleClick ? 'pointer' : 'default'}
       _hover={{ boxShadow: 'md' }}
     >
       <MarkdownDisplay content={fact.text} characterLimit={200} />

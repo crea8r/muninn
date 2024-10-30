@@ -23,6 +23,21 @@ type Object struct {
 	TypeValues  []ObjectTypeValue `json:"typeValues"`
 }
 
+type ListObjectsByOrgIdRow struct {
+	ID          uuid.UUID         `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	IDString    string            `json:"idString"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	MatchSource       string      `json:"matchSource"`
+	ObjHeadline       string 			`json:"objHeadline"`
+	FactHeadline      string		  `json:"factHeadline"`
+	TypeValueHeadline string      `json:"typeValueHeadline"`
+	SearchRank        float64		  `json:"searchRank"`
+	Tags              interface{} `json:"tags"`
+	TypeValues        interface{} `json:"typeValues"`
+}
+
 type ObjectTypeValue struct {
 	ID           uuid.UUID         `json:"id"`
 	ObjectTypeID uuid.UUID         `json:"objectTypeId"`
@@ -126,7 +141,7 @@ func (m *ObjectModel) Delete(ctx context.Context, id uuid.UUID) error {
 	return m.DB.DeleteObject(ctx, id)
 }
 
-func (m *ObjectModel) List(ctx context.Context, orgID uuid.UUID, search string, limit, offset int32) ([]Object, int64, error) {
+func (m *ObjectModel) List(ctx context.Context, orgID uuid.UUID, search string, limit, offset int32) ([]ListObjectsByOrgIdRow, int64, error) {
 	objects, err := m.DB.ListObjectsByOrgID(ctx, database.ListObjectsByOrgIDParams{
 		OrgID:  orgID,
 		Column2: search,
@@ -143,36 +158,42 @@ func (m *ObjectModel) List(ctx context.Context, orgID uuid.UUID, search string, 
 	if err != nil {
 		return nil, 0, err
 	}
-	result := make([]Object, len(objects))
-	for i, obj := range objects {
+	result := make([]ListObjectsByOrgIdRow, len(objects))
+	for i,obj := range objects {
 		var tags []database.Tag
 		var typeValues []ObjectTypeValue
-		tagsBytes, ok := obj.Tags.([]byte)
-		if !ok {
-			return nil, 0, fmt.Errorf("expected []byte for Tags, got %T", obj.Tags)
+
+		tagBytes,_ := obj.Tags.([]byte)
+		typeValuesBytes,_ := obj.TypeValues.([]byte)
+
+		// Unmarshal the byte slices into their respective types
+		if len(tagBytes) > 0 {
+			if err := json.Unmarshal(tagBytes, &tags); err != nil {
+				return nil, 0, err
+			}
 		}
-		
-		err = json.Unmarshal(tagsBytes, &tags)
-		if err != nil {
-			return nil, 0, err
+		if len(typeValuesBytes) > 0 {
+			if err := json.Unmarshal(typeValuesBytes, &typeValues); err != nil {
+				return nil, 0, err
+			}
 		}
-		typeValuesBytes, ok := obj.TypeValues.([]byte)
-		if !ok {
-			return nil, 0, fmt.Errorf("expected []byte for TypeValues, got %T", obj.TypeValues)
+		finalSearchRank := 0.0
+		if obj.SearchRank != nil {
+			finalSearchRank = obj.SearchRank.(float64)
 		}
-		err = json.Unmarshal(typeValuesBytes, &typeValues)
-		if err != nil {
-			return nil, 0, err
-		}
-		
-		result[i] = Object{
-			ID:          obj.ID,
-			Name:        obj.Name,
-			Description: obj.Description,
-			IDString:    obj.IDString,
-			CreatedAt:   obj.CreatedAt,
-			Tags:        tags,
-			TypeValues:  typeValues,
+		result[i] = ListObjectsByOrgIdRow{
+			ID: 				obj.ID,
+			Name: 				obj.Name,
+			Description: 		obj.Description,
+			IDString: 			obj.IDString,
+			CreatedAt: 			obj.CreatedAt,
+			MatchSource: 		obj.MatchSource,
+			ObjHeadline: 		obj.ObjHeadline.(string),
+			FactHeadline: 		obj.FactHeadline.(string),
+			TypeValueHeadline: 	obj.TypeValueHeadline.(string),
+			SearchRank: 		finalSearchRank,
+			Tags: 				tags,
+			TypeValues: 		typeValues,
 		}
 	}
 
