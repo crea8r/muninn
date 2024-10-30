@@ -81,4 +81,6 @@ export interface ObjectTypeFilter {
   tags: Tag[];
   objectTypeFields: { [key: string]: any };
   displayColumns?: string[];
+  searchOrder?: string;
+  search?: string;
 }

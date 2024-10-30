@@ -2,17 +2,22 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/crea8r/muninn/server/internal/api/handlers"
 	"github.com/crea8r/muninn/server/internal/api/middleware"
 	"github.com/crea8r/muninn/server/internal/database"
 	"github.com/crea8r/muninn/server/internal/models"
+	"github.com/crea8r/muninn/server/internal/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
 )
 
 func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
+	debug := os.Getenv("DEBUG_SQL") == "true"
+	fmt.Println("DEBUG_SQL: ", debug)
 	r := chi.NewRouter()
 
 	corsMiddleware := cors.New(cors.Options{
@@ -25,6 +30,9 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	})
 	r.Use(corsMiddleware.Handler)
+
+	objectService := service.NewObjectService(queries, debug)
+	advancedObjectHandler := handlers.NewAdvancedObjectHandler(objectService)
 
 	tagHandler := handlers.NewTagHandler(queries)
 	objectTypeHandler := handlers.NewObjectTypeHandler(queries)
@@ -112,6 +120,9 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 			r.Delete("/steps/{id}", objStepHandler.SoftDelete)
 			r.Delete("/steps/{id}/force", objStepHandler.HardDelete)
 			r.Put("/steps/{id}/sub-status", objStepHandler.UpdateSubStatus)
+
+			// Object Advanced routes
+			r.Get("/advanced", advancedObjectHandler.ListObjects)
 		})
 		
 		r.Route("/facts", func(r chi.Router) {

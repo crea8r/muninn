@@ -6,7 +6,6 @@ const createDynamicComponent = (
   component: React.ComponentType<any>,
   props: any
 ) => {
-  console.log('props:', props);
   return React.createElement(component, props);
 };
 

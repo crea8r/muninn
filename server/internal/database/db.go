@@ -54,6 +54,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.countObjectTypesStmt, err = db.PrepareContext(ctx, countObjectTypes); err != nil {
 		return nil, fmt.Errorf("error preparing query CountObjectTypes: %w", err)
 	}
+	if q.countObjectsAdvancedStmt, err = db.PrepareContext(ctx, countObjectsAdvanced); err != nil {
+		return nil, fmt.Errorf("error preparing query CountObjectsAdvanced: %w", err)
+	}
 	if q.countObjectsByOrgIDStmt, err = db.PrepareContext(ctx, countObjectsByOrgID); err != nil {
 		return nil, fmt.Errorf("error preparing query CountObjectsByOrgID: %w", err)
 	}
@@ -237,6 +240,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.listObjectTypesStmt, err = db.PrepareContext(ctx, listObjectTypes); err != nil {
 		return nil, fmt.Errorf("error preparing query ListObjectTypes: %w", err)
 	}
+	if q.listObjectsAdvancedStmt, err = db.PrepareContext(ctx, listObjectsAdvanced); err != nil {
+		return nil, fmt.Errorf("error preparing query ListObjectsAdvanced: %w", err)
+	}
 	if q.listObjectsByOrgIDStmt, err = db.PrepareContext(ctx, listObjectsByOrgID); err != nil {
 		return nil, fmt.Errorf("error preparing query ListObjectsByOrgID: %w", err)
 	}
@@ -395,6 +401,11 @@ func (q *Queries) Close() error {
 	if q.countObjectTypesStmt != nil {
 		if cerr := q.countObjectTypesStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing countObjectTypesStmt: %w", cerr)
+		}
+	}
+	if q.countObjectsAdvancedStmt != nil {
+		if cerr := q.countObjectsAdvancedStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countObjectsAdvancedStmt: %w", cerr)
 		}
 	}
 	if q.countObjectsByOrgIDStmt != nil {
@@ -702,6 +713,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing listObjectTypesStmt: %w", cerr)
 		}
 	}
+	if q.listObjectsAdvancedStmt != nil {
+		if cerr := q.listObjectsAdvancedStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listObjectsAdvancedStmt: %w", cerr)
+		}
+	}
 	if q.listObjectsByOrgIDStmt != nil {
 		if cerr := q.listObjectsByOrgIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listObjectsByOrgIDStmt: %w", cerr)
@@ -926,6 +942,7 @@ type Queries struct {
 	countImportTasksStmt                     *sql.Stmt
 	countListsByOrgIDStmt                    *sql.Stmt
 	countObjectTypesStmt                     *sql.Stmt
+	countObjectsAdvancedStmt                 *sql.Stmt
 	countObjectsByOrgIDStmt                  *sql.Stmt
 	countObjectsByTypeWithAdvancedFilterStmt *sql.Stmt
 	countObjectsForStepStmt                  *sql.Stmt
@@ -987,6 +1004,7 @@ type Queries struct {
 	listFunnelsStmt                          *sql.Stmt
 	listListsByOrgIDStmt                     *sql.Stmt
 	listObjectTypesStmt                      *sql.Stmt
+	listObjectsAdvancedStmt                  *sql.Stmt
 	listObjectsByOrgIDStmt                   *sql.Stmt
 	listObjectsByTaskIDStmt                  *sql.Stmt
 	listObjectsByTypeWithAdvancedFilterStmt  *sql.Stmt
@@ -1038,6 +1056,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		countImportTasksStmt:                     q.countImportTasksStmt,
 		countListsByOrgIDStmt:                    q.countListsByOrgIDStmt,
 		countObjectTypesStmt:                     q.countObjectTypesStmt,
+		countObjectsAdvancedStmt:                 q.countObjectsAdvancedStmt,
 		countObjectsByOrgIDStmt:                  q.countObjectsByOrgIDStmt,
 		countObjectsByTypeWithAdvancedFilterStmt: q.countObjectsByTypeWithAdvancedFilterStmt,
 		countObjectsForStepStmt:                  q.countObjectsForStepStmt,
@@ -1099,6 +1118,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		listFunnelsStmt:                          q.listFunnelsStmt,
 		listListsByOrgIDStmt:                     q.listListsByOrgIDStmt,
 		listObjectTypesStmt:                      q.listObjectTypesStmt,
+		listObjectsAdvancedStmt:                  q.listObjectsAdvancedStmt,
 		listObjectsByOrgIDStmt:                   q.listObjectsByOrgIDStmt,
 		listObjectsByTaskIDStmt:                  q.listObjectsByTaskIDStmt,
 		listObjectsByTypeWithAdvancedFilterStmt:  q.listObjectsByTypeWithAdvancedFilterStmt,

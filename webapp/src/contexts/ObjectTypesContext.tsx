@@ -9,6 +9,7 @@ import React, {
 import { ObjectType } from 'src/types';
 import { listObjectTypes } from 'src/api/objType';
 import { useToast } from '@chakra-ui/react';
+import authService from 'src/services/authService';
 
 export interface ObjectTypesCache {
   [key: string]: string; // Maps ObjectType ID to name
@@ -110,8 +111,9 @@ export const ObjectTypesProvider: React.FC<{ children: React.ReactNode }> = ({
         fetchObjectTypes(true);
       }
     };
-
-    loadInitialData();
+    if (authService.isAuthenticated()) {
+      loadInitialData();
+    }
   }, [fetchObjectTypes]);
 
   // Force refresh function

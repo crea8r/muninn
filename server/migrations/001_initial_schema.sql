@@ -459,3 +459,18 @@ CREATE TRIGGER trigger_update_import_task_updated_at
 BEFORE UPDATE ON import_task
 FOR EACH ROW
 EXECUTE FUNCTION update_import_task_updated_at();
+
+-- Indexes for step filtering
+CREATE INDEX idx_obj_step_obj_id ON obj_step(obj_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_obj_step_step_id ON obj_step(step_id) WHERE deleted_at IS NULL;
+
+-- Indexes for type value searching
+CREATE INDEX idx_obj_type_value_obj_id ON obj_type_value(obj_id);
+CREATE INDEX idx_obj_type_value_type_values ON obj_type_value USING gin (type_values);
+
+-- Indexes for fact counting and dates
+CREATE INDEX idx_obj_fact_obj_id ON obj_fact(obj_id);
+CREATE INDEX idx_fact_created_at ON fact(created_at);
+
+-- Index for text search
+CREATE INDEX idx_obj_text_search ON obj USING gin (to_tsvector('english', name || ' ' || description || ' ' || id_string));
