@@ -474,3 +474,5 @@ CREATE INDEX idx_fact_created_at ON fact(created_at);
 
 -- Index for text search
 CREATE INDEX idx_obj_text_search ON obj USING gin (to_tsvector('english', name || ' ' || description || ' ' || id_string));
+
+CREATE INDEX idx_obj_type_value_type_id ON obj_type_value(type_id);

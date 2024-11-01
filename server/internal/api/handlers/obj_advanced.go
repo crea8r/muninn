@@ -37,9 +37,7 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 // parseUUIDs helper function to parse comma-separated UUIDs
 func parseUUIDs(input string) ([]uuid.UUID, error) {
 	if input == "" {
-		emptyArray := make([]uuid.UUID, 0)
-		fmt.Println("return empty array: ",emptyArray)
-		return emptyArray, nil
+		return nil, nil
 	}
 
 	var result []uuid.UUID
@@ -59,9 +57,9 @@ func parseTypeValueCriteria(r *http.Request) ([]json.RawMessage, error) {
 	for i := 1; i <= 3; i++ {
 		value := r.URL.Query().Get(fmt.Sprintf("type_value_criteria%d", i))
 		if value == "" {
-			value = "{}"
+			continue
 		}
-
+		fmt.Println("value:", value)
 		if !json.Valid([]byte(value)) {
 			return nil, fmt.Errorf("invalid JSON in type_value_criteria%d", i)
 		}
@@ -103,9 +101,16 @@ func (h *AdvancedObjectHandler) ListObjects(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	typeIDs, err := parseUUIDs(r.URL.Query().Get("type_ids"))
+	if err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: fmt.Sprintf("invalid type IDs: %v", err)})
+			return
+	}
+
 	// Parse type value criteria
 	typeValueCriteria, err := parseTypeValueCriteria(r)
 	if err != nil {
+		fmt.Println("error in typeValueCriteria", err)
 		writeJSON(w, http.StatusBadRequest, errorResponse{Error: fmt.Sprintf("invalid type value criteria: %v", err)})
 		return
 	}
@@ -113,23 +118,25 @@ func (h *AdvancedObjectHandler) ListObjects(w http.ResponseWriter, r *http.Reque
 	// Parse ordering parameters
 	orderBy := service.OrderBy(r.URL.Query().Get("order_by"))
 	typeValueField := r.URL.Query().Get("type_value_field")
-	ascending := strings.ToLower(r.URL.Query().Get("ascending")) == "true"
+	// if ascending is not set, default to false (descending)
+	ascending := r.URL.Query().Get("ascending") == "true"
 
 	// Create service parameters
 	params := service.ListObjectsParams{
 		Params: pagination.Params{
-			Page:     int32(page),
-			PageSize: int32(pageSize),
+				Page:     int32(page),
+				PageSize: int32(pageSize),
 		},
 		OrgID:             orgID,
 		SearchQuery:       r.URL.Query().Get("q"),
 		StepIDs:           stepIDs,
 		TagIDs:            tagIDs,
+		TypeIDs:           typeIDs,
 		TypeValueCriteria: typeValueCriteria,
 		OrderBy:           orderBy,
 		TypeValueField:    typeValueField,
-		Ascending:         ascending,
-	}
+		Ascending:    ascending,
+}
 	fmt.Println("params", params)
 
 	// Get results from service

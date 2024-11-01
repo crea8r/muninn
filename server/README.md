@@ -1,5 +1,9 @@
 # Instruction
 
+## Development note
+
+Change `ListObjectsAdvancedParams` and `CountObjectsAdvancedParams`: all `json.RawMessage` turn to `*json.RawMessage`.
+
 ## Production
 
 Service
