@@ -182,7 +182,14 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
           ) : (
             // Data rows
             data?.map((item, rowIndex) => (
-              <Tr key={item.id || rowIndex}>
+              <Tr
+                key={item.id || rowIndex}
+                _hover={{
+                  background: 'gray.100',
+                }}
+                cursor={'pointer'}
+                onClick={() => window.open(`/objects/${item.id}`, '_blank')}
+              >
                 {columns.map((column) => (
                   <Td
                     key={`${column.objectTypeId || ''}:${column.field}`}
