@@ -15,6 +15,7 @@ import { Link as RouterLink, useHistory } from 'react-router-dom';
 import authService from 'src/services/authService';
 import { login } from 'src/api/auth';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
+import LoadingScreen from 'src/components/LoadingScreen';
 
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -51,14 +52,8 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  return (
-    <Box
-      minH='100vh'
-      display='flex'
-      alignItems='center'
-      justifyContent='center'
-      bg='gray.50'
-    >
+  const renderLogin = () => {
+    return (
       <Box w='full' maxW='md' p={8} bg='white' borderRadius='lg' boxShadow='lg'>
         <VStack spacing={8}>
           <Heading as='h1' size='xl' color='var(--color-primary)'>
@@ -107,6 +102,18 @@ const LoginPage: React.FC = () => {
           </Text>
         </VStack>
       </Box>
+    );
+  };
+
+  return (
+    <Box
+      minH='100vh'
+      display='flex'
+      alignItems='center'
+      justifyContent='center'
+      bg='gray.50'
+    >
+      {isLoading ? <LoadingScreen /> : renderLogin()}
     </Box>
   );
 };

@@ -61,7 +61,7 @@ const App: React.FC = () => {
     if (details) {
       document.title = details.orgName;
     } else {
-      document.title = 'Muninn, shape your contacts your ways';
+      document.title = 'Muninn, shape your data your ways';
     }
   }, [details]);
 
