@@ -8,7 +8,7 @@ import (
 // PaginatedResult represents a generic paginated result
 type PaginatedResult[T any] struct {
     Items      []T   `json:"items"`
-    TotalCount int64 `json:"total_count"`
+    TotalCount interface{} `json:"total_count"`
     Page       int32 `json:"page"`
     PageSize   int32 `json:"page_size"`
 }

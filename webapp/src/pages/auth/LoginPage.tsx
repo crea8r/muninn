@@ -22,7 +22,7 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const history = useHistory();
   const toast = useToast();
-  const { refreshGlobalData } = useGlobalContext();
+  const { refreshAll } = useGlobalContext();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
-      await refreshGlobalData();
+      await refreshAll();
       history.push('/feed');
     } catch (error: any) {
       toast({

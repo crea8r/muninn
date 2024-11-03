@@ -69,6 +69,25 @@ func parseTypeValueCriteria(r *http.Request) ([]json.RawMessage, error) {
 	return criteria, nil
 }
 
+func parseIntArray(s string) ([]int32, error) {
+	if s == "" {
+			return nil, nil
+	}
+	
+	parts := strings.Split(s, ",")
+	result := make([]int32, 0, len(parts))
+	
+	for _, part := range parts {
+			val, err := strconv.ParseInt(strings.TrimSpace(part), 10, 32)
+			if err != nil {
+					return nil, err
+			}
+			result = append(result, int32(val))
+	}
+	
+	return result, nil
+}
+
 func (h *AdvancedObjectHandler) ListObjects(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -115,6 +134,13 @@ func (h *AdvancedObjectHandler) ListObjects(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// Parse sub_status filter
+	subStatusFilter, err := parseIntArray(r.URL.Query().Get("sub_status"))
+	if err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: fmt.Sprintf("invalid sub_status values: %v", err)})
+			return
+	}
+
 	// Parse ordering parameters
 	orderBy := service.OrderBy(r.URL.Query().Get("order_by"))
 	typeValueField := r.URL.Query().Get("type_value_field")
@@ -124,8 +150,8 @@ func (h *AdvancedObjectHandler) ListObjects(w http.ResponseWriter, r *http.Reque
 	// Create service parameters
 	params := service.ListObjectsParams{
 		Params: pagination.Params{
-				Page:     int32(page),
-				PageSize: int32(pageSize),
+			Page:     int32(page),
+			PageSize: int32(pageSize),
 		},
 		OrgID:             orgID,
 		SearchQuery:       r.URL.Query().Get("q"),
@@ -136,8 +162,8 @@ func (h *AdvancedObjectHandler) ListObjects(w http.ResponseWriter, r *http.Reque
 		OrderBy:           orderBy,
 		TypeValueField:    typeValueField,
 		Ascending:    ascending,
-}
-	fmt.Println("params", params)
+		SubStatusFilter: subStatusFilter,
+	}
 
 	// Get results from service
 	result, err := h.objectService.ListObjects(ctx, params)

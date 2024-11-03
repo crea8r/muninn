@@ -32,7 +32,7 @@ import FunnelBoard from './pages/settings/FunnelBoard';
 import ListObjectByTypesPage from './pages/settings/ListObjectByTypesPage';
 import FunnelConfigPage from './pages/settings/funnel-config-page/FunnelConfigPage';
 import MergeObjectsPage from './pages/merge/MergeObjectsPage';
-import { ObjectTypesProvider } from './contexts/ObjectTypesContext';
+import AdvancedListingPage from './pages/object/AdvancedListingPage';
 
 const theme = extendTheme({
   styles: {
@@ -69,121 +69,124 @@ const App: React.FC = () => {
     <ChakraProvider theme={theme}>
       <GlobalProvider>
         <SpotLightProvider>
-          <ObjectTypesProvider>
-            <CSSReset />
-            <GlobalImageFallback>
-              <Router>
-                <Switch>
-                  <Route exact path='/' component={LandingPage} />
-                  <Route exact path='/login' component={LoginPage} />
-                  <Route exact path='/register' component={RegisterPage} />
-                  <Route
-                    exact
-                    path='/no-permission'
-                    component={NoPermissionPage}
-                  />
-                  <Route>
-                    <Flex direction='column' minH='100vh'>
-                      <Header />
-                      <Flex flex={1}>
-                        <Sidebar />
-                        <MainContent>
-                          <Switch>
-                            <ProtectedRoute
-                              exact
-                              path='/feed'
-                              component={FeedPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/tasks'
-                              component={TasksPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/views'
-                              component={ViewsPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/views/:id'
-                              component={ViewDetailPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/objects'
-                              component={ObjectsPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/merge'
-                              component={MergeObjectsPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/objects/:objectId'
-                              component={ObjectDetailPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/settings'
-                              component={SettingsPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/settings/object-types'
-                              component={ObjectTypesPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/settings/object-types/:typeId'
-                              component={ListObjectByTypesPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/settings/funnels'
-                              component={FunnelsPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/settings/funnels/:funnelId'
-                              component={FunnelBoard}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/settings/funnels/:id/detail'
-                              component={FunnelConfigPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/settings/templates'
-                              component={ListsPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/settings/tags'
-                              component={TagsPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/account'
-                              component={AccountPage}
-                            />
-                            <ProtectedRoute
-                              exact
-                              path='/organisation'
-                              component={OrganisationPage}
-                              requiredRole='admin'
-                            />
-                          </Switch>
-                        </MainContent>
-                      </Flex>
+          <CSSReset />
+          <GlobalImageFallback>
+            <Router>
+              <Switch>
+                <Route exact path='/' component={LandingPage} />
+                <Route exact path='/login' component={LoginPage} />
+                <Route exact path='/register' component={RegisterPage} />
+                <Route
+                  exact
+                  path='/no-permission'
+                  component={NoPermissionPage}
+                />
+                <Route>
+                  <Flex direction='column' minH='100vh'>
+                    <Header />
+                    <Flex flex={1}>
+                      <Sidebar />
+                      <MainContent>
+                        <Switch>
+                          <ProtectedRoute
+                            exact
+                            path='/feed'
+                            component={FeedPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/tasks'
+                            component={TasksPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/views'
+                            component={ViewsPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/views/:id'
+                            component={ViewDetailPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/objects'
+                            component={ObjectsPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/advanced-filter'
+                            component={AdvancedListingPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/merge'
+                            component={MergeObjectsPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/objects/:objectId'
+                            component={ObjectDetailPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/settings'
+                            component={SettingsPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/settings/object-types'
+                            component={ObjectTypesPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/settings/object-types/:typeId'
+                            component={ListObjectByTypesPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/settings/funnels'
+                            component={FunnelsPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/settings/funnels/:funnelId'
+                            component={FunnelBoard}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/settings/funnels/:id/detail'
+                            component={FunnelConfigPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/settings/templates'
+                            component={ListsPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/settings/tags'
+                            component={TagsPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/account'
+                            component={AccountPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/organisation'
+                            component={OrganisationPage}
+                            requiredRole='admin'
+                          />
+                        </Switch>
+                      </MainContent>
                     </Flex>
-                  </Route>
-                </Switch>
-              </Router>
-            </GlobalImageFallback>
-          </ObjectTypesProvider>
+                  </Flex>
+                </Route>
+              </Switch>
+            </Router>
+          </GlobalImageFallback>
           <SpotLight />
         </SpotLightProvider>
       </GlobalProvider>

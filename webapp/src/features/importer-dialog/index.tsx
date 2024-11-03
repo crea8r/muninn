@@ -14,22 +14,30 @@ import {
   TabList,
   TabPanels,
 } from '@chakra-ui/react';
-import { ObjectType } from '../../types/Object';
-import { listObjectTypes } from '../../api/objType';
+import { ObjectType } from 'src/types/Object';
+import { listObjectTypes } from 'src/api/objType';
 import {
   getImportHistory,
   getImportTaskStatus,
   ImportTask,
   initiateImport,
-} from 'src/api/import';
-import LoadingPanel from '../LoadingPanel';
+} from './services/import';
+import LoadingPanel from 'src/components/LoadingPanel';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { FactToCreate } from 'src/api/fact';
-import { Step1, Step3, StepController, StepNavigation } from './Steps';
-import Step2 from './Step2';
-import Step4 from './Step4';
-import { ImportHistory, ImportingNotification } from './ImportHistory';
+import {
+  Step1,
+  Step3,
+  StepController,
+  StepNavigation,
+} from './components/Steps';
+import Step2 from './components/Step2';
+import Step4 from './components/Step4';
+import {
+  ImportHistory,
+  ImportingNotification,
+} from './components/ImportHistory';
 import { trim } from 'lodash';
 import { normalizeToIdStyle } from 'src/utils/text';
 

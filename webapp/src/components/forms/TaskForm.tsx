@@ -231,7 +231,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                 isDisabled={isLoading}
               >
                 {globalData &&
-                  globalData.members.map((member) => (
+                  globalData.memberData?.members.map((member) => (
                     <option key={member.id} value={member.id}>
                       {member.username} ({member.profile.email})
                     </option>

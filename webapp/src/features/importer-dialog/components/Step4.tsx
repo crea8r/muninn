@@ -8,11 +8,11 @@ import {
   Select,
   Button,
 } from '@chakra-ui/react';
-import { FactForm } from '../forms';
+import { FactForm } from '../../../components/forms';
 import { FactToCreate } from 'src/api/fact';
 import { listTags } from 'src/api/tag';
 import { Tag } from 'src/types';
-import { TagInput } from '../TagInput';
+import { TagInput } from '../../../components/TagInput';
 
 interface Step4Props {
   setDefaultFact: (fact: FactToCreate) => void;

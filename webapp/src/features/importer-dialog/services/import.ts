@@ -1,5 +1,5 @@
-import { FactToCreate } from './fact';
-import { axiosWithAuth } from './utils';
+import { FactToCreate } from 'src/api/fact';
+import { axiosWithAuth } from 'src/api/utils';
 const axios = axiosWithAuth();
 
 const API_URL = process.env.REACT_APP_API_URL;

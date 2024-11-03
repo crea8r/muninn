@@ -38,8 +38,8 @@ import {
   ModalCloseButton,
 } from '@chakra-ui/react';
 import { InfoIcon, ChevronDownIcon, EditIcon } from '@chakra-ui/icons';
-import { Object } from 'src/types';
-import { useObjectTypes } from 'src/contexts/ObjectTypesContext';
+import { Object, ObjectType } from 'src/types';
+import { useGlobalContext } from 'src/contexts/GlobalContext';
 
 interface ValueOption {
   source: 'source' | 'target' | 'custom';
@@ -168,7 +168,7 @@ const MergeRuleStep: React.FC<MergeRuleStepProps> = ({
   onRulesChange,
 }) => {
   // const { objectTypes, isLoading: isLoadingTypes } = useObjectTypes();
-  const { objectTypes } = useObjectTypes();
+  const { globalData } = useGlobalContext();
 
   const updateRules = (key: string, value: any) => {
     onRulesChange({ ...rules, [key]: value });
@@ -336,7 +336,10 @@ const MergeRuleStep: React.FC<MergeRuleStepProps> = ({
                 const targetTypeValue = targetObject.typeValues.find(
                   (tv) => tv.objectTypeId === typeId
                 );
-                const typeName = objectTypes[typeId] || `Unknown (${typeId})`;
+                const typeName =
+                  globalData?.objectTypeData?.objectTypes.find(
+                    (t: ObjectType) => t.id === typeId
+                  )?.name || `Unknown (${typeId})`;
 
                 return (
                   <Tr key={typeId}>

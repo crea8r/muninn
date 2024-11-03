@@ -6,6 +6,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/google/uuid"
 )
@@ -21,7 +22,7 @@ type Querier interface {
 	CountImportTasks(ctx context.Context, orgID uuid.UUID) (int64, error)
 	CountListsByOrgID(ctx context.Context, orgID uuid.UUID) (int64, error)
 	CountObjectTypes(ctx context.Context, arg CountObjectTypesParams) (int64, error)
-	CountObjectsAdvanced(ctx context.Context, arg CountObjectsAdvancedParams) (int64, error)
+	CountObjectsAdvanced(ctx context.Context, arg CountObjectsAdvancedParams) (json.RawMessage, error)
 	CountObjectsByOrgID(ctx context.Context, arg CountObjectsByOrgIDParams) (int64, error)
 	CountObjectsByTypeWithAdvancedFilter(ctx context.Context, arg CountObjectsByTypeWithAdvancedFilterParams) (int64, error)
 	CountObjectsForStep(ctx context.Context, arg CountObjectsForStepParams) (int64, error)

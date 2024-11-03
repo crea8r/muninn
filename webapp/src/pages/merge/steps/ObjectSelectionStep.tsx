@@ -19,13 +19,10 @@ import {
   Button,
 } from '@chakra-ui/react';
 import { SearchIcon, CloseIcon, ExternalLinkIcon } from '@chakra-ui/icons';
-import { Object } from 'src/types';
+import { Object, ObjectType } from 'src/types';
 import { fetchObjects } from 'src/api/object';
 import { debounce } from 'lodash';
-import {
-  ObjectTypesCache,
-  useObjectTypes,
-} from 'src/contexts/ObjectTypesContext';
+import { useGlobalContext } from 'src/contexts/GlobalContext';
 
 interface ObjectSelectionStepProps {
   sourceObject: Object | null;
@@ -44,16 +41,17 @@ interface ObjectSelectionPanelProps {
 
 const ObjectTypeTag: React.FC<{
   typeId: string;
-  objectTypes: ObjectTypesCache;
+  objectTypes: ObjectType[];
 }> = ({ typeId, objectTypes }) => (
   <Tag size='sm' colorScheme='blue'>
-    {objectTypes[typeId] || `Unknown (${typeId})`}
+    {objectTypes.find((v: ObjectType) => v.id === typeId)?.name ||
+      `Unknown (${typeId})`}
   </Tag>
 );
 
 const ObjectCard: React.FC<{
   obj: Object;
-  objectTypes: ObjectTypesCache;
+  objectTypes: ObjectType[];
   onSelect?: () => void;
   isSelected?: boolean;
 }> = ({ obj, objectTypes, onSelect, isSelected }) => (
@@ -130,7 +128,7 @@ const ObjectSelectionPanel: React.FC<ObjectSelectionPanelProps> = ({
   const [searchResults, setSearchResults] = useState<Object[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { objectTypes, isLoading: isLoadingTypes } = useObjectTypes();
+  const { globalData } = useGlobalContext();
   const toast = useToast();
 
   const handleSearch = debounce(async (query: string) => {
@@ -174,15 +172,6 @@ const ObjectSelectionPanel: React.FC<ObjectSelectionPanelProps> = ({
     setSearchQuery('');
   };
 
-  if (isLoadingTypes) {
-    return (
-      <Box flex={1} textAlign='center' py={8}>
-        <Spinner />
-        <Text mt={2}>Loading object types...</Text>
-      </Box>
-    );
-  }
-
   return (
     <Box flex={1}>
       <HStack justify='space-between' mb={4}>
@@ -225,7 +214,7 @@ const ObjectSelectionPanel: React.FC<ObjectSelectionPanelProps> = ({
               <ObjectCard
                 key={obj.id}
                 obj={obj}
-                objectTypes={objectTypes}
+                objectTypes={globalData?.objectTypeData?.objectTypes || []}
                 onSelect={() => onSelect(obj)}
               />
             ))}
@@ -241,7 +230,11 @@ const ObjectSelectionPanel: React.FC<ObjectSelectionPanelProps> = ({
       )}
 
       {selectedObject && (
-        <ObjectCard obj={selectedObject} objectTypes={objectTypes} isSelected />
+        <ObjectCard
+          obj={selectedObject}
+          objectTypes={globalData?.objectTypeData?.objectTypes || []}
+          isSelected
+        />
       )}
     </Box>
   );
@@ -253,18 +246,6 @@ const ObjectSelectionStep: React.FC<ObjectSelectionStepProps> = ({
   onSourceSelect,
   onTargetSelect,
 }) => {
-  // const { objectTypes, isLoading } = useObjectTypes();
-  const { isLoading } = useObjectTypes();
-
-  if (isLoading) {
-    return (
-      <Box textAlign='center' py={8}>
-        <Spinner size='xl' />
-        <Text mt={4}>Loading...</Text>
-      </Box>
-    );
-  }
-
   return (
     <HStack spacing={8} align='stretch'>
       <ObjectSelectionPanel

@@ -89,7 +89,7 @@ const ObjectDetailPage: React.FC = () => {
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [isLargerThan1280] = useMediaQuery('(min-width: 1280px)');
   const [isLoading, setIsLoading] = useState(false);
-  const { refreshGlobalData } = useGlobalContext();
+  const { refreshSummary } = useGlobalContext();
   const {
     isOpen: isOpenNewActivityDialog,
     onOpen: onOpenNewActivityDialog,
@@ -109,7 +109,9 @@ const ObjectDetailPage: React.FC = () => {
       window.Object.entries(otv.type_values).forEach(([_, value]) => {
         if (
           value &&
-          (value.includes('http://') || value.includes('https://'))
+          (value.includes('http://') ||
+            value.includes('https://') ||
+            value.includes('data:image'))
         ) {
           tmp.push(value);
         }
@@ -250,7 +252,7 @@ const ObjectDetailPage: React.FC = () => {
     setIsLoading(true);
     await createTask(task);
     setForceUpdate(forceUpdate + 1);
-    refreshGlobalData();
+    refreshSummary();
     setIsLoading(false);
   };
 
@@ -258,7 +260,7 @@ const ObjectDetailPage: React.FC = () => {
     setIsLoading(true);
     await updateTask(task.id, task);
     setForceUpdate(forceUpdate + 1);
-    refreshGlobalData();
+    refreshSummary();
     setIsLoading(false);
   };
 
@@ -266,7 +268,7 @@ const ObjectDetailPage: React.FC = () => {
     setIsLoading(true);
     await deleteTask(taskId);
     setForceUpdate(forceUpdate + 1);
-    refreshGlobalData();
+    refreshSummary();
     setIsLoading(false);
   };
 

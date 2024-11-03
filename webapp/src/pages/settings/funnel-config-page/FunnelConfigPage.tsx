@@ -21,6 +21,7 @@ import ReactMarkdown from 'react-markdown';
 import LoadingPanel from 'src/components/LoadingPanel';
 import { DeleteIcon, EditIcon } from '@chakra-ui/icons';
 import { EditFunnelForm } from 'src/components/forms';
+import { FaFunnelDollar } from 'react-icons/fa';
 
 const FunnelConfigPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -131,6 +132,11 @@ const FunnelConfigPage: React.FC = () => {
     onAdvancedEditFunnelOpen();
   };
 
+  const handleClickFunnel = () => {
+    console.log('id: ', id);
+    history.push(`/settings/funnels/${id}`);
+  };
+
   const handleDeleteFunnel = async () => {
     if (!funnel) return;
     if (window.confirm('Are you sure you want to delete this funnel?')) {
@@ -205,6 +211,15 @@ const FunnelConfigPage: React.FC = () => {
                   icon={<DeleteIcon />}
                   onClick={handleDeleteFunnel}
                   isDisabled={isLoading || !funnel}
+                  mr={2}
+                />
+                <IconButton
+                  colorScheme='blue'
+                  variant={'outline'}
+                  icon={<FaFunnelDollar />}
+                  onClick={handleClickFunnel}
+                  aria-label={''}
+                  mr={2}
                 />
               </Box>
             </Flex>

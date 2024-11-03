@@ -21,12 +21,12 @@ import { SearchIcon } from '@chakra-ui/icons';
 import { Link, useHistory, useLocation } from 'react-router-dom';
 import { NewObject, Tag } from 'src/types/';
 import { fetchObjects, createObject } from 'src/api/object';
-import ImporterDialog from 'src/components/importer-dialog/ImporterDialog';
+import ImporterDialog from 'src/features/importer-dialog';
 import { ObjectForm } from 'src/components/forms/';
 import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 import { shortenText } from 'src/utils';
 import SmartImage from 'src/components/SmartImage';
-import { FiGitMerge, FiRefreshCw } from 'react-icons/fi';
+import { FiFilter, FiGitMerge, FiRefreshCw } from 'react-icons/fi';
 import queryString from 'query-string';
 import debounce from 'lodash/debounce';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
@@ -224,6 +224,11 @@ const ObjectsPage: React.FC = () => {
               icon={<FiGitMerge />}
               onClick={() => history.push('/merge')}
             />
+            <IconButton
+              aria-label='Advanced Filter'
+              icon={<FiFilter />}
+              onClick={() => history.push('/advanced-filter')}
+            />
           </HStack>
         </Flex>
 
@@ -333,7 +338,11 @@ const ObjectRow: React.FC<{ obj: ListObjectsRow }> = React.memo(({ obj }) => {
   obj.typeValues.forEach((otv) => {
     window.Object.entries(otv.type_values).forEach(([_, value]) => {
       if (typeof value === 'string') {
-        if (value.startsWith('http://') || value.startsWith('https://')) {
+        if (
+          value.startsWith('http://') ||
+          value.startsWith('https://') ||
+          value.startsWith('data:image/')
+        ) {
           imgUrls.push(value);
         } else if (value !== '') {
           str.push(value);

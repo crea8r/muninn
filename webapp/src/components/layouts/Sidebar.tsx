@@ -118,7 +118,7 @@ const Sidebar: React.FC = () => {
   const [unseenFeedCount, setUnseenFeedCount] = useState(0);
   const [todoTaskCount, setTodoTaskCount] = useState(0);
   const { globalData } = useGlobalContext();
-  const member = globalData?.members.find(
+  const member = globalData?.memberData?.members.find(
     (m) => m.id === authService.getCreatorId()
   );
 
@@ -128,8 +128,8 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     const fetchCounts = async () => {
-      const feedCount = globalData?.unseenFeedsCount || 0;
-      const taskCount = globalData?.tasksCount || 0;
+      const feedCount = globalData?.summaryData?.unseenFeedsCount || 0;
+      const taskCount = globalData?.summaryData?.tasksCount || 0;
       setUnseenFeedCount(feedCount);
       setTodoTaskCount(taskCount);
     };

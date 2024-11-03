@@ -16,7 +16,7 @@ import {
 } from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { ImportTask } from 'src/api/import';
+import { ImportTask } from '../services/import';
 import { shortenText } from 'src/utils';
 
 interface ImportHistoryProps {

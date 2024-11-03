@@ -47,7 +47,7 @@ const Header: React.FC = () => {
     ? details?.profile?.fullname
     : details?.name;
   return (
-    <Box as='header' bg='white' boxShadow='sm' py={4}>
+    <Box as='header' bg='white' boxShadow='sm' py={2}>
       <Flex
         // maxW='container.xl'
         mx='auto'
@@ -72,10 +72,16 @@ const Header: React.FC = () => {
         </HStack>
         <Flex alignItems='center' flex={1}>
           <InputGroup maxW='500px' mx='auto' onClick={handleOpenSearch}>
-            <InputLeftElement pointerEvents='none'>
-              <SearchIcon color='gray.300' />
+            <InputLeftElement pointerEvents='none' height={'32px'}>
+              <SearchIcon color='gray.300' fontSize={'16px'} />
             </InputLeftElement>
-            <Input placeholder='Search...' width={'90%'} />
+            <Input
+              placeholder='Search...'
+              width={'90%'}
+              size={'sm'}
+              pointerEvents={'none'}
+              readOnly={true}
+            />
           </InputGroup>
         </Flex>
         <Menu>

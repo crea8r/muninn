@@ -53,6 +53,7 @@ type ListObjectsParams struct {
     OrderBy           OrderBy
     TypeValueField    string
     Ascending        bool
+    SubStatusFilter   []int32
 }
 
 // ListObjectsAdvancedParams represents the database query parameters
@@ -70,6 +71,7 @@ type ListObjectsAdvancedParams struct {
     Ascending         bool              `json:"ascending"`
     Limit             int32             `json:"limit"`
     Offset            int32             `json:"offset"`
+    SubStatusFilter   []int32            `json:"sub_status_filter,omitempty"`
 }
 
 type ObjectService struct {
@@ -102,6 +104,7 @@ func (s *ObjectService) ListObjects(ctx context.Context, params ListObjectsParam
 
     // Prepare arrays (nil if empty)
     var stepIDs, tagIDs, typeIDs []uuid.UUID
+    var subStatusFilter []int32
     if len(params.StepIDs) > 0 {
         stepIDs = params.StepIDs
     }
@@ -110,6 +113,9 @@ func (s *ObjectService) ListObjects(ctx context.Context, params ListObjectsParam
     }
     if len(params.TypeIDs) > 0 {
         typeIDs = params.TypeIDs
+    }
+    if len(params.SubStatusFilter) > 0 {
+        subStatusFilter = params.SubStatusFilter
     }
 
     if s.debug {
@@ -126,6 +132,7 @@ func (s *ObjectService) ListObjects(ctx context.Context, params ListObjectsParam
         Column6: criteria1,
         Column7: criteria2,
         Column8: criteria3,
+        Column9: subStatusFilter,
     })
     if err != nil {
         return nil, fmt.Errorf("error counting objects: %w", err)
@@ -145,17 +152,22 @@ func (s *ObjectService) ListObjects(ctx context.Context, params ListObjectsParam
         Column11:        params.TypeValueField, 
         Limit:            params.PageSize,
         Offset:           params.GetOffset(),
+        Column14: subStatusFilter,
     })
     if err != nil {
         return nil, fmt.Errorf("error listing objects: %w", err)
     }
-    // loop through each item and JSON.Unmarshal the tags and type_values
+    // loop through each item and JSON.Unmarshal the tags and type_values, steps
     for i, item := range items {
         if err := json.Unmarshal(item.Tags.([]byte), &items[i].Tags); err != nil {
             return nil, fmt.Errorf("error unmarshalling tags: %w", err)
         }
         if err := json.Unmarshal(item.TypeValues.([]byte), &items[i].TypeValues); err != nil {
             return nil, fmt.Errorf("error unmarshalling type values: %w", err)
+        }
+        
+        if err := json.Unmarshal(item.Steps.([]byte), &items[i].Steps); err != nil {
+            return nil, fmt.Errorf("error unmarshalling steps: %w", err)
         }
     }
 

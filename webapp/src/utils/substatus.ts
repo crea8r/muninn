@@ -1,4 +1,4 @@
-export const substatus = (s: number) => {
+export const getSubStatusLabel = (s: number) => {
   return s === 0
     ? 'To Engage'
     : s === 1
