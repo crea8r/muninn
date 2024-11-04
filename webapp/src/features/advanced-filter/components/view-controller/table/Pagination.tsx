@@ -1,7 +1,7 @@
 // components/results-panel/Pagination.tsx
 import React from 'react';
 import { HStack, Button, Text, Select } from '@chakra-ui/react';
-import { useAdvancedFilter } from '../../contexts/AdvancedFilterContext';
+import { useAdvancedFilter } from '../../../contexts/AdvancedFilterContext';
 
 export interface PaginationProps {
   currentPage: number;

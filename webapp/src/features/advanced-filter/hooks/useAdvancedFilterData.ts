@@ -22,35 +22,36 @@ export const useAdvancedFilterData = (filterConfig: FilterConfig) => {
   }, [filterConfig.typeValueCriteria]);
 
   const debouncedFilter = useDebounceFilter(filterConfig, 300);
+  const fetchData = async () => {
+    console.log('fetchData ...');
+    if (!debouncedFilter) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetchAdvancedFilterResults(debouncedFilter);
+      setData(response.items);
+      if (typeof response.total_count === 'object') {
+        setTotalCount(response.total_count.total_count);
+        setStepCounts(response.total_count.step_counts);
+      } else {
+        setTotalCount(response.total_count);
+      }
+    } catch (err) {
+      console.error('Failed to fetch filtered data:', err);
+      setError(err as Error);
+      setData([]);
+      setTotalCount(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!debouncedFilter) return;
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetchAdvancedFilterResults(debouncedFilter);
-        setData(response.items);
-        if (typeof response.total_count === 'object') {
-          setTotalCount(response.total_count.total_count);
-          setStepCounts(response.total_count.step_counts);
-        } else {
-          setTotalCount(response.total_count);
-        }
-      } catch (err) {
-        console.error('Failed to fetch filtered data:', err);
-        setError(err as Error);
-        setData([]);
-        setTotalCount(0);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedFilter]);
 
-  return { data, totalCount, stepCounts, isLoading, error };
+  return { data, totalCount, stepCounts, isLoading, error, refetch: fetchData };
 };

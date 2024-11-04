@@ -16,18 +16,110 @@ import {
   MenuDivider,
 } from '@chakra-ui/react';
 import { DragHandleIcon, AddIcon, CloseIcon } from '@chakra-ui/icons';
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from 'react-beautiful-dnd';
 import { ColumnConfig } from '../../types/view-config';
 import { STANDARD_COLUMNS } from '../../constants/default-columns';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { StandardColumn, TypeValueColumn } from '../../types/column-config';
 import { ObjectType } from 'src/types';
 import { useAdvancedFilter } from '../../contexts/AdvancedFilterContext';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+
+// Sortable item component
+const SortableItem = ({
+  column,
+  isRestricted,
+  isRequired,
+  onToggle,
+  onRemove,
+  getLabel,
+}: {
+  column: ColumnConfig;
+  isRestricted: boolean;
+  isRequired: boolean;
+  onToggle: (checked: boolean) => void;
+  onRemove: () => void;
+  getLabel: (column: ColumnConfig) => string;
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: column.objectTypeId
+      ? `${column.objectTypeId}-${column.field}`
+      : column.field,
+    disabled: isRestricted,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <Box
+      ref={setNodeRef}
+      style={style}
+      borderWidth='1px'
+      borderRadius='md'
+      borderColor={isDragging ? 'blue.300' : 'gray.200'}
+      bg={isDragging ? 'blue.50' : 'white'}
+      p={2}
+      mb={2}
+      _last={{ mb: 0 }}
+      opacity={isDragging ? 0.8 : 1}
+    >
+      <HStack>
+        <Box
+          {...attributes}
+          {...listeners}
+          cursor={isRestricted ? 'not-allowed' : 'grab'}
+          color={isRestricted ? 'gray.300' : 'gray.500'}
+          _hover={!isRestricted ? { color: 'blue.500' } : undefined}
+        >
+          <DragHandleIcon />
+        </Box>
+        <Checkbox
+          isChecked={column.visible}
+          onChange={(e) => onToggle(e.target.checked)}
+          isDisabled={isRequired}
+          flex={1}
+        >
+          {getLabel(column)}
+        </Checkbox>
+        {!isRequired && (
+          <IconButton
+            aria-label='Remove column'
+            icon={<CloseIcon />}
+            size='xs'
+            variant='ghost'
+            colorScheme='red'
+            onClick={onRemove}
+          />
+        )}
+      </HStack>
+    </Box>
+  );
+};
 
 interface ColumnManagerProps {
   columns: ColumnConfig[];
@@ -61,21 +153,31 @@ export const ColumnManager: React.FC<ColumnManagerProps> = ({
   const objectTypes = globalData?.objectTypeData?.objectTypes || [];
   const { filterConfig } = useAdvancedFilter();
   const filteredTypeIds = filterConfig?.typeIds || [];
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-    const sourceIndex = result.source.index;
-    const destinationIndex = result.destination.index;
+    const oldIndex = visibleColumns.findIndex(
+      (col) =>
+        (col.objectTypeId ? `${col.objectTypeId}-${col.field}` : col.field) ===
+        active.id
+    );
+    const newIndex = visibleColumns.findIndex(
+      (col) =>
+        (col.objectTypeId ? `${col.objectTypeId}-${col.field}` : col.field) ===
+        over.id
+    );
 
-    // Don't allow reordering of restricted columns
-    if (
-      restrictions.restrictedColumns.includes(visibleColumns[sourceIndex].field)
-    ) {
-      return;
+    if (oldIndex !== -1 && newIndex !== -1) {
+      onReorderColumns(oldIndex, newIndex);
     }
-
-    onReorderColumns(sourceIndex, destinationIndex);
   };
 
   const getColumnLabel = (column: ColumnConfig) => {
@@ -174,112 +276,62 @@ export const ColumnManager: React.FC<ColumnManagerProps> = ({
           </MenuList>
         </Menu>
       </HStack>
+      <Box
+        borderWidth='1px'
+        borderRadius='md'
+        borderColor='gray.200'
+        bg='white'
+        p={2}
+      >
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToVerticalAxis]}
+        >
+          <SortableContext
+            items={visibleColumns.map((col) =>
+              col.objectTypeId ? `${col.objectTypeId}-${col.field}` : col.field
+            )}
+            strategy={verticalListSortingStrategy}
+          >
+            {visibleColumns.map((column) => (
+              <SortableItem
+                key={
+                  column.objectTypeId
+                    ? `${column.objectTypeId}-${column.field}`
+                    : column.field
+                }
+                column={column}
+                isRestricted={restrictions.restrictedColumns.includes(
+                  column.field
+                )}
+                isRequired={restrictions.requiredColumns.includes(column.field)}
+                onToggle={(checked) =>
+                  onToggleColumn(column.field, checked, column.objectTypeId)
+                }
+                onRemove={() =>
+                  onRemoveColumn(column.field, column.objectTypeId)
+                }
+                getLabel={getColumnLabel}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
 
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId='column-list'>
-          {(provided, snapshot) => (
-            <VStack
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              spacing={2}
-              align='stretch'
-              bg={snapshot.isDraggingOver ? 'gray.50' : undefined}
-              borderRadius='md'
-              minH='100px'
-            >
-              {visibleColumns.map((column, index) => (
-                <Draggable
-                  key={`${column.objectTypeId || ''}:${column.field}`}
-                  draggableId={`${column.objectTypeId || ''}:${column.field}`}
-                  index={index}
-                  isDragDisabled={restrictions.restrictedColumns.includes(
-                    column.field
-                  )}
-                >
-                  {(provided, snapshot) => (
-                    <Box
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      bg={snapshot.isDragging ? 'blue.50' : 'white'}
-                      borderWidth={1}
-                      borderColor={
-                        snapshot.isDragging ? 'blue.200' : 'gray.200'
-                      }
-                      borderRadius='md'
-                      p={2}
-                      boxShadow={snapshot.isDragging ? 'md' : undefined}
-                      _hover={{ borderColor: 'blue.200' }}
-                    >
-                      <HStack spacing={2} justify='space-between'>
-                        <HStack flex={1} minW={0}>
-                          <Box
-                            {...provided.dragHandleProps}
-                            color='gray.400'
-                            _hover={{ color: 'blue.500' }}
-                            cursor={
-                              restrictions.restrictedColumns.includes(
-                                column.field
-                              )
-                                ? 'not-allowed'
-                                : 'grab'
-                            }
-                          >
-                            <DragHandleIcon />
-                          </Box>
-                          <Box flex={1} minW={0}>
-                            <Checkbox
-                              isChecked={column.visible}
-                              onChange={(e) =>
-                                onToggleColumn(
-                                  column.field,
-                                  e.target.checked,
-                                  column.objectTypeId
-                                )
-                              }
-                              isDisabled={restrictions.requiredColumns.includes(
-                                column.field
-                              )}
-                            >
-                              <Text isTruncated>{getColumnLabel(column)}</Text>
-                            </Checkbox>
-                          </Box>
-                        </HStack>
-                        {!restrictions.requiredColumns.includes(
-                          column.field
-                        ) && (
-                          <IconButton
-                            aria-label='Remove column'
-                            size='sm'
-                            variant='ghost'
-                            colorScheme='red'
-                            icon={<CloseIcon />}
-                            onClick={() =>
-                              onRemoveColumn(column.field, column.objectTypeId)
-                            }
-                          />
-                        )}
-                      </HStack>
-                    </Box>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-              {visibleColumns.length === 0 && (
-                <Box
-                  p={4}
-                  textAlign='center'
-                  color='gray.500'
-                  borderWidth={1}
-                  borderStyle='dashed'
-                  borderRadius='md'
-                >
-                  No columns selected
-                </Box>
-              )}
-            </VStack>
-          )}
-        </Droppable>
-      </DragDropContext>
+        {visibleColumns.length === 0 && (
+          <Box
+            p={4}
+            textAlign='center'
+            color='gray.500'
+            borderWidth={1}
+            borderStyle='dashed'
+            borderRadius='md'
+          >
+            No columns selected
+          </Box>
+        )}
+      </Box>
     </VStack>
   );
 };

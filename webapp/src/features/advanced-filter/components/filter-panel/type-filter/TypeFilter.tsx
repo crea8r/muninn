@@ -98,11 +98,28 @@ export const TypeFilter: React.FC = () => {
     return fields.join(', ');
   };
 
+  const clearAll = () => {
+    updateFilter({
+      typeIds: [],
+    });
+  };
+
   return (
     <VStack align='stretch' spacing={3}>
-      <Text fontWeight='medium' fontSize='sm'>
-        Object Types
-      </Text>
+      <HStack justify='space-between' width={'100%'} alignItems={'center'}>
+        <Text fontWeight='medium' fontSize='sm'>
+          Object Types
+        </Text>
+        <Text
+          fontSize='sm'
+          fontWeight={'light'}
+          color='blue.300'
+          cursor='pointer'
+          onClick={clearAll}
+        >
+          Clear All
+        </Text>
+      </HStack>
 
       {/* Selected Types */}
       <Wrap spacing={2}>

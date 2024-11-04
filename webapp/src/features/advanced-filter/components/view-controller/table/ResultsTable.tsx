@@ -1,5 +1,5 @@
 // components/view-controller/ResultsTable.tsx
-import React from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Table,
   Thead,
@@ -11,72 +11,20 @@ import {
   Text,
   Skeleton,
   Tag as ChkTag,
-  VStack,
+  Checkbox,
 } from '@chakra-ui/react';
-import { ColumnConfig } from '../../types/view-config';
-import { useResizeColumns } from '../../hooks/useResizeColumns';
+import { ColumnConfig } from '../../../types/view-config';
+import { useResizeColumns } from '../../../hooks/useResizeColumns';
 import { Pagination } from './Pagination';
-import { useAdvancedFilter } from '../../contexts/AdvancedFilterContext';
+import { useAdvancedFilter } from '../../../contexts/AdvancedFilterContext';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { Tag, ObjectType } from 'src/types';
-import { TriangleDownIcon, TriangleUpIcon } from '@chakra-ui/icons';
 import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
-
-const isSortedByColumn = (column: ColumnConfig, sortBy: string) => {
-  if (!column.sortable) return false;
-  if (!column.objectTypeId) {
-    // standard column
-    return column.field === sortBy;
-  } else {
-    console.log('sortBy:', sortBy);
-    // type value column
-    return sortBy === `type_value:${column.objectTypeId}:${column.field}`;
-  }
-};
-
-interface SortButtonProps {
-  column: ColumnConfig;
-  sortBy: string;
-  sortTypeValueField: string;
-  sortDirection: 'asc' | 'desc';
-  sort: (field: string, ascending: boolean, objectTypeId?: string) => void;
-}
-
-const SortButton = ({
-  sortBy,
-  sortTypeValueField,
-  sortDirection,
-  column,
-  sort,
-}: SortButtonProps) => {
-  const sortedByThisColumn = isSortedByColumn(column, sortBy);
-  const handleSort = (asc: boolean) => {
-    sort(column.field, asc, column.objectTypeId);
-  };
-  return !sortedByThisColumn ? (
-    <VStack color={'gray.300'} spacing={0} ml={1}>
-      <TriangleUpIcon cursor={'pointer'} onClick={() => handleSort(true)} />
-      <TriangleDownIcon cursor={'pointer'} onClick={() => handleSort(false)} />
-    </VStack>
-  ) : (
-    <VStack color={'gray.300'} spacing={0} ml={1}>
-      <TriangleUpIcon
-        cursor={'pointer'}
-        style={sortDirection === 'asc' ? { color: 'black' } : {}}
-        onClick={() => {
-          handleSort(true);
-        }}
-      />
-      <TriangleDownIcon
-        cursor={'pointer'}
-        style={sortDirection === 'desc' ? { color: 'black' } : {}}
-        onClick={() => {
-          handleSort(false);
-        }}
-      />
-    </VStack>
-  );
-};
+import { ActionBar } from './ActionBar';
+import { SortButton } from './SortButton';
+import { createExportCsvAction } from 'src/features/advanced-filter/actions/export-csv';
+import { createAddTagAction } from 'src/features/advanced-filter/actions/add-tag';
+import { createAddToFunnelAction } from 'src/features/advanced-filter/actions/add-to-funnel';
 
 interface ResultsTableProps {
   data: any[];
@@ -85,6 +33,7 @@ interface ResultsTableProps {
   isLoading: boolean;
   density: 'comfortable' | 'compact';
   onColumnResize: (field: string, width: number, objectTypeId?: string) => void;
+  onRefresh: () => void;
 }
 
 const getCellValue = (
@@ -183,6 +132,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
   density,
   onColumnResize,
   totalCount,
+  onRefresh,
 }) => {
   const { getResizeProps, columnWidths } = useResizeColumns({
     columns,
@@ -191,31 +141,129 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
   const { filterConfig, updateFilter } = useAdvancedFilter();
   const { page = 1, pageSize = 10 } = filterConfig;
   const { globalData } = useGlobalContext();
+  const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [selectAll, setSelectAll] = useState(false);
 
   const tags = globalData?.tagData?.tags || [];
-  const typeValues = globalData?.objectTypeData?.objectTypes || [];
+  const typeValues = useMemo(
+    () => globalData?.objectTypeData?.objectTypes || [],
+    [globalData]
+  );
   const sortDirection = filterConfig.ascending ? 'asc' : 'desc';
   let sortBy = filterConfig?.sortBy || 'created_at';
   const sortTypeValueField = filterConfig?.type_value_field || '';
+
+  const getColumnLabel = useCallback(
+    (column: ColumnConfig) => {
+      if (column.objectTypeId) {
+        const typeValue = typeValues.find((t) => t.id === column.objectTypeId);
+        return typeValue ? `${typeValue.name}:${column.field}` : column.field;
+      }
+      return column.label || column.field;
+    },
+    [typeValues]
+  );
+
   const sort = (field: string, ascending: boolean, objectTypeId?: string) => {
     const updates = {
       type_value_field: objectTypeId ? field : undefined,
       sortBy: objectTypeId ? `type_value:${objectTypeId}:${field}` : field,
       ascending,
     };
-    console.log('updates', updates);
     updateFilter({
       ...filterConfig,
       ...updates,
     });
   };
 
+  // select data
+  const selectedCount = useMemo(
+    () => Object.values(selectedItems).filter(Boolean).length,
+    [selectedItems]
+  );
+
+  const isAllSelected = useMemo(
+    () => data && data.length > 0 && selectedCount === data.length,
+    [data, selectedCount]
+  );
+
+  const isIndeterminate = useMemo(
+    () => selectedCount > 0 && data && selectedCount < data.length,
+    [data, selectedCount]
+  );
+
+  const handleSelectAll = useCallback(() => {
+    if (isAllSelected) {
+      setSelectedItems({});
+      setSelectAll(false);
+    } else {
+      const newSelected = data.reduce((acc, item) => {
+        acc[item.id] = true;
+        return acc;
+      }, {} as Record<string, boolean>);
+      setSelectedItems(newSelected);
+      setSelectAll(true);
+    }
+  }, [data, isAllSelected]);
+
+  const handleSelectItem = useCallback((id: string) => {
+    setSelectedItems((prev) => {
+      const newSelected = { ...prev };
+      if (newSelected[id]) {
+        delete newSelected[id];
+      } else {
+        newSelected[id] = true;
+      }
+      return newSelected;
+    });
+  }, []);
+
+  const selectedData = useMemo(
+    () => data?.filter((item) => selectedItems[item.id]),
+    [data, selectedItems]
+  );
+
+  const actions = useMemo(
+    () => [
+      createExportCsvAction({ columns, getColumnLabel }),
+      createAddTagAction(() => {
+        setSelectedItems({});
+        onRefresh();
+      }),
+      createAddToFunnelAction(() => {
+        setSelectedItems({});
+        onRefresh();
+      }),
+      // ... other actions
+    ],
+    [columns, getColumnLabel, onRefresh]
+  );
+
   return (
     <Box>
+      {selectedCount > 0 ? (
+        <ActionBar
+          selectedCount={selectedCount}
+          totalCount={totalCount}
+          isSelectedAll={selectAll}
+          actions={actions}
+          selectedData={selectedData}
+          onClose={() => setSelectedItems({})}
+        />
+      ) : null}
       <Box overflowX='auto'>
         <Table size={density === 'compact' ? 'sm' : 'md'} variant='simple'>
           <Thead>
             <Tr>
+              <Th px={2} width='24px'>
+                <Checkbox
+                  isChecked={isAllSelected}
+                  isIndeterminate={isIndeterminate}
+                  onChange={handleSelectAll}
+                />
+              </Th>
               {columns.map((column, index) => (
                 <Th
                   key={`${column.objectTypeId || ''}:${column.field}`}
@@ -240,7 +288,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
                       />
                     )}
                     <Text ml={1} fontSize={'small'}>
-                      {column.label}
+                      {getColumnLabel(column)}
                     </Text>
                     <Box
                       position='absolute'
@@ -283,16 +331,26 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
                   _hover={{
                     background: 'gray.100',
                   }}
-                  cursor={'pointer'}
-                  onClick={() => window.open(`/objects/${item.id}`, '_blank')}
                 >
-                  {columns.map((column) => (
+                  <Td px={2}>
+                    <Checkbox
+                      isChecked={!!selectedItems[item.id]}
+                      onChange={() => handleSelectItem(item.id)}
+                    />
+                  </Td>
+                  {columns.map((column, i) => (
                     <Td
                       key={`${column.objectTypeId || ''}:${column.field}`}
                       maxWidth={column.width}
                       overflow='hidden'
                       textOverflow='ellipsis'
                       whiteSpace='nowrap'
+                      cursor={i === 0 ? 'pointer' : 'default'}
+                      _hover={i === 0 ? { textDecoration: 'underline' } : {}}
+                      onClick={() => {
+                        if (i === 0)
+                          window.open(`/objects/${item.id}`, '_blank');
+                      }}
                     >
                       {formatValue(
                         getCellValue(item, column, { tags, typeValues }),

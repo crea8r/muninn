@@ -9,6 +9,7 @@ export interface StandardColumn {
   defaultVisible: boolean;
   required?: boolean;
   formatType?: ColumnFormatType;
+  order?: number;
 }
 
 export interface TypeValueColumn extends Omit<StandardColumn, 'field'> {

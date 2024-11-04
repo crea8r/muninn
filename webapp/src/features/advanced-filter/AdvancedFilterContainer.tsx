@@ -21,7 +21,7 @@ export const AdvancedFilterContainer: React.FC<
 > = ({ viewSource, initialViewConfig, onViewConfigChange, filterOptions }) => {
   // Get filter state and data
   const { filterConfig } = useAdvancedFilter();
-  const { data, totalCount, stepCounts, isLoading, error } =
+  const { data, totalCount, stepCounts, isLoading, error, refetch } =
     useAdvancedFilterData(filterConfig);
 
   const toast = useToast();
@@ -77,6 +77,7 @@ export const AdvancedFilterContainer: React.FC<
               data={data}
               isLoading={isLoading}
               totalCount={totalCount}
+              refetch={refetch}
             />
           </Box>
         </VStack>

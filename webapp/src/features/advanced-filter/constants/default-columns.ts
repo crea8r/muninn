@@ -9,6 +9,7 @@ export const STANDARD_COLUMNS: StandardColumn[] = [
     sortable: true,
     defaultVisible: true,
     required: true,
+    order: 0,
   },
   {
     field: 'created_at',
@@ -17,6 +18,7 @@ export const STANDARD_COLUMNS: StandardColumn[] = [
     sortable: true,
     defaultVisible: true,
     formatType: 'date',
+    order: 1,
   },
   {
     field: 'first_fact_date',
@@ -46,7 +48,7 @@ export const STANDARD_COLUMNS: StandardColumn[] = [
     label: 'Tags',
     width: 150,
     sortable: false,
-    defaultVisible: true,
+    defaultVisible: false,
     formatType: 'react.element',
   },
   {
@@ -64,6 +66,7 @@ export const STANDARD_COLUMNS: StandardColumn[] = [
     sortable: true,
     defaultVisible: true,
     formatType: 'number',
+    order: 2,
   },
   {
     field: 'description',

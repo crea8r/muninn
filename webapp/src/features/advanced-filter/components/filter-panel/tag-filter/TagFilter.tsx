@@ -13,6 +13,7 @@ import {
   InputGroup,
   InputLeftElement,
   useOutsideClick,
+  HStack,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { useAdvancedFilter } from '../../../contexts/AdvancedFilterContext';
@@ -76,12 +77,28 @@ export const TagFilter: React.FC = () => {
     setIsSearching(false);
   };
 
+  const clearAll = () => {
+    updateFilter({
+      tagIds: [],
+    });
+  };
+
   return (
     <VStack align='stretch' spacing={3}>
-      <Text fontWeight='medium' fontSize='sm'>
-        Tags
-      </Text>
-
+      <HStack justify='space-between' width={'100%'} alignItems={'center'}>
+        <Text fontWeight='medium' fontSize='sm'>
+          Tags
+        </Text>
+        <Text
+          fontSize='sm'
+          fontWeight={'light'}
+          color='blue.300'
+          cursor='pointer'
+          onClick={clearAll}
+        >
+          Clear All
+        </Text>
+      </HStack>
       {/* Selected Tags */}
       <Wrap spacing={2}>
         {selectedTags.map((tag) => (

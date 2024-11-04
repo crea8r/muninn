@@ -84,11 +84,28 @@ export const FunnelStepFilter: React.FC = () => {
     });
   };
 
+  const clearAll = () => {
+    updateFilter({
+      funnelStepFilter: undefined,
+    });
+  };
+
   return (
     <VStack align='stretch' spacing={4} width={'100%'}>
-      <Text fontWeight='medium' fontSize='sm'>
-        Funnel & Steps Filter
-      </Text>
+      <HStack justify='space-between' width={'100%'} alignItems={'center'}>
+        <Text fontWeight='medium' fontSize='sm'>
+          Funnel & Steps Filter
+        </Text>
+        <Text
+          fontSize='sm'
+          fontWeight={'light'}
+          color='blue.300'
+          cursor='pointer'
+          onClick={clearAll}
+        >
+          Clear All
+        </Text>
+      </HStack>
 
       <Select
         placeholder='Select funnel'

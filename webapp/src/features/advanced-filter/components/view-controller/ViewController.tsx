@@ -10,7 +10,7 @@ import {
 import { useViewConfig } from '../../hooks/useViewConfig';
 import { useColumnConfig } from '../../hooks/useColumnConfig';
 import { FloatingConfig } from './FloatingConfig';
-import { ResultsTable } from './ResultsTable';
+import { ResultsTable } from './table/ResultsTable';
 
 interface Position {
   top: number;
@@ -54,6 +54,7 @@ interface ViewControllerProps {
   data: any[];
   isLoading?: boolean;
   totalCount: number;
+  refetch: () => void;
 }
 
 export const ViewController: React.FC<ViewControllerProps> = ({
@@ -63,6 +64,7 @@ export const ViewController: React.FC<ViewControllerProps> = ({
   data,
   isLoading = false,
   totalCount,
+  refetch,
 }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [configAnchor, setConfigAnchor] = useState<HTMLElement | null>(null);
@@ -151,6 +153,7 @@ export const ViewController: React.FC<ViewControllerProps> = ({
             density={config.density}
             onColumnResize={updateColumnWidth}
             totalCount={totalCount}
+            onRefresh={refetch}
           />
         ) : (
           // Kanban view will be implemented in future phase

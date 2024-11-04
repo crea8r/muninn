@@ -31,7 +31,7 @@ export const useViewConfig = ({
         width: col.width,
         label: col.label,
         visible: col.defaultVisible,
-        order: index,
+        order: col.order,
         formatType: col.formatType,
         sortable: col.sortable,
       })),
@@ -80,7 +80,7 @@ export const useViewConfig = ({
               field: col.field,
               width: col.width,
               visible: col.defaultVisible,
-              order: index,
+              order: col.order,
               formatType: col.formatType,
             })),
           };

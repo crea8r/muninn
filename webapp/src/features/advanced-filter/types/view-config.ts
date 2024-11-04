@@ -15,7 +15,7 @@ export interface ColumnConfig {
   label?: string;
   width?: number;
   visible: boolean;
-  order: number;
+  order?: number;
   // For object type fields
   objectTypeId?: string;
   formatType?: ColumnFormatType;
