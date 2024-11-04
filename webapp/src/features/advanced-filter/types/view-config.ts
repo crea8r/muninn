@@ -1,22 +1,26 @@
 // types/view-config.ts
 export type DisplayMode = 'table' | 'kanban';
 export type DisplayDensity = 'compact' | 'comfortable';
+export type ColumnFormatType =
+  | 'text'
+  | 'date'
+  | 'number'
+  | 'boolean'
+  | 'object'
+  | 'react.element'
+  | 'md';
 
 export interface ColumnConfig {
   field: string;
+  label?: string;
   width?: number;
   visible: boolean;
   order: number;
   // For object type fields
   objectTypeId?: string;
-  formatType?:
-    | 'text'
-    | 'date'
-    | 'number'
-    | 'boolean'
-    | 'object'
-    | 'react.element';
+  formatType?: ColumnFormatType;
   customFormat?: string; // For dates or numbers
+  sortable?: boolean;
 }
 
 export interface ViewConfigBase {

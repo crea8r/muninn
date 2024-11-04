@@ -6,6 +6,7 @@ import {
   Select,
   Checkbox,
   CheckboxGroup,
+  HStack,
 } from '@chakra-ui/react';
 import { useAdvancedFilter } from '../../../contexts/AdvancedFilterContext';
 import { SubStatus } from 'src/features/advanced-filter/constants';
@@ -71,7 +72,8 @@ export const FunnelStepFilter: React.FC = () => {
 
   const handleSubStatusChange = (selected: string[]) => {
     if (!currentFilter) return;
-
+    // prevent empty selection
+    if (selected.length === 0) return;
     // Convert back to numbers, ensuring 0 is properly handled
     const numericValues = selected.map((val) => parseInt(val, 10));
     updateFilter({
@@ -105,9 +107,23 @@ export const FunnelStepFilter: React.FC = () => {
       {selectedFunnel && (
         <>
           <VStack align='stretch' spacing={2} width={'100%'}>
-            <Text fontSize='sm' fontWeight='light'>
-              Steps
-            </Text>
+            <HStack justify='space-between'>
+              <Text fontSize='sm' fontWeight='light'>
+                Steps
+              </Text>
+              <Text
+                fontSize='sm'
+                fontWeight={'light'}
+                color='blue.500'
+                cursor='pointer'
+                onClick={() =>
+                  handleStepToggle(selectedFunnel.steps.map((s) => s.id))
+                }
+              >
+                Select All
+              </Text>
+            </HStack>
+
             <CheckboxGroup
               value={currentFilter?.stepIds || []}
               onChange={(values) => handleStepToggle(values as string[])}
@@ -128,9 +144,23 @@ export const FunnelStepFilter: React.FC = () => {
           </VStack>
 
           <VStack align='stretch' spacing={2} width={'100%'}>
-            <Text fontSize='sm' fontWeight='light'>
-              Step status
-            </Text>
+            <HStack justify='space-between'>
+              <Text fontSize='sm' fontWeight='light'>
+                Step status
+              </Text>
+              <Text
+                fontSize='sm'
+                fontWeight={'light'}
+                color='blue.500'
+                cursor='pointer'
+                onClick={() =>
+                  handleSubStatusChange(allStatuses.map((s) => s.toString()))
+                }
+              >
+                Select All
+              </Text>
+            </HStack>
+
             <CheckboxGroup
               value={selectedSubStatuses}
               onChange={handleSubStatusChange}

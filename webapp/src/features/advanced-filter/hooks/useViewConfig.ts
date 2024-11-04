@@ -29,9 +29,11 @@ export const useViewConfig = ({
       columns: STANDARD_COLUMNS.map((col, index) => ({
         field: col.field,
         width: col.width,
+        label: col.label,
         visible: col.defaultVisible,
         order: index,
         formatType: col.formatType,
+        sortable: col.sortable,
       })),
     };
   });

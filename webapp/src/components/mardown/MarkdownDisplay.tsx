@@ -69,10 +69,14 @@ const MarkdownDisplay: React.FC<MarkdownDisplayProps> = ({
   );
 };
 
+const HEADER_MB = '16px';
+const HEADER_MT = '24px';
+const PARAPGRAPH_M = '8px';
+
 const markdownStyles = {
   'h1, h2, h3, h4, h5, h6': {
-    marginTop: '24px',
-    marginBottom: '16px',
+    marginTop: HEADER_MT,
+    marginBottom: HEADER_MB,
     fontWeight: 'bold',
     lineHeight: '1.25',
   },
@@ -90,11 +94,11 @@ const markdownStyles = {
   h4: { fontSize: '1em' },
   h5: { fontSize: '0.875em' },
   h6: { fontSize: '0.85em', color: '#6a737d' },
-  'p, ul, ol': { marginBottom: '16px' },
+  'p, ul, ol': { marginBottom: PARAPGRAPH_M },
   'ul, ol': { paddingLeft: '.2em' },
   'ul ul, ul ol, ol ul, ol ol': { marginTop: '0', marginBottom: '0' },
   li: { wordWrap: 'break-all' },
-  'li > p': { marginTop: '16px' },
+  'li > p': { marginTop: PARAPGRAPH_M },
   'li + li': { marginTop: '.25em' },
   code: {
     padding: '.2em .4em',
@@ -125,7 +129,7 @@ const markdownStyles = {
     borderSpacing: '0',
     borderCollapse: 'collapse',
     marginTop: '0',
-    marginBottom: '16px',
+    marginBottom: PARAPGRAPH_M,
   },
   'td, th': {
     padding: '6px 13px',
@@ -147,7 +151,7 @@ const markdownStyles = {
     padding: '0 1em',
     color: '#6a737d',
     borderLeft: '.25em solid #dfe2e5',
-    marginBottom: '16px',
+    marginBottom: PARAPGRAPH_M,
   },
   'blockquote > :first-child': { marginTop: '0' },
   'blockquote > :last-child': { marginBottom: '0' },

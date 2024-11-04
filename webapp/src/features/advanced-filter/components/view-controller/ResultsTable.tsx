@@ -11,6 +11,7 @@ import {
   Text,
   Skeleton,
   Tag as ChkTag,
+  VStack,
 } from '@chakra-ui/react';
 import { ColumnConfig } from '../../types/view-config';
 import { useResizeColumns } from '../../hooks/useResizeColumns';
@@ -18,6 +19,64 @@ import { Pagination } from './Pagination';
 import { useAdvancedFilter } from '../../contexts/AdvancedFilterContext';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { Tag, ObjectType } from 'src/types';
+import { TriangleDownIcon, TriangleUpIcon } from '@chakra-ui/icons';
+import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
+
+const isSortedByColumn = (column: ColumnConfig, sortBy: string) => {
+  if (!column.sortable) return false;
+  if (!column.objectTypeId) {
+    // standard column
+    return column.field === sortBy;
+  } else {
+    console.log('sortBy:', sortBy);
+    // type value column
+    return sortBy === `type_value:${column.objectTypeId}:${column.field}`;
+  }
+};
+
+interface SortButtonProps {
+  column: ColumnConfig;
+  sortBy: string;
+  sortTypeValueField: string;
+  sortDirection: 'asc' | 'desc';
+  sort: (field: string, ascending: boolean, objectTypeId?: string) => void;
+}
+
+const SortButton = ({
+  sortBy,
+  sortTypeValueField,
+  sortDirection,
+  column,
+  sort,
+}: SortButtonProps) => {
+  const sortedByThisColumn = isSortedByColumn(column, sortBy);
+  const handleSort = (asc: boolean) => {
+    sort(column.field, asc, column.objectTypeId);
+  };
+  return !sortedByThisColumn ? (
+    <VStack color={'gray.300'} spacing={0} ml={1}>
+      <TriangleUpIcon cursor={'pointer'} onClick={() => handleSort(true)} />
+      <TriangleDownIcon cursor={'pointer'} onClick={() => handleSort(false)} />
+    </VStack>
+  ) : (
+    <VStack color={'gray.300'} spacing={0} ml={1}>
+      <TriangleUpIcon
+        cursor={'pointer'}
+        style={sortDirection === 'asc' ? { color: 'black' } : {}}
+        onClick={() => {
+          handleSort(true);
+        }}
+      />
+      <TriangleDownIcon
+        cursor={'pointer'}
+        style={sortDirection === 'desc' ? { color: 'black' } : {}}
+        onClick={() => {
+          handleSort(false);
+        }}
+      />
+    </VStack>
+  );
+};
 
 interface ResultsTableProps {
   data: any[];
@@ -109,6 +168,9 @@ const formatValue = (value: any, column: ColumnConfig) => {
       return value ? 'Yes' : 'No';
     case 'react.element':
       return value;
+    case 'md':
+      console.log('md value:', value);
+      return <MarkdownDisplay content={value} />;
     default:
       return value.toString();
   }
@@ -126,89 +188,124 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
     columns,
     onColumnResize,
   });
-  const { filterConfig } = useAdvancedFilter();
+  const { filterConfig, updateFilter } = useAdvancedFilter();
   const { page = 1, pageSize = 10 } = filterConfig;
   const { globalData } = useGlobalContext();
+
   const tags = globalData?.tagData?.tags || [];
   const typeValues = globalData?.objectTypeData?.objectTypes || [];
+  const sortDirection = filterConfig.ascending ? 'asc' : 'desc';
+  let sortBy = filterConfig?.sortBy || 'created_at';
+  const sortTypeValueField = filterConfig?.type_value_field || '';
+  const sort = (field: string, ascending: boolean, objectTypeId?: string) => {
+    const updates = {
+      type_value_field: objectTypeId ? field : undefined,
+      sortBy: objectTypeId ? `type_value:${objectTypeId}:${field}` : field,
+      ascending,
+    };
+    console.log('updates', updates);
+    updateFilter({
+      ...filterConfig,
+      ...updates,
+    });
+  };
 
   return (
-    <Box overflowX='auto'>
-      <Table size={density === 'compact' ? 'sm' : 'md'} variant='simple'>
-        <Thead>
-          <Tr>
-            {columns.map((column, index) => (
-              <Th
-                key={`${column.objectTypeId || ''}:${column.field}`}
-                width={columnWidths[index]}
-                position='relative'
-              >
-                <Box display='flex' alignItems='center'>
-                  {/* <Text>{getColumnLabel(column)}</Text> */}
-                  <Text>{column.field}</Text>
-                  <Box
-                    position='absolute'
-                    right={0}
-                    top={0}
-                    bottom={0}
-                    width='4px'
-                    cursor='col-resize'
-                    {...getResizeProps(index)}
-                  />
-                </Box>
-              </Th>
-            ))}
-          </Tr>
-        </Thead>
-        <Tbody>
-          {isLoading ? (
-            // Loading state
-            Array.from({ length: 5 }).map((_, rowIndex) => (
-              <Tr key={rowIndex}>
-                {columns?.map((column, colIndex) => (
-                  <Td key={`${column.objectTypeId || ''}:${column.field}`}>
-                    <Skeleton height='20px' />
-                  </Td>
-                ))}
-              </Tr>
-            ))
-          ) : !data || data?.length === 0 ? (
-            // Empty state
+    <Box>
+      <Box overflowX='auto'>
+        <Table size={density === 'compact' ? 'sm' : 'md'} variant='simple'>
+          <Thead>
             <Tr>
-              <Td colSpan={columns.length} textAlign='center' py={8}>
-                No data available
-              </Td>
-            </Tr>
-          ) : (
-            // Data rows
-            data?.map((item, rowIndex) => (
-              <Tr
-                key={item.id || rowIndex}
-                _hover={{
-                  background: 'gray.100',
-                }}
-                cursor={'pointer'}
-                onClick={() => window.open(`/objects/${item.id}`, '_blank')}
-              >
-                {columns.map((column) => (
-                  <Td
-                    key={`${column.objectTypeId || ''}:${column.field}`}
-                    maxWidth={column.width}
-                    overflow='hidden'
-                    textOverflow='ellipsis'
-                    whiteSpace='nowrap'
+              {columns.map((column, index) => (
+                <Th
+                  key={`${column.objectTypeId || ''}:${column.field}`}
+                  width={columnWidths[index]}
+                  position='relative'
+                  textTransform={'capitalize'}
+                >
+                  <Box
+                    display='flex'
+                    alignItems='center'
+                    alignContent={'space-between'}
+                    whiteSpace={'nowrap'}
+                    overflow={'ellipsis'}
                   >
-                    {formatValue(
-                      getCellValue(item, column, { tags, typeValues }),
-                      column
+                    {column.sortable && (
+                      <SortButton
+                        column={column}
+                        sortBy={sortBy}
+                        sortTypeValueField={sortTypeValueField}
+                        sortDirection={sortDirection}
+                        sort={sort}
+                      />
                     )}
-                  </Td>
-                ))}
+                    <Text ml={1} fontSize={'small'}>
+                      {column.label}
+                    </Text>
+                    <Box
+                      position='absolute'
+                      right={0}
+                      top={0}
+                      bottom={0}
+                      width='4px'
+                      cursor='col-resize'
+                      {...getResizeProps(index)}
+                    />
+                  </Box>
+                </Th>
+              ))}
+            </Tr>
+          </Thead>
+          <Tbody>
+            {isLoading ? (
+              // Loading state
+              Array.from({ length: 5 }).map((_, rowIndex) => (
+                <Tr key={rowIndex}>
+                  {columns?.map((column, colIndex) => (
+                    <Td key={`${column.objectTypeId || ''}:${column.field}`}>
+                      <Skeleton height='20px' />
+                    </Td>
+                  ))}
+                </Tr>
+              ))
+            ) : !data || data?.length === 0 ? (
+              // Empty state
+              <Tr>
+                <Td colSpan={columns.length} textAlign='center' py={8}>
+                  No data available
+                </Td>
               </Tr>
-            ))
-          )}
-        </Tbody>
-      </Table>
+            ) : (
+              // Data rows
+              data?.map((item, rowIndex) => (
+                <Tr
+                  key={item.id || rowIndex}
+                  _hover={{
+                    background: 'gray.100',
+                  }}
+                  cursor={'pointer'}
+                  onClick={() => window.open(`/objects/${item.id}`, '_blank')}
+                >
+                  {columns.map((column) => (
+                    <Td
+                      key={`${column.objectTypeId || ''}:${column.field}`}
+                      maxWidth={column.width}
+                      overflow='hidden'
+                      textOverflow='ellipsis'
+                      whiteSpace='nowrap'
+                    >
+                      {formatValue(
+                        getCellValue(item, column, { tags, typeValues }),
+                        column
+                      )}
+                    </Td>
+                  ))}
+                </Tr>
+              ))
+            )}
+          </Tbody>
+        </Table>
+      </Box>
       <Box p={2}>
         <Pagination
           totalCount={totalCount}

@@ -24,8 +24,6 @@ export const AdvancedFilterContainer: React.FC<
   const { data, totalCount, stepCounts, isLoading, error } =
     useAdvancedFilterData(filterConfig);
 
-  // Process total count which might include step counts
-
   const toast = useToast();
   if (error) {
     toast({

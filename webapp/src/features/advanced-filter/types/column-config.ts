@@ -1,3 +1,5 @@
+import { ColumnFormatType } from './view-config';
+
 // types/column-config.ts
 export interface StandardColumn {
   field: string;
@@ -6,7 +8,7 @@ export interface StandardColumn {
   sortable: boolean;
   defaultVisible: boolean;
   required?: boolean;
-  formatType?: 'text' | 'date' | 'number' | 'boolean' | 'react.element';
+  formatType?: ColumnFormatType;
 }
 
 export interface TypeValueColumn extends Omit<StandardColumn, 'field'> {

@@ -75,6 +75,8 @@ export const useColumnConfig = ({
         visible: true,
         order: config.columns.length,
         formatType: column.formatType,
+        label: column.label || column.field,
+        sortable: column.sortable || false,
         ...('objectTypeId' in column
           ? { objectTypeId: column.objectTypeId }
           : {}),

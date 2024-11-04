@@ -209,39 +209,107 @@ FROM filtered_objects fo
 ORDER BY
     -- First by search rank if searching
     CASE WHEN $2 = '' THEN 0 ELSE (fo.obj_rank + fo.fact_rank + fo.type_value_rank) END DESC,
-    -- Then by specified ordering
-    CASE WHEN COALESCE($10, false) THEN  -- When ascending (with proper boolean handling)
-        CASE $9
-            WHEN 'fact_count' THEN fo.fact_count::text
-            WHEN 'created_at' THEN fo.created_at::text
-            WHEN 'first_fact' THEN COALESCE(fo.first_fact_date::text, fo.created_at::text)
-            WHEN 'last_fact' THEN COALESCE(fo.last_fact_date::text, fo.created_at::text)
-            WHEN 'name' THEN fo.name
-            WHEN 'type_value' THEN (
-                SELECT fields.value::text
-                FROM jsonb_array_elements(fo.all_type_values) AS tv
-                CROSS JOIN LATERAL jsonb_each_text(tv) AS fields
-                WHERE fields.key = $11::text
-                LIMIT 1
-            )
-            ELSE fo.created_at::text
+    -- Handle numeric types
+    CASE WHEN $9 = 'fact_count' THEN 
+        CASE WHEN COALESCE($10, false) THEN fo.fact_count END
+    END ASC NULLS LAST,
+    CASE WHEN $9 = 'fact_count' THEN 
+        CASE WHEN NOT COALESCE($10, false) THEN fo.fact_count END
+    END DESC NULLS LAST,
+    -- Handle timestamp types
+    CASE WHEN $9 IN ('created_at', 'first_fact', 'last_fact') THEN 
+        CASE WHEN COALESCE($10, false) THEN
+            CASE $9
+                WHEN 'created_at' THEN fo.created_at
+                WHEN 'first_fact' THEN COALESCE(fo.first_fact_date, fo.created_at)
+                WHEN 'last_fact' THEN COALESCE(fo.last_fact_date, fo.created_at)
+            END
         END
     END ASC NULLS LAST,
-    CASE WHEN NOT COALESCE($10, false) THEN  -- When descending (with proper boolean handling)
-        CASE $9
-            WHEN 'fact_count' THEN fo.fact_count::text
-            WHEN 'created_at' THEN fo.created_at::text
-            WHEN 'first_fact' THEN COALESCE(fo.first_fact_date::text, fo.created_at::text)
-            WHEN 'last_fact' THEN COALESCE(fo.last_fact_date::text, fo.created_at::text)
-            WHEN 'name' THEN fo.name
-            WHEN 'type_value' THEN (
-                SELECT fields.value::text
-                FROM jsonb_array_elements(fo.all_type_values) AS tv
-                CROSS JOIN LATERAL jsonb_each_text(tv) AS fields
-                WHERE fields.key = $11::text
-                LIMIT 1
-            )
-            ELSE fo.created_at::text
+    CASE WHEN $9 IN ('created_at', 'first_fact', 'last_fact') THEN 
+        CASE WHEN NOT COALESCE($10, false) THEN
+            CASE $9
+                WHEN 'created_at' THEN fo.created_at
+                WHEN 'first_fact' THEN COALESCE(fo.first_fact_date, fo.created_at)
+                WHEN 'last_fact' THEN COALESCE(fo.last_fact_date, fo.created_at)
+            END
+        END
+    END DESC NULLS LAST,
+    -- Handle text types
+    CASE WHEN $9 IN ('id_string', 'name') THEN 
+        CASE WHEN COALESCE($10, false) THEN
+            CASE $9
+                WHEN 'id_string' THEN fo.id_string
+                WHEN 'name' THEN fo.name
+            END
+        END
+    END ASC NULLS LAST,
+    CASE WHEN $9 IN ('id_string', 'name') THEN 
+        CASE WHEN NOT COALESCE($10, false) THEN
+            CASE $9
+                WHEN 'id_string' THEN fo.id_string
+                WHEN 'name' THEN fo.name
+            END
+        END
+    END DESC NULLS LAST,
+    -- Handle type_value separately with numeric check
+    CASE WHEN $9 = 'type_value' THEN 
+        CASE WHEN COALESCE($10, false) THEN
+            (SELECT 
+                CASE 
+                    -- Try to cast to numeric if possible
+                    WHEN fields.value ~ '^[0-9]+\.?[0-9]*$' THEN 
+                        CAST(fields.value AS numeric)
+                    ELSE NULL
+                END
+            FROM jsonb_array_elements(fo.all_type_values) AS tv
+            CROSS JOIN LATERAL jsonb_each_text(tv) AS fields
+            WHERE fields.key = $11::text
+            LIMIT 1)
+        END
+    END ASC NULLS LAST,
+    CASE WHEN $9 = 'type_value' THEN 
+        CASE WHEN NOT COALESCE($10, false) THEN
+            (SELECT 
+                CASE 
+                    -- Try to cast to numeric if possible
+                    WHEN fields.value ~ '^[0-9]+\.?[0-9]*$' THEN 
+                        CAST(fields.value AS numeric)
+                    ELSE NULL
+                END
+            FROM jsonb_array_elements(fo.all_type_values) AS tv
+            CROSS JOIN LATERAL jsonb_each_text(tv) AS fields
+            WHERE fields.key = $11::text
+            LIMIT 1)
+        END
+    END DESC NULLS LAST,
+    -- Handle non-numeric type_values
+    CASE WHEN $9 = 'type_value' THEN 
+        CASE WHEN COALESCE($10, false) THEN
+            (SELECT 
+                CASE 
+                    -- Use text value when it's not numeric
+                    WHEN fields.value !~ '^[0-9]+\.?[0-9]*$' THEN 
+                        fields.value
+                END
+            FROM jsonb_array_elements(fo.all_type_values) AS tv
+            CROSS JOIN LATERAL jsonb_each_text(tv) AS fields
+            WHERE fields.key = $11::text
+            LIMIT 1)
+        END
+    END ASC NULLS LAST,
+    CASE WHEN $9 = 'type_value' THEN 
+        CASE WHEN NOT COALESCE($10, false) THEN
+            (SELECT 
+                CASE 
+                    -- Use text value when it's not numeric
+                    WHEN fields.value !~ '^[0-9]+\.?[0-9]*$' THEN 
+                        fields.value
+                END
+            FROM jsonb_array_elements(fo.all_type_values) AS tv
+            CROSS JOIN LATERAL jsonb_each_text(tv) AS fields
+            WHERE fields.key = $11::text
+            LIMIT 1)
         END
     END DESC NULLS LAST
 LIMIT $12 OFFSET $13

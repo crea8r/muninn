@@ -88,7 +88,6 @@ export const ViewController: React.FC<ViewControllerProps> = ({
     updateConfig,
     viewRestrictions,
   });
-
   const handleDensityChange = useCallback(
     (density: DisplayDensity) => {
       updateConfig({ density });

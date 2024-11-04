@@ -137,7 +137,8 @@ func (s *ObjectService) ListObjects(ctx context.Context, params ListObjectsParam
     if err != nil {
         return nil, fmt.Errorf("error counting objects: %w", err)
     }
-
+    fmt.Println("OrderBy: ", params.OrderBy)
+    fmt.Println("TypeValueField: ", params.TypeValueField)
     items, err := s.db.ListObjectsAdvanced(ctx, database.ListObjectsAdvancedParams{
         OrgID:             params.OrgID,
         Column2:       params.SearchQuery,

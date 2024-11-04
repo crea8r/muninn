@@ -21,6 +21,7 @@ export const SortingControl: React.FC = () => {
   const { filterConfig, updateFilter } = useAdvancedFilter();
   const { globalData } = useGlobalContext();
   const objectTypes = globalData?.objectTypeData?.objectTypes || [];
+  const filteredObjectTypes = filterConfig.typeIds || [];
 
   // Determine current sort type and values
   const currentSort = useMemo(() => {
@@ -48,7 +49,10 @@ export const SortingControl: React.FC = () => {
       });
     } else {
       // Default to first object type and its first field if available
-      const firstType = objectTypes[0];
+      const firstTypeId = filteredObjectTypes[0];
+      const firstType = objectTypes.find(
+        (t: ObjectType) => t.id === firstTypeId
+      );
       if (firstType) {
         const firstField = Object.keys(firstType.fields)[0];
         updateFilter({
@@ -62,7 +66,6 @@ export const SortingControl: React.FC = () => {
   const toggleDirection = () => {
     updateFilter({ ascending: !filterConfig.ascending });
   };
-
   return (
     <VStack align='stretch' spacing={3}>
       <Divider my={2} />
@@ -76,7 +79,12 @@ export const SortingControl: React.FC = () => {
       >
         <Stack>
           <Radio value='standard'>Standard Fields</Radio>
-          <Radio value='type_value'>Object Type Field</Radio>
+          <Radio
+            value='type_value'
+            isDisabled={filteredObjectTypes.length === 0}
+          >
+            Object Type Field
+          </Radio>
         </Stack>
       </RadioGroup>
 
@@ -112,11 +120,13 @@ export const SortingControl: React.FC = () => {
               }
             }}
           >
-            {objectTypes.map((type: ObjectType) => (
-              <option key={type.id} value={type.id}>
-                {type.name}
-              </option>
-            ))}
+            {objectTypes
+              .filter((o: ObjectType) => filteredObjectTypes.includes(o.id))
+              .map((type: ObjectType) => (
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
+              ))}
           </Select>
 
           {currentSort.typeId && (
