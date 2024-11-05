@@ -64,6 +64,8 @@ export const Pagination: React.FC<PaginationProps> = ({
           <option value='10'>10</option>
           <option value='20'>20</option>
           <option value='50'>50</option>
+          <option value='50'>200</option>
+          <option value='50'>300</option>
         </Select>
       </HStack>
     </HStack>
