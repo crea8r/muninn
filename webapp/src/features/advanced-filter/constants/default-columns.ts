@@ -16,9 +16,8 @@ export const STANDARD_COLUMNS: StandardColumn[] = [
     label: 'Created Date',
     width: 150,
     sortable: true,
-    defaultVisible: true,
+    defaultVisible: false,
     formatType: 'date',
-    order: 1,
   },
   {
     field: 'first_fact_date',
@@ -64,9 +63,8 @@ export const STANDARD_COLUMNS: StandardColumn[] = [
     label: 'Fact Count',
     width: 50,
     sortable: true,
-    defaultVisible: true,
+    defaultVisible: false,
     formatType: 'number',
-    order: 2,
   },
   {
     field: 'description',
