@@ -66,7 +66,7 @@ export const FunnelStepFilter: React.FC = () => {
     updateFilter({
       funnelStepFilter: {
         funnelId,
-        stepIds: funnel.steps.map((s) => s.id),
+        stepIds: funnel.steps?.map((s) => s.id),
         subStatuses: currentFilter?.subStatuses || [...allStatuses],
       },
     });
@@ -150,7 +150,7 @@ export const FunnelStepFilter: React.FC = () => {
               onChange={(values) => handleStepToggle(values as string[])}
             >
               <VStack align='stretch' spacing={1}>
-                {selectedFunnel.steps.map((step) => (
+                {selectedFunnel.steps?.map((step) => (
                   <Checkbox
                     key={step.id}
                     value={step.id}

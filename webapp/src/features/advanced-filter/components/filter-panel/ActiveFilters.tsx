@@ -46,7 +46,7 @@ export const ActiveFilters: React.FC = () => {
           <TagLabel>Funnel: {funnel.name}</TagLabel>
         </Tag>
 
-        {funnelFilter.stepIds.length < funnel.steps.length && (
+        {funnelFilter.stepIds?.length < funnel.steps?.length && (
           <Tag size='md' variant='subtle' colorScheme='purple'>
             <TagLabel>
               Steps: {funnelFilter.stepIds.length}/{funnel.steps.length}

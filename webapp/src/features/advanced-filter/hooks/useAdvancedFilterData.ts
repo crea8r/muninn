@@ -31,7 +31,7 @@ export const useAdvancedFilterData = (filterConfig: FilterConfig) => {
 
     try {
       const response = await fetchAdvancedFilterResults(debouncedFilter);
-      setData(response.items);
+      setData(response.items || []);
       if (typeof response.total_count === 'object') {
         setTotalCount(response.total_count.total_count);
         setStepCounts(response.total_count.step_counts);

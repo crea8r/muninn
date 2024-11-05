@@ -41,7 +41,7 @@ export const StepCountsDisplay: React.FC<StepCountsDisplayProps> = ({
         <Text color='gray.600'>Total: {totalCount}</Text>
       </HStack>
       <Flex gap={2} overflowX={'scroll'} pb={2}>
-        {funnel.steps.map((step, index) => {
+        {funnel.steps?.map((step, index) => {
           const count = stepCounts[step.id] || 0;
           const percentage = totalCount > 0 ? (count / totalCount) * 100 : 0;
 
