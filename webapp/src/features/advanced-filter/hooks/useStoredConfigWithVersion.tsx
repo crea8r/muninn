@@ -122,7 +122,10 @@ export const useStoredConfigWithVersion = () => {
       }
       return defaultCol;
     });
-    return [...df, ...storedColumns.filter((col: any) => col.objectTypeId)];
+    return [
+      ...df,
+      ...storedColumns.filter((col: any) => col.objectTypeId !== undefined),
+    ];
   };
 
   const saveConfig = useCallback(

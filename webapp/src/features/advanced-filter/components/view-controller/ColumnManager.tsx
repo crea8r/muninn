@@ -303,10 +303,14 @@ export const ColumnManager: React.FC<ColumnManagerProps> = ({
                     : column.field
                 }
                 column={column}
-                isRestricted={restrictions.restrictedColumns.includes(
-                  column.field
-                )}
-                isRequired={restrictions.requiredColumns.includes(column.field)}
+                isRestricted={
+                  restrictions.restrictedColumns.includes(column.field) &&
+                  column.objectTypeId === undefined
+                }
+                isRequired={
+                  restrictions.requiredColumns.includes(column.field) &&
+                  column.objectTypeId === undefined
+                }
                 onToggle={(checked) =>
                   onToggleColumn(column.field, checked, column.objectTypeId)
                 }

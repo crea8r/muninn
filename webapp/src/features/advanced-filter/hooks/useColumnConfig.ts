@@ -20,7 +20,11 @@ export const useColumnConfig = ({
   // Toggle column visibility
   const toggleColumnVisibility = useCallback(
     (field: string, visible: boolean, objectTypeId?: string) => {
-      if (viewRestrictions.requiredColumns.includes(field) && !visible) {
+      if (
+        viewRestrictions.requiredColumns.includes(field) &&
+        objectTypeId === undefined &&
+        !visible
+      ) {
         return;
       }
 
@@ -119,7 +123,7 @@ export const useColumnConfig = ({
   // Remove column
   const removeColumn = useCallback(
     (field: string, objectTypeId?: string) => {
-      if (viewRestrictions.requiredColumns.includes(field)) {
+      if (viewRestrictions.requiredColumns.includes(field) && !objectTypeId) {
         return; // Cannot remove required columns
       }
 

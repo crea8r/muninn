@@ -78,6 +78,7 @@ export const useViewConfig = ({
             density: 'comfortable',
             columns: STANDARD_COLUMNS.map((col, index) => ({
               field: col.field,
+              label: col.label,
               width: col.width,
               visible: col.defaultVisible,
               order: col.order,
