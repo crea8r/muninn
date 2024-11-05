@@ -14,6 +14,7 @@ import { useAdvancedFilter } from '../../contexts/AdvancedFilterContext';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { substatus } from 'src/utils';
 import { STANDARD_SORT_OPTIONS } from '../../constants';
+import { useUnsavedChangesContext } from 'src/contexts/unsaved-changes/UnsavedChange';
 
 export const ActiveFilters: React.FC = () => {
   const { filterConfig, updateFilter } = useAdvancedFilter();
@@ -21,6 +22,7 @@ export const ActiveFilters: React.FC = () => {
   const objectTypes = globalData?.objectTypeData?.objectTypes || [];
   const funnels = globalData?.funnelData?.funnels || [];
   const tags = globalData?.tagData?.tags || [];
+  const { setDirty } = useUnsavedChangesContext();
 
   const removeCriteria = (criteriaKey: string) => {
     const newCriteria: any = { ...filterConfig.typeValueCriteria };
@@ -101,7 +103,7 @@ export const ActiveFilters: React.FC = () => {
     if (!objectTypes.length) return null;
 
     return selectedTypes.map((type) => (
-      <Tag key={type.id} size='md' variant='subtle' colorScheme='blue'>
+      <Tag key={type.id} size='md' variant='outline' colorScheme='blue'>
         <TagLabel>{type.name}</TagLabel>
         <TagCloseButton
           onClick={() => {
@@ -126,7 +128,7 @@ export const ActiveFilters: React.FC = () => {
         }`;
 
         return (
-          <Tag key={key} size='md' variant='subtle' colorScheme='blue'>
+          <Tag key={key} size='md' variant='outline' colorScheme='blue'>
             <TagLabel>{label}</TagLabel>
             <TagCloseButton onClick={() => removeCriteria(key)} />
           </Tag>
@@ -159,12 +161,35 @@ export const ActiveFilters: React.FC = () => {
     );
   };
 
+  const clearAll = () => {
+    updateFilter({
+      typeIds: [],
+      tagIds: [],
+      typeValueCriteria: undefined,
+      funnelStepFilter: undefined,
+    });
+    setDirty(false);
+  };
+
   return (
     <Box>
       <Divider my={2} />
-      <Text fontSize='md' fontWeight='bold' mb={2} color={'blue.500'}>
-        Filters
-      </Text>
+      <HStack justify='space-between' width={'100%'} alignItems={'center'}>
+        <Text fontSize='md' fontWeight='bold' color={'blue.500'}>
+          Filters
+        </Text>
+        <Text
+          fontSize='sm'
+          fontWeight={'light'}
+          color='gray.500'
+          textDecoration={'underline'}
+          cursor='pointer'
+          onClick={clearAll}
+        >
+          Clear All
+        </Text>
+      </HStack>
+
       <HStack spacing={2} flexWrap='wrap'>
         {renderTypeFilters()}
         {renderTagFilters()}

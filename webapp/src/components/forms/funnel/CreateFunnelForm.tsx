@@ -31,6 +31,7 @@ import {
 } from '@chakra-ui/icons';
 import { NewFunnel, NewFunnelStep } from 'src/types';
 import MarkdownEditor from 'src/components/mardown/MardownEditor';
+import { useUnsavedChangesContext } from 'src/contexts/unsaved-changes/UnsavedChange';
 
 interface CreateFunnelFormProps {
   isOpen: boolean;
@@ -46,6 +47,7 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [steps, setSteps] = useState<NewFunnelStep[]>([]);
+  const { isDirty, setDirty } = useUnsavedChangesContext();
 
   useEffect(() => {
     if (!isOpen) {
@@ -57,6 +59,7 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
   }, [isOpen]);
 
   const handleAddStep = () => {
+    setDirty(true);
     setSteps([
       ...steps,
       {
@@ -74,12 +77,14 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
     field: keyof NewFunnelStep,
     value: string
   ) => {
+    setDirty(true);
     const newSteps = [...steps];
     newSteps[index] = { ...newSteps[index], [field]: value };
     setSteps(newSteps);
   };
 
   const handleMoveStep = (index: number, direction: 'up' | 'down') => {
+    setDirty(true);
     if (
       (direction === 'up' && index > 0) ||
       (direction === 'down' && index < steps.length - 1)
@@ -99,6 +104,19 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
     setSteps(newSteps);
   };
 
+  const handleClose = () => {
+    if (isDirty) {
+      const confirm = window.confirm(
+        'You have unsaved changes. Are you sure you want to close?'
+      );
+      if (!confirm) {
+        return;
+      }
+    }
+    onClose();
+    setDirty(false);
+  };
+
   const handleSave = () => {
     const newFunnel: NewFunnel = {
       name,
@@ -110,7 +128,7 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size='xl'>
+    <Modal isOpen={isOpen} onClose={handleClose} size='xl'>
       <ModalOverlay />
       <ModalContent maxWidth='800px'>
         <ModalHeader>Create New Funnel</ModalHeader>
@@ -120,11 +138,17 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
             <Input
               placeholder='Funnel Name'
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                setDirty(true);
+              }}
             />
             <MarkdownEditor
               initialValue={description}
-              onChange={setDescription}
+              onChange={(content: string) => {
+                setDirty(true);
+                setDescription(content);
+              }}
               filters={[]}
             />
             <Button leftIcon={<AddIcon />} onClick={handleAddStep}>
@@ -216,7 +240,7 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
           <Button colorScheme='blue' mr={3} onClick={handleSave}>
             Save Funnel
           </Button>
-          <Button variant='ghost' onClick={onClose}>
+          <Button variant='ghost' onClick={handleClose}>
             Cancel
           </Button>
         </ModalFooter>

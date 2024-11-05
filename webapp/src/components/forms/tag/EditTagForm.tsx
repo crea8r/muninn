@@ -36,12 +36,14 @@ const EditTagForm: React.FC<EditTagFormProps> = ({
   );
   const [textColor, setTextColor] = useState(tag.color_schema.text);
   const toast = useToast();
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
     // Update form when tag prop changes
     setDescription(tag.description);
     setBackgroundColor(tag.color_schema.background);
     setTextColor(tag.color_schema.text);
+    setIsDirty(true);
   }, [tag]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,6 +66,7 @@ const EditTagForm: React.FC<EditTagFormProps> = ({
         duration: 3000,
         isClosable: true,
       });
+      setIsDirty(false);
     } catch (error) {
       toast({
         title: 'Error updating tag',
@@ -76,7 +79,19 @@ const EditTagForm: React.FC<EditTagFormProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal
+      isOpen={isOpen}
+      onClose={() => {
+        if (isDirty) {
+          const cfm = window.confirm(
+            'Are you sure you want to abandon all changes?'
+          );
+          if (!cfm) return;
+        }
+        setIsDirty(false);
+        onClose();
+      }}
+    >
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>Edit Tag: {tag.name}</ModalHeader>

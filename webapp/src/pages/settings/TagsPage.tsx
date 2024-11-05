@@ -32,8 +32,10 @@ import {
 } from 'src/api/tag';
 import { Tag } from 'src/types';
 import LoadingPanel from 'src/components/LoadingPanel';
+import { STORAGE_KEYS } from 'src/contexts/GlobalContext';
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE =
+  parseInt(localStorage.getItem(STORAGE_KEYS.PER_PAGE)) || 10;
 
 const TagsPage: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);

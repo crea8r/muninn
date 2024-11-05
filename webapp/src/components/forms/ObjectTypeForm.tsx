@@ -98,11 +98,29 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
 
   // Handler to remove a field
   const handleRemoveField = (index: number) => {
+    if (fields[index].name !== '' || initialData) {
+      const cfm = window.confirm(
+        'Removing field are highly encourage except on a new form. Are you sure you want to remove this field?'
+      );
+      if (!cfm) {
+        return;
+      }
+    }
     setFields(fields.filter((_, i) => i !== index));
   };
 
   // Handler to save the ObjectType
   const handleSave = () => {
+    // check if any field name is empty
+    if (fields.some((field) => field.name === '') || fields.length === 0) {
+      toast({
+        title: 'Field name is required and a data type need at least one field',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
     if (!name || !description) {
       toast({
         title: 'Name and description are required',
@@ -215,6 +233,7 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
                       <IconButton
                         aria-label='Remove field'
                         icon={<DeleteIcon />}
+                        colorScheme={'red'}
                         onClick={() => handleRemoveField(index)}
                         size='sm'
                       />

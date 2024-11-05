@@ -44,6 +44,7 @@ const EditObjectTypeValueModal = ({
     ...objectType?.fields,
     ...editedValues,
   }).sort();
+  const [isDirty, setIsDirty] = React.useState(false);
   const toast = useToast();
 
   const handleReset = () => {
@@ -66,6 +67,7 @@ const EditObjectTypeValueModal = ({
         duration: 5000,
         isClosable: true,
       });
+      setIsDirty(false);
     } catch (e) {
       handleReset();
       toast({
@@ -83,6 +85,12 @@ const EditObjectTypeValueModal = ({
     <Modal
       isOpen={isOpen}
       onClose={() => {
+        if (isDirty) {
+          const cfm = window.confirm(
+            'Are you sure you want to abandon all changes?'
+          );
+          if (!cfm) return;
+        }
         handleReset();
         onClose();
       }}
@@ -118,8 +126,10 @@ const EditObjectTypeValueModal = ({
                     value={editedValues[key]}
                     onChange={
                       isEditMode
-                        ? (value) =>
-                            setEditedValues({ ...editedValues, [key]: value })
+                        ? (value) => {
+                            setIsDirty(true);
+                            setEditedValues({ ...editedValues, [key]: value });
+                          }
                         : undefined
                     }
                     dataType={objectType?.fields[key]}

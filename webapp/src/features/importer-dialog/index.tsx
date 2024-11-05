@@ -15,7 +15,6 @@ import {
   TabPanels,
 } from '@chakra-ui/react';
 import { ObjectType } from 'src/types/Object';
-import { listObjectTypes } from 'src/api/objType';
 import {
   getImportHistory,
   getImportTaskStatus,
@@ -40,6 +39,7 @@ import {
 } from './components/ImportHistory';
 import { trim } from 'lodash';
 import { normalizeToIdStyle } from 'src/utils/text';
+import { useGlobalContext } from 'src/contexts/GlobalContext';
 
 interface ImporterDialogProps {
   isOpen: boolean;
@@ -48,7 +48,8 @@ interface ImporterDialogProps {
 
 const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
   dayjs.extend(relativeTime);
-  const [objectTypes, setObjectTypes] = useState<ObjectType[]>([]);
+  const { globalData } = useGlobalContext();
+  const objectTypes = globalData?.objectTypeData?.objectTypes || [];
   const [objectTypeInput, setObjectTypeInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -139,28 +140,6 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
     }
     return () => clearInterval(intervalId);
   }, [importTaskId, toast, fetchImportHistory]);
-
-  useEffect(() => {
-    const fetchObjectTypes = async () => {
-      try {
-        setIsLoading(true);
-        const response = await listObjectTypes({ page: 1, pageSize: 100 });
-        setObjectTypes(response.objectTypes);
-      } catch (error) {
-        console.error('Error fetching object types:', error);
-        toast({
-          title: 'Error fetching object types',
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchObjectTypes();
-  }, [toast]);
 
   const handleFileChange = (data: string[][], filename: string) => {
     setCsvData(data);

@@ -12,7 +12,7 @@ import {
 import { FeedPage } from './pages/feed/';
 import { TasksPage } from './pages/tasks/';
 import { ViewsPage, ViewDetailPage } from './pages/views/';
-import { ObjectsPage, ObjectDetailPage } from './pages/object/';
+import { ObjectDetailPage } from './pages/object/';
 import {
   SettingsPage,
   ObjectTypesPage,
@@ -111,7 +111,7 @@ const App: React.FC = () => {
                           <ProtectedRoute
                             exact
                             path='/objects'
-                            component={ObjectsPage}
+                            component={AdvancedListingPage}
                           />
                           <ProtectedRoute
                             exact

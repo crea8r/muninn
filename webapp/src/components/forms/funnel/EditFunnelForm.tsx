@@ -46,6 +46,7 @@ import {
 } from '@chakra-ui/icons';
 import { Funnel, FunnelStep, FunnelUpdate } from 'src/types';
 import MarkdownEditor from 'src/components/mardown/MardownEditor';
+import { useUnsavedChangesContext } from 'src/contexts/unsaved-changes/UnsavedChange';
 
 interface EditFunnelFormProps {
   isOpen: boolean;
@@ -90,12 +91,27 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
       );
     }
   };
+  const { isDirty, setDirty } = useUnsavedChangesContext();
+
+  const handleClose = () => {
+    if (isDirty) {
+      const confirm = window.confirm(
+        'You have unsaved changes. Are you sure you want to close?'
+      );
+      if (!confirm) {
+        return;
+      }
+    }
+    onClose();
+    setDirty(false);
+  };
 
   useEffect(() => {
     setDefaultValue(funnel);
   }, [funnel]);
 
   const handleAddStep = () => {
+    setDirty(true);
     const newStep: FunnelStep = {
       id: `new-${Date.now()}`,
       name: '',
@@ -112,12 +128,14 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
     field: keyof FunnelStep,
     value: string
   ) => {
+    setDirty(true);
     const updatedSteps = [...newSteps];
     updatedSteps[index] = { ...updatedSteps[index], [field]: value };
     setNewSteps(updatedSteps);
   };
 
   const handleMoveStep = (index: number, direction: 'up' | 'down') => {
+    setDirty(true);
     if (
       (direction === 'up' && index > 0) ||
       (direction === 'down' && index < newSteps.length - 1)
@@ -132,6 +150,7 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
   };
 
   const handleDeleteStep = (index: number) => {
+    setDirty(true);
     const stepToDelete = newSteps[index];
     const updatedSteps = newSteps.filter((_, i) => i !== index);
     updatedSteps.forEach((step, i) => (step.step_order = i));
@@ -148,12 +167,11 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
   };
 
   const handleStepMapping = (oldStepId: string, newStepId: string) => {
+    setDirty(true);
     setStepMapping({ ...stepMapping, [oldStepId]: newStepId });
   };
 
   const handleSave = () => {
-    console.log('newSteps: ', newSteps);
-    console.log('oldSteps: ', existingSteps);
     let processedMapping: any = {};
     Object.keys(stepMapping).forEach((oldStepId) => {
       let newStepId = stepMapping[oldStepId];
@@ -201,6 +219,7 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
       step_mapping: processedMapping,
     };
     onSave(editedFunnel);
+    setDirty(false);
     onClose();
   };
 
@@ -510,7 +529,7 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
       isOpen={isOpen}
       onClose={() => {
         setCurrentPhase(0);
-        onClose();
+        handleClose();
       }}
       size='xl'
     >
@@ -523,11 +542,18 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
             <Input
               placeholder='Funnel Name'
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setDirty(true);
+                setName(e.target.value);
+              }}
             />
             <MarkdownEditor
               initialValue={description}
-              onChange={setDescription}
+              onChange={(content: string) => {
+                console.log('dirty');
+                setDirty(true);
+                setDescription(content);
+              }}
               filters={[]}
             />
             <Stepper index={currentPhase}>
@@ -559,6 +585,14 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
             variant='ghost'
             mr={3}
             onClick={() => {
+              if (isDirty) {
+                const confirm = window.confirm(
+                  'You have unsaved changes. Are you sure you want to reset?'
+                );
+                if (!confirm) {
+                  return;
+                }
+              }
               setDefaultValue(funnel);
               setCurrentPhase(0);
             }}
@@ -573,7 +607,7 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
           >
             Save Changes
           </Button>
-          <Button variant='ghost' onClick={onClose}>
+          <Button variant='ghost' onClick={handleClose}>
             Cancel
           </Button>
         </ModalFooter>

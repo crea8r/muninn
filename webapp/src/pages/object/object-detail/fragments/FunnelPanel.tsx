@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   VStack,
   Button,
@@ -12,12 +12,12 @@ import {
   Spacer,
   Text,
 } from '@chakra-ui/react';
-import { Funnel, FunnelStep } from 'src/types/';
-import { fetchAllFunnels } from 'src/api/funnel';
+import { FunnelStep } from 'src/types/';
 import { StepAndFunnel } from 'src/types/Object';
 import AddObjectStepModal from 'src/components/forms/object/object-step/AddObjectStepModal';
 import ObjectFunnelCard from 'src/components/forms/object/object-step/ObjectFunnelCard';
 import { FaPlus } from 'react-icons/fa';
+import { useGlobalContext } from 'src/contexts/GlobalContext';
 
 interface FunnelPanelProps {
   objectId: string;
@@ -34,28 +34,11 @@ const FunnelPanel: React.FC<FunnelPanelProps> = ({
   onUpdateSubStatus,
   stepsAndFunnels,
 }) => {
-  const [allFunnels, setAllFunnels] = useState<Funnel[]>([]);
+  const { globalData } = useGlobalContext();
+  const allFunnels = globalData?.funnelData?.funnels || [];
   const [showComplete, setShowComplete] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
-  useEffect(() => {
-    const loadFunnels = async () => {
-      try {
-        const allFunnelsData = await fetchAllFunnels();
-        setAllFunnels(allFunnelsData.funnels);
-      } catch (error) {
-        toast({
-          title: 'Error loading funnels',
-          description: 'Please try again later.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
-    };
-
-    loadFunnels();
-  }, [objectId, toast]);
 
   const handleSubmit = async (stepId: string, isNew: boolean) => {
     const successTitle = isNew

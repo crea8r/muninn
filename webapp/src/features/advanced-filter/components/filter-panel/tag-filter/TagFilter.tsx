@@ -20,6 +20,7 @@ import { useAdvancedFilter } from '../../../contexts/AdvancedFilterContext';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { useState, useMemo, useRef } from 'react';
 import { Tag } from 'src/types';
+import { useUnsavedChangesContext } from 'src/contexts/unsaved-changes/UnsavedChange';
 
 export const TagFilter: React.FC = () => {
   const { filterConfig, updateFilter } = useAdvancedFilter();
@@ -27,6 +28,7 @@ export const TagFilter: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const { setDirty } = useUnsavedChangesContext();
 
   const tags = useMemo(
     () => globalData?.tagData?.tags || [],
@@ -75,6 +77,7 @@ export const TagFilter: React.FC = () => {
     });
     setSearchQuery('');
     setIsSearching(false);
+    setDirty(true);
   };
 
   const clearAll = () => {
@@ -92,7 +95,8 @@ export const TagFilter: React.FC = () => {
         <Text
           fontSize='sm'
           fontWeight={'light'}
-          color='blue.300'
+          color='gray.500'
+          textDecoration={'underline'}
           cursor='pointer'
           onClick={clearAll}
         >

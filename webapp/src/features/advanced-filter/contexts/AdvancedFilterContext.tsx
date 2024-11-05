@@ -1,6 +1,7 @@
 // contexts/AdvancedFilterContext.tsx
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { FilterConfig } from '../types/filters';
+import { STORAGE_KEYS, useGlobalContext } from 'src/contexts/GlobalContext';
 
 export interface AdvancedFilterContextType {
   filterConfig: FilterConfig;
@@ -10,7 +11,7 @@ export interface AdvancedFilterContextType {
 
 const defaultConfig: FilterConfig = {
   page: 1,
-  pageSize: 10,
+  pageSize: parseInt(localStorage.getItem(STORAGE_KEYS.PER_PAGE)) || 10,
 };
 
 const AdvancedFilterContext = createContext<
@@ -32,9 +33,13 @@ export const AdvancedFilterProvider: React.FC<AdvancedFilterProviderProps> = ({
     ...defaultConfig,
     ...initialConfig,
   }));
+  const { setGlobalPerPage } = useGlobalContext();
 
   const updateFilter = useCallback(
     (updates: Partial<FilterConfig>) => {
+      if (updates.pageSize) {
+        setGlobalPerPage(updates.pageSize);
+      }
       setFilterConfig((prev) => {
         const newConfig = {
           ...prev,
@@ -53,7 +58,7 @@ export const AdvancedFilterProvider: React.FC<AdvancedFilterProviderProps> = ({
         return newConfig;
       });
     },
-    [onChange]
+    [onChange, setGlobalPerPage]
   );
 
   const resetFilters = useCallback(() => {

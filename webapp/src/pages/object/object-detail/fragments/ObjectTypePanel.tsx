@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Box,
   VStack,
@@ -8,11 +8,10 @@ import {
   SimpleGrid,
 } from '@chakra-ui/react';
 import { ObjectType, ObjectTypeValue } from 'src/types/';
-import { listObjectTypes } from 'src/api/objType';
 import ObjectTypeCard from 'src/components/forms/object/object-type/ObjectTypeCard';
 import AddObjectTypeValueModal from 'src/components/forms/object/object-type/AddObjectTypeValueModal';
-import LoadingPanel from 'src/components/LoadingPanel';
 import EditObjectTypeValueModal from 'src/components/forms/object/object-type/EditObjectTypeModal';
+import { useGlobalContext } from 'src/contexts/GlobalContext';
 
 interface ObjectTypePanelProps {
   objectId: string;
@@ -33,15 +32,16 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
   onRemoveObjectTypeValue,
   onUpdateObjectTypeValue,
 }) => {
-  const [availableTypes, setAvailableTypes] = useState<ObjectType[]>([]);
+  const { globalData } = useGlobalContext();
+  const availableTypes = globalData?.objectTypeData?.objectTypes || [];
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isLoading, setIsLoading] = useState(false);
   const {
     isOpen: isEditOpen,
     onOpen: onEditOpen,
     onClose: onEditClose,
   } = useDisclosure();
   const toast = useToast();
-  const [isLoading, setIsLoading] = useState(false);
   const [currentObjectTypeValue, setCurrentObjectTypeValue] = useState<
     ObjectTypeValue | undefined
   >();
@@ -49,33 +49,9 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
     ObjectType | undefined
   >();
 
-  useEffect(() => {
-    const loadObjectTypes = async () => {
-      try {
-        setIsLoading(true);
-        const resp = await listObjectTypes({
-          page: 1,
-          pageSize: 100,
-        });
-        setAvailableTypes(resp.objectTypes);
-      } catch (error) {
-        toast({
-          title: 'Error loading object types',
-          description: 'Please try again later.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadObjectTypes();
-  }, [objectId, toast]);
-
   const handleAddType = async (payload: any) => {
     try {
+      setIsLoading(true);
       await onAddObjectTypeValue(objectId, payload);
       onClose();
       toast({
@@ -93,6 +69,8 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -113,30 +91,32 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
 
   return (
     <Box>
-      {isLoading ? (
-        <LoadingPanel />
-      ) : (
-        <VStack align='stretch' spacing={4}>
-          <SimpleGrid columns={[1, 2]} spacing={4}>
-            {objectTypes.map((typeValue) => (
-              <ObjectTypeCard
-                key={typeValue.id}
-                objectType={availableTypes.find(
-                  (type) => type.id === typeValue.objectTypeId
-                )}
-                objectTypeValue={typeValue}
-                onOpen={handleClickObjectCard}
-              />
-            ))}
-          </SimpleGrid>
-          <Button onClick={onOpen}>Add New Type</Button>
-        </VStack>
-      )}
+      <VStack align='stretch' spacing={4}>
+        <SimpleGrid columns={[1, 2]} spacing={4}>
+          {objectTypes.map((typeValue) => (
+            <ObjectTypeCard
+              key={typeValue.id}
+              objectType={availableTypes.find(
+                (type) => type.id === typeValue.objectTypeId
+              )}
+              objectTypeValue={typeValue}
+              onOpen={handleClickObjectCard}
+            />
+          ))}
+        </SimpleGrid>
+        <Button onClick={onOpen} isLoading={isLoading}>
+          Add New Type
+        </Button>
+      </VStack>
 
       <AddObjectTypeValueModal
         isOpen={isOpen}
         onClose={onClose}
-        availableTypes={availableTypes}
+        availableTypes={availableTypes.filter((availType: ObjectType) => {
+          return !objectTypes.some(
+            (o: ObjectTypeValue) => o.objectTypeId === availType.id
+          );
+        })}
         onAddType={handleAddType}
       />
       {currentObjectType && currentObjectTypeValue && (

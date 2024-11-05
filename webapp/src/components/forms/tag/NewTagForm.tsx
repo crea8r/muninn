@@ -39,6 +39,7 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
   const [description, setDescription] = useState('');
   const [backgroundColor, setBackgroundColor] = useState(getRandomDarkColor());
   const [textColor, setTextColor] = useState(getRandomBrightColor());
+  const [isDirty, setIsDirty] = useState(false);
   const toast = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,6 +73,7 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
       setDescription('');
       setBackgroundColor(getRandomDarkColor());
       setTextColor(getRandomBrightColor());
+      setIsDirty(false);
       onClose();
     } catch (error) {
       toast({
@@ -83,9 +85,18 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
       });
     }
   };
+  const handleClose = () => {
+    if (isDirty) {
+      const cfm = window.confirm(
+        'Are you sure you want to discard your changes?'
+      );
+      if (!cfm) return;
+    }
+    onClose();
+  };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={handleClose}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>Create New Tag</ModalHeader>
@@ -95,13 +106,22 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
             <VStack spacing={4}>
               <FormControl isRequired>
                 <FormLabel>Name</FormLabel>
-                <Input value={name} onChange={(e) => setName(e.target.value)} />
+                <Input
+                  value={name}
+                  onChange={(e) => {
+                    setIsDirty(true);
+                    setName(e.target.value);
+                  }}
+                />
               </FormControl>
               <FormControl>
                 <FormLabel>Description</FormLabel>
                 <Input
                   value={description}
-                  onChange={(e) => setDescription(e.target.value || '')}
+                  onChange={(e) => {
+                    setIsDirty(true);
+                    setDescription(e.target.value || '');
+                  }}
                 />
               </FormControl>
               <FormControl>
@@ -109,7 +129,10 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
                 <Input
                   type='color'
                   value={backgroundColor}
-                  onChange={(e) => setBackgroundColor(e.target.value)}
+                  onChange={(e) => {
+                    setIsDirty(true);
+                    setBackgroundColor(e.target.value);
+                  }}
                 />
               </FormControl>
               <FormControl>
@@ -117,7 +140,10 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
                 <Input
                   type='color'
                   value={textColor}
-                  onChange={(e) => setTextColor(e.target.value)}
+                  onChange={(e) => {
+                    setIsDirty(true);
+                    setTextColor(e.target.value);
+                  }}
                 />
               </FormControl>
             </VStack>
@@ -127,7 +153,7 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
           <Button colorScheme='blue' mr={3} onClick={handleSubmit}>
             Create
           </Button>
-          <Button variant='ghost' onClick={onClose}>
+          <Button variant='ghost' onClick={handleClose}>
             Cancel
           </Button>
         </ModalFooter>

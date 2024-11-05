@@ -35,10 +35,24 @@ import { ObjectType } from 'src/types';
 import { useHistory } from 'react-router-dom';
 import FaIconList from 'src/components/FaIconList';
 import LoadingPanel from 'src/components/LoadingPanel';
-import LoadingModal from 'src/components/LoadingModal';
 import { debounce } from 'lodash';
+import {
+  UnsavedChangesProvider,
+  useUnsavedChangesContext,
+} from 'src/contexts/unsaved-changes/UnsavedChange';
+import { STORAGE_KEYS, useGlobalContext } from 'src/contexts/GlobalContext';
+import LoadingScreen from 'src/components/LoadingScreen';
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE =
+  parseInt(localStorage.getItem(STORAGE_KEYS.PER_PAGE)) || 10;
+
+const ObjectTypesWrapper: React.FC = () => {
+  return (
+    <UnsavedChangesProvider enabled={true}>
+      <ObjectTypesPage />
+    </UnsavedChangesProvider>
+  );
+};
 
 const ObjectTypesPage: React.FC = () => {
   const [objectTypes, setObjectTypes] = useState<ObjectType[]>([]);
@@ -53,6 +67,8 @@ const ObjectTypesPage: React.FC = () => {
   >(undefined);
   const toast = useToast();
   const history = useHistory();
+  const { isDirty, setDirty } = useUnsavedChangesContext();
+  const { refreshObjectTypes } = useGlobalContext();
 
   useEffect(() => {
     debounce(fetchObjectTypes, 500)();
@@ -99,6 +115,7 @@ const ObjectTypesPage: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
+      setDirty(false);
     } catch (error) {
       toast({
         title: 'Error creating object type',
@@ -110,6 +127,7 @@ const ObjectTypesPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+    refreshObjectTypes();
   };
 
   const handleUpdateObjectType = async (updatedObjectType: ObjectType) => {
@@ -130,6 +148,7 @@ const ObjectTypesPage: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
+      setDirty(false);
     } catch (error) {
       toast({
         title: 'Error updating object type',
@@ -141,6 +160,7 @@ const ObjectTypesPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+    refreshObjectTypes();
   };
 
   const handleDeleteObjectType = async (id: string) => {
@@ -170,6 +190,7 @@ const ObjectTypesPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+    refreshObjectTypes();
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,6 +199,7 @@ const ObjectTypesPage: React.FC = () => {
   };
 
   const handleEditObjectType = (objectType: ObjectType) => {
+    setDirty(true);
     setEditingObjectType(objectType);
     onOpen();
   };
@@ -326,6 +348,14 @@ const ObjectTypesPage: React.FC = () => {
       <ObjectTypeForm
         isOpen={isOpen && !isLoading}
         onClose={() => {
+          if (isDirty) {
+            const cfm = window.confirm(
+              'You have unsaved changes. Are you sure you want to close?'
+            );
+            if (!cfm) {
+              return;
+            }
+          }
           onClose();
           setEditingObjectType(undefined);
         }}
@@ -334,10 +364,20 @@ const ObjectTypesPage: React.FC = () => {
         }
         initialData={editingObjectType}
       />
-
-      <LoadingModal isOpen={isLoading} onClose={() => {}} />
+      {isLoading && (
+        <Box
+          position={'absolute'}
+          top={0}
+          left={0}
+          width={'100%'}
+          height={'100vh'}
+          zIndex={1000}
+        >
+          <LoadingScreen />
+        </Box>
+      )}
     </Box>
   );
 };
 
-export default ObjectTypesPage;
+export default ObjectTypesWrapper;

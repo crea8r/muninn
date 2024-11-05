@@ -46,6 +46,7 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
     initialObject?.description || ''
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const toast = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,6 +62,8 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
           duration: 5000,
           isClosable: true,
         });
+        setIsDirty(false);
+        onReset();
         onClose();
       } catch (error) {
         console.error('Error creating object:', error);
@@ -89,6 +92,7 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
           duration: 5000,
           isClosable: true,
         });
+        onReset();
         onClose();
       } catch (error) {
         console.error('Error updating object:', error);
@@ -121,14 +125,19 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
     }
   };
 
+  const handleClose = () => {
+    if (isDirty) {
+      const cfm = window.confirm(
+        'Are you sure you want to discard the changes?'
+      );
+      if (!cfm) return;
+    }
+    onReset();
+    onClose();
+  };
+
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={() => {
-        onReset();
-        onClose();
-      }}
-    >
+    <Modal isOpen={isOpen} onClose={handleClose}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
@@ -142,7 +151,10 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
                 <FormLabel>Name</FormLabel>
                 <Input
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setIsDirty(true);
+                    setName(e.target.value);
+                  }}
                   placeholder='Enter object name'
                 />
               </FormControl>
@@ -156,9 +168,10 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
                 <InputGroup marginTop={4}>
                   <Input
                     value={idString}
-                    onChange={(e) =>
-                      setIDString(normalizeToIdStyle(e.target.value))
-                    }
+                    onChange={(e) => {
+                      setIsDirty(true);
+                      setIDString(normalizeToIdStyle(e.target.value));
+                    }}
                     placeholder='Object id string, useful for adding info from csv'
                     isDisabled={isSubmitting}
                   />
@@ -177,7 +190,10 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
                 <FormLabel>Description</FormLabel>
                 <MarkdownEditor
                   initialValue={description}
-                  onChange={setDescription}
+                  onChange={(content: string) => {
+                    setIsDirty(true);
+                    setDescription(content);
+                  }}
                   filters={[]}
                 />
               </FormControl>
@@ -187,7 +203,7 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
             <Button variant='ghost' mr={3} onClick={onReset}>
               Reset
             </Button>
-            <Button variant='ghost' mr={3} onClick={onClose}>
+            <Button variant='ghost' mr={3} onClick={handleClose}>
               Cancel
             </Button>
             <Button colorScheme='blue' type='submit' isLoading={isSubmitting}>

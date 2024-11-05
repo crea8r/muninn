@@ -22,6 +22,7 @@ import {
   useDisclosure,
   ModalOverlay,
   Alert,
+  Spinner,
 } from '@chakra-ui/react';
 import { EditIcon } from '@chakra-ui/icons';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
@@ -67,10 +68,14 @@ import { ObjectDetail, ObjectTypeValue } from 'src/types/Object';
 import { FaPlus } from 'react-icons/fa';
 import { FactToCreate, FactToUpdate } from 'src/api/fact';
 import BreadcrumbComponent from 'src/components/Breadcrumb';
-import LoadingModal from 'src/components/LoadingModal';
 import SmartImage from 'src/components/SmartImage';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { shortenText } from 'src/utils';
+import {
+  UnsavedChangesProvider,
+  useUnsavedChangesContext,
+} from 'src/contexts/unsaved-changes/UnsavedChange';
+import LoadingScreen from 'src/components/LoadingScreen';
 
 const extractFunnelSteps = (object: ObjectDetail) => {
   const stepsAndFunnels = object.stepsAndFunnels;
@@ -89,6 +94,7 @@ const ObjectDetailPage: React.FC = () => {
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [isLargerThan1280] = useMediaQuery('(min-width: 1280px)');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSilentLoading, setIsSilentLoading] = useState(false);
   const { refreshSummary } = useGlobalContext();
   const {
     isOpen: isOpenNewActivityDialog,
@@ -98,7 +104,7 @@ const ObjectDetailPage: React.FC = () => {
   const [imgUrls, setImgUrls] = useState<string[]>([]);
   const [tabIndex, setTabIndex] = useState(1);
   const history = useHistory();
-
+  const { isDirty, setDirty } = useUnsavedChangesContext();
   const handleTabIndexChange = (index: number) => {
     setTabIndex(index);
   };
@@ -127,7 +133,11 @@ const ObjectDetailPage: React.FC = () => {
   useEffect(() => {
     const loadObjectDetails = async () => {
       try {
-        setIsLoading(true);
+        if (forceUpdate === 0) {
+          setIsLoading(true);
+        } else {
+          setIsSilentLoading(true);
+        }
         const details = await fetchObjectDetails(objectId);
         setObject(details);
         setFacts(details.facts);
@@ -149,7 +159,11 @@ const ObjectDetailPage: React.FC = () => {
           isClosable: true,
         });
       } finally {
-        setIsLoading(false);
+        if (forceUpdate === 0) {
+          setIsLoading(false);
+        } else {
+          setIsSilentLoading(false);
+        }
       }
     };
 
@@ -194,6 +208,7 @@ const ObjectDetailPage: React.FC = () => {
     setForceUpdate(forceUpdate + 1);
     onCloseNewActivityDialog();
     setIsLoading(false);
+    setDirty(false);
   };
 
   const handleAddObjectTypeValue = async (objectId: string, payload: any) => {
@@ -273,7 +288,16 @@ const ObjectDetailPage: React.FC = () => {
   };
 
   return isLoading ? (
-    <LoadingModal isOpen={isLoading} onClose={() => {}} />
+    <Box
+      position={'absolute'}
+      top={0}
+      left={0}
+      width={'100%'}
+      height={'100vh'}
+      zIndex={1000}
+    >
+      <LoadingScreen />
+    </Box>
   ) : (
     <>
       {object ? (
@@ -305,8 +329,11 @@ const ObjectDetailPage: React.FC = () => {
                         }}
                       />
                     </Box>
-
-                    <Text>{object?.name}</Text>
+                    {isSilentLoading ? (
+                      <Spinner size={'sm'} />
+                    ) : (
+                      <Text>{object?.name}</Text>
+                    )}
                   </HStack>
                 </Heading>
               </HStack>
@@ -350,7 +377,12 @@ const ObjectDetailPage: React.FC = () => {
                   </Tab>
                   <Tab>
                     <Text mr={2}>Activity Log</Text>
-                    <FaPlus onClick={onOpenNewActivityDialog} />
+                    <FaPlus
+                      onClick={() => {
+                        onOpenNewActivityDialog();
+                        setDirty(true);
+                      }}
+                    />
                   </Tab>
                 </TabList>
                 <TabPanels>
@@ -420,22 +452,27 @@ const ObjectDetailPage: React.FC = () => {
                   <Heading as='h2' size='md'>
                     Detail
                   </Heading>
-                  <EditIcon
-                    fontSize='x-large'
-                    onClick={() => {
-                      setShowEditObject(true);
-                    }}
-                  />
+                  {!isSilentLoading && (
+                    <EditIcon
+                      fontSize='x-large'
+                      onClick={() => {
+                        setShowEditObject(true);
+                      }}
+                    />
+                  )}
                 </HStack>
 
-                {object?.description && object?.description !== '' && (
-                  <>
-                    <MarkdownDisplay
-                      content={object.description}
-                      characterLimit={200}
-                    />
-                  </>
-                )}
+                {!isSilentLoading &&
+                  object?.description &&
+                  object?.description !== '' && (
+                    <>
+                      <MarkdownDisplay
+                        content={object.description}
+                        characterLimit={200}
+                      />
+                    </>
+                  )}
+                {isSilentLoading && <Spinner size={'sm'} />}
 
                 <TagInput
                   tags={object?.tags || []}
@@ -454,7 +491,7 @@ const ObjectDetailPage: React.FC = () => {
             )}
           </Box>
 
-          {object && (
+          {object && !isSilentLoading && (
             <ObjectForm
               initialObject={object}
               isOpen={showEditObject}
@@ -466,7 +503,16 @@ const ObjectDetailPage: React.FC = () => {
 
           <Modal
             isOpen={isOpenNewActivityDialog}
-            onClose={onCloseNewActivityDialog}
+            onClose={() => {
+              if (isDirty) {
+                const cfm = window.confirm(
+                  'Are you sure you want to abandon all changes?'
+                );
+                if (!cfm) return;
+              }
+              onCloseNewActivityDialog();
+              setDirty(false);
+            }}
           >
             <ModalOverlay />
             <ModalContent>
@@ -486,4 +532,12 @@ const ObjectDetailPage: React.FC = () => {
   );
 };
 
-export default ObjectDetailPage;
+const ObjectDetailPageWrapper: React.FC = () => {
+  return (
+    <UnsavedChangesProvider enabled={true}>
+      <ObjectDetailPage />
+    </UnsavedChangesProvider>
+  );
+};
+
+export default ObjectDetailPageWrapper;

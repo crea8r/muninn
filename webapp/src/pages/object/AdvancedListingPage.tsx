@@ -9,7 +9,7 @@ export default function AdvancedListingPage() {
   };
 
   return (
-    <Box height='calc(100vh - 120px)' bg='white' p={2}>
+    <Box height='calc(100vh - 120px)' bg='white' p={0}>
       <AdvancedFilter viewSource={viewSource} />
     </Box>
   );

@@ -30,12 +30,26 @@ import { Funnel, NewFunnel } from '../../types/Funnel';
 import { fetchAllFunnels, createFunnel } from 'src/api/funnel';
 import { useHistory } from 'react-router-dom';
 import LoadingPanel from 'src/components/LoadingPanel';
-import LoadingModal from 'src/components/LoadingModal';
 import { debounce } from 'lodash';
 import { FaEdit, FaFunnelDollar } from 'react-icons/fa';
 import { shortenText } from 'src/utils';
+import {
+  UnsavedChangesProvider,
+  useUnsavedChangesContext,
+} from 'src/contexts/unsaved-changes/UnsavedChange';
+import { STORAGE_KEYS, useGlobalContext } from 'src/contexts/GlobalContext';
+import LoadingScreen from 'src/components/LoadingScreen';
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE =
+  parseInt(localStorage.getItem(STORAGE_KEYS.PER_PAGE)) || 10;
+
+const FunnelPageWrapper: React.FC = () => {
+  return (
+    <UnsavedChangesProvider enabled={true}>
+      <FunnelsPage />
+    </UnsavedChangesProvider>
+  );
+};
 
 const FunnelsPage: React.FC = () => {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
@@ -50,7 +64,8 @@ const FunnelsPage: React.FC = () => {
     onClose: onCreateClose,
   } = useDisclosure();
   const toast = useToast();
-
+  const { setDirty } = useUnsavedChangesContext();
+  const { refreshFunnels } = useGlobalContext();
   useEffect(() => {
     debounce(loadFunnels, 500)();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -91,6 +106,7 @@ const FunnelsPage: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
+      setDirty(false);
     } catch (error) {
       toast({
         title: 'Error creating funnel',
@@ -102,6 +118,7 @@ const FunnelsPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+    refreshFunnels();
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -247,9 +264,20 @@ const FunnelsPage: React.FC = () => {
         onClose={onCreateClose}
         onSave={handleCreateFunnel}
       />
-      <LoadingModal isOpen={isLoading} onClose={() => {}} />
+      {isLoading && (
+        <Box
+          width={'100%'}
+          height={'100vh'}
+          position={'absolute'}
+          top={0}
+          left={0}
+          zIndex={1000}
+        >
+          <LoadingScreen />
+        </Box>
+      )}
     </Box>
   );
 };
 
-export default FunnelsPage;
+export default FunnelPageWrapper;

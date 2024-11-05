@@ -10,6 +10,7 @@ import {
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { useAdvancedFilter } from 'src/features/advanced-filter/contexts/AdvancedFilterContext';
 import { ObjectType } from 'src/types';
+import { useUnsavedChangesContext } from 'src/contexts/unsaved-changes/UnsavedChange';
 
 interface CriteriaBuilderProps {
   value?: Record<string, string>;
@@ -23,6 +24,7 @@ export const CriteriaBuilder: React.FC<CriteriaBuilderProps> = ({
   const { globalData } = useGlobalContext();
   const objectTypes = globalData?.objectTypeData?.objectTypes || [];
   const { filterConfig } = useAdvancedFilter();
+  const { setDirty } = useUnsavedChangesContext();
   const filteredObjectTypeIds = filterConfig.typeIds;
 
   const handleTypeChange = (typeId: string) => {
@@ -34,6 +36,7 @@ export const CriteriaBuilder: React.FC<CriteriaBuilderProps> = ({
   };
 
   const handleValueChange = (fieldValue: string) => {
+    setDirty(true);
     onChange({ ...value, value: fieldValue });
   };
 

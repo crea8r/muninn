@@ -35,8 +35,14 @@ export const Pagination: React.FC<PaginationProps> = ({
         >
           Previous
         </Button>
-        <Text>
-          Page {currentPage} of {totalPages}
+        <Text
+          display={{
+            base: 'none',
+            md: 'block',
+          }}
+        >
+          {(currentPage - 1) * pageSize + 1} to{' '}
+          {Math.min(currentPage * pageSize, totalCount)} of {totalCount}
         </Text>
         <Button
           size='sm'

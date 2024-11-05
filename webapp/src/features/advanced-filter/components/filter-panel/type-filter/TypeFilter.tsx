@@ -20,6 +20,7 @@ import { useAdvancedFilter } from '../../../contexts/AdvancedFilterContext';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { useState, useMemo, useRef } from 'react';
 import { ObjectType } from 'src/types';
+import { useUnsavedChangesContext } from 'src/contexts/unsaved-changes/UnsavedChange';
 
 export const TypeFilter: React.FC = () => {
   const { filterConfig, updateFilter } = useAdvancedFilter();
@@ -27,6 +28,7 @@ export const TypeFilter: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const { setDirty } = useUnsavedChangesContext();
 
   const types = useMemo(
     () => globalData?.objectTypeData?.objectTypes || [],
@@ -84,6 +86,7 @@ export const TypeFilter: React.FC = () => {
   };
 
   const handleTypeAdd = (typeId: string) => {
+    setDirty(true);
     updateFilter({
       typeIds: [...selectedTypeIds, typeId],
     });
@@ -113,7 +116,8 @@ export const TypeFilter: React.FC = () => {
         <Text
           fontSize='sm'
           fontWeight={'light'}
-          color='blue.300'
+          color='gray.500'
+          textDecoration={'underline'}
           cursor='pointer'
           onClick={clearAll}
         >
@@ -126,7 +130,7 @@ export const TypeFilter: React.FC = () => {
         {selectedTypes.map((type) => (
           <WrapItem key={type.id}>
             <Tooltip label={renderFieldsList(type)} placement='top' hasArrow>
-              <Tag size='md' variant='solid' colorScheme='blue'>
+              <Tag size='md' variant='outline' colorScheme='blue'>
                 <TagLabel>{type.name}</TagLabel>
                 <TagCloseButton onClick={() => handleTypeRemove(type.id)} />
               </Tag>

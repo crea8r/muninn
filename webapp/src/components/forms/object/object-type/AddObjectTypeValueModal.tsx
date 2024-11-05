@@ -31,6 +31,7 @@ const AddObjectTypeValueModal: React.FC<AddObjectTypeValueModalProps> = ({
 }) => {
   const [selectedType, setSelectedType] = useState<string>('');
   const [typeValues, setTypeValues] = useState<{ [key: string]: string }>({});
+  const [isDirty, setIsDirty] = useState(false);
 
   const handleAddType = () => {
     if (!selectedType) return;
@@ -38,6 +39,7 @@ const AddObjectTypeValueModal: React.FC<AddObjectTypeValueModalProps> = ({
       typeId: selectedType,
       values: typeValues,
     });
+    setIsDirty(false);
     resetForm();
   };
 
@@ -46,8 +48,24 @@ const AddObjectTypeValueModal: React.FC<AddObjectTypeValueModalProps> = ({
     setTypeValues({});
   };
 
+  const handleClose = () => {
+    if (isDirty) {
+      if (
+        window.confirm(
+          'Are you sure you want to close? You have unsaved changes.'
+        )
+      ) {
+        onClose();
+        resetForm();
+      }
+    } else {
+      onClose();
+      resetForm();
+    }
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={handleClose}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>Add New Object Type</ModalHeader>
@@ -59,6 +77,7 @@ const AddObjectTypeValueModal: React.FC<AddObjectTypeValueModalProps> = ({
                 placeholder='Select type'
                 value={selectedType}
                 onChange={(e) => {
+                  setIsDirty(true);
                   setSelectedType(e.target.value);
                   const selectedTypeFields =
                     availableTypes.find((t) => t.id === e.target.value)
@@ -86,9 +105,10 @@ const AddObjectTypeValueModal: React.FC<AddObjectTypeValueModalProps> = ({
                   field={field}
                   dataType={dataType}
                   value={value}
-                  onChange={(value) =>
-                    setTypeValues({ ...typeValues, [field]: value })
-                  }
+                  onChange={(value) => {
+                    setIsDirty(true);
+                    setTypeValues({ ...typeValues, [field]: value });
+                  }}
                 />
               );
             })}

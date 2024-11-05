@@ -22,6 +22,16 @@ import LoadingPanel from 'src/components/LoadingPanel';
 import { DeleteIcon, EditIcon } from '@chakra-ui/icons';
 import { EditFunnelForm } from 'src/components/forms';
 import { FaFunnelDollar } from 'react-icons/fa';
+import { UnsavedChangesProvider } from 'src/contexts/unsaved-changes/UnsavedChange';
+import { useGlobalContext } from 'src/contexts/GlobalContext';
+
+const FunnelConfigPageWrapper: React.FC = () => {
+  return (
+    <UnsavedChangesProvider enabled={true}>
+      <FunnelConfigPage />;
+    </UnsavedChangesProvider>
+  );
+};
 
 const FunnelConfigPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +43,7 @@ const FunnelConfigPage: React.FC = () => {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [forcedUpdate, setForcedUpdate] = useState(0);
+  const { refreshFunnels } = useGlobalContext();
   const toast = useToast();
   const {
     isOpen: isEditOpen,
@@ -126,6 +137,7 @@ const FunnelConfigPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+    refreshFunnels();
   };
 
   const handleClickEditFunnel = () => {
@@ -133,7 +145,6 @@ const FunnelConfigPage: React.FC = () => {
   };
 
   const handleClickFunnel = () => {
-    console.log('id: ', id);
     history.push(`/settings/funnels/${id}`);
   };
 
@@ -161,6 +172,7 @@ const FunnelConfigPage: React.FC = () => {
       } finally {
         setIsLoading(false);
       }
+      refreshFunnels();
     }
   };
 
@@ -261,4 +273,4 @@ const FunnelConfigPage: React.FC = () => {
   );
 };
 
-export default FunnelConfigPage;
+export default FunnelConfigPageWrapper;

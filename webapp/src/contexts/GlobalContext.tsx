@@ -14,6 +14,74 @@ import { listTags } from 'src/api/tag';
 import { fetchAllFunnels } from 'src/api/funnel';
 import { PersonalSummarize } from 'src/types/Summarize';
 
+export const STORAGE_KEYS = {
+  CACHE_VERSION: 'globalData_version',
+  MEMBERS: 'globalData_members',
+  OBJECT_TYPES: 'globalData_objectTypes',
+  TAGS: 'globalData_tags',
+  FUNNELS: 'globalData_funnels',
+  PER_PAGE: 'globalData_perPage',
+} as const;
+
+const CACHE_VERSION = '1.0'; // Increment this when data structure changes
+// Cache duration increased to 10 minutes
+const CACHE_DURATION = 10 * 60 * 1000;
+// Summary refresh interval remains at 1 minute
+const SUMMARY_REFRESH_INTERVAL = 60 * 1000;
+
+const storage = {
+  isValid: () => {
+    try {
+      const version = localStorage.getItem(STORAGE_KEYS.CACHE_VERSION);
+      return version === CACHE_VERSION;
+    } catch {
+      return false;
+    }
+  },
+
+  getData: <T,>(key: string): { data: T; lastUpdated: number } | null => {
+    try {
+      const item = localStorage.getItem(key);
+      if (!item) return null;
+      return JSON.parse(item);
+    } catch {
+      return null;
+    }
+  },
+
+  setData: <T,>(key: string, data: T) => {
+    try {
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          data,
+          lastUpdated: Date.now(),
+        })
+      );
+    } catch (error) {
+      console.warn('Failed to save to localStorage:', error);
+    }
+  },
+
+  clearAll: () => {
+    try {
+      Object.values(STORAGE_KEYS).forEach((key) => {
+        localStorage.removeItem(key);
+      });
+    } catch (error) {
+      console.warn('Failed to clear localStorage:', error);
+    }
+  },
+
+  initialize: () => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.CACHE_VERSION, CACHE_VERSION);
+    } catch (error) {
+      console.warn('Failed to initialize localStorage:', error);
+    }
+  },
+};
+
 // Define separate interfaces for each data type to make the code more maintainable
 interface MemberData {
   members: OrgMember[];
@@ -63,10 +131,6 @@ interface GlobalContextType {
 }
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
-// Cache duration increased to 10 minutes
-const CACHE_DURATION = 10 * 60 * 1000;
-// Summary refresh interval remains at 1 minute
-const SUMMARY_REFRESH_INTERVAL = 60 * 1000;
 
 export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -74,191 +138,212 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
   const [globalData, setGlobalData] = useState<GlobalData | null>(null);
   const [initialized, setInitialized] = useState(false);
 
-  // Helper function to check if cache is stale
-  const isCacheStale = (lastUpdated: number | undefined) => {
+  const isCacheStale = useCallback((lastUpdated: number | undefined) => {
     if (!lastUpdated) return true;
     return Date.now() - lastUpdated > CACHE_DURATION;
-  };
+  }, []);
 
-  // Separate refresh functions for each data type
-  const refreshMembers = useCallback(
-    async (force: boolean = false) => {
-      if (!force && !isCacheStale(globalData?.memberData?.lastUpdated)) {
-        return;
-      }
+  const loadFromStorage = useCallback(() => {
+    if (!storage.isValid()) {
+      storage.clearAll();
+      storage.initialize();
+      return null;
+    }
 
-      try {
-        const members = await listOrgMembers();
-        setGlobalData((prev) => ({
-          ...prev!,
-          memberData: {
-            members,
-            lastUpdated: Date.now(),
-          },
-        }));
-      } catch (error) {
-        console.error('Failed to fetch members:', error);
-      }
-    },
-    [globalData?.memberData?.lastUpdated]
-  );
+    return {
+      memberData: storage.getData<MemberData>(STORAGE_KEYS.MEMBERS),
+      objectTypeData: storage.getData<ObjectTypeData>(
+        STORAGE_KEYS.OBJECT_TYPES
+      ),
+      tagData: storage.getData<TagData>(STORAGE_KEYS.TAGS),
+      funnelData: storage.getData<FunnelData>(STORAGE_KEYS.FUNNELS),
+      perPage: parseInt(localStorage.getItem(STORAGE_KEYS.PER_PAGE) || '5'),
+    };
+  }, []);
 
-  const refreshObjectTypes = useCallback(
-    async (force: boolean = false) => {
-      if (!force && !isCacheStale(globalData?.objectTypeData?.lastUpdated)) {
-        return;
-      }
+  const refreshMembers = useCallback(async (force: boolean = false) => {
+    try {
+      const members = await listOrgMembers();
+      const newData = {
+        members,
+        lastUpdated: Date.now(),
+      };
 
-      try {
-        const response = await listObjectTypes({
-          page: 1,
-          pageSize: 100, // Assuming we want to load all object types
-        });
-        setGlobalData((prev) => ({
-          ...prev!,
-          objectTypeData: {
-            objectTypes: response.objectTypes,
-            lastUpdated: Date.now(),
-          },
-        }));
-      } catch (error) {
-        console.error('Failed to fetch object types:', error);
-      }
-    },
-    [globalData?.objectTypeData?.lastUpdated]
-  );
+      storage.setData(STORAGE_KEYS.MEMBERS, newData);
+      setGlobalData((prev) => ({
+        ...prev!,
+        memberData: newData,
+      }));
+    } catch (error) {
+      console.error('Failed to fetch members:', error);
+    }
+  }, []);
 
-  const refreshTags = useCallback(
-    async (force: boolean = false) => {
-      if (!force && !isCacheStale(globalData?.tagData?.lastUpdated)) {
-        return;
-      }
+  const refreshObjectTypes = useCallback(async (force: boolean = false) => {
+    try {
+      const response = await listObjectTypes({ page: 1, pageSize: 100 });
+      const newData = {
+        objectTypes: response.objectTypes,
+        lastUpdated: Date.now(),
+      };
 
-      try {
-        const response = await listTags({
-          page: 1,
-          pageSize: 100, // Assuming we want to load all tags
-        });
-        setGlobalData((prev) => ({
-          ...prev!,
-          tagData: {
-            tags: response.tags,
-            lastUpdated: Date.now(),
-          },
-        }));
-      } catch (error) {
-        console.error('Failed to fetch tags:', error);
-      }
-    },
-    [globalData?.tagData?.lastUpdated]
-  );
+      storage.setData(STORAGE_KEYS.OBJECT_TYPES, newData);
+      setGlobalData((prev) => ({
+        ...prev!,
+        objectTypeData: newData,
+      }));
+    } catch (error) {
+      console.error('Failed to fetch object types:', error);
+    }
+  }, []);
 
-  const refreshFunnels = useCallback(
-    async (force: boolean = false) => {
-      if (!force && !isCacheStale(globalData?.funnelData?.lastUpdated)) {
-        return;
-      }
+  const refreshTags = useCallback(async (force: boolean = false) => {
+    try {
+      const response = await listTags({ page: 1, pageSize: 100 });
+      const newData = {
+        tags: response.tags,
+        lastUpdated: Date.now(),
+      };
 
-      try {
-        const response = await fetchAllFunnels(
-          1,
-          100 // Assuming we want to load all funnels
-        );
-        setGlobalData((prev) => ({
-          ...prev!,
-          funnelData: {
-            funnels: response.funnels,
-            lastUpdated: Date.now(),
-          },
-        }));
-      } catch (error) {
-        console.error('Failed to fetch funnels:', error);
-      }
-    },
-    [globalData?.funnelData?.lastUpdated]
-  );
+      storage.setData(STORAGE_KEYS.TAGS, newData);
+      setGlobalData((prev) => ({
+        ...prev!,
+        tagData: newData,
+      }));
+    } catch (error) {
+      console.error('Failed to fetch tags:', error);
+    }
+  }, []);
 
-  const refreshSummary = useCallback(
-    async (force: boolean = false) => {
-      if (!force && !isCacheStale(globalData?.summaryData?.lastUpdated)) {
-        return;
-      }
+  const refreshFunnels = useCallback(async (force: boolean = false) => {
+    try {
+      const response = await fetchAllFunnels(1, 100);
+      const newData = {
+        funnels: response.funnels,
+        lastUpdated: Date.now(),
+      };
 
-      try {
-        const pS: PersonalSummarize = await personalSummarize();
-        setGlobalData((prev) => ({
-          ...prev!,
-          summaryData: {
-            unseenFeedsCount: pS.unseen,
-            tasksCount: pS.ongoingTask,
-            lastUpdated: Date.now(),
-          },
-        }));
-      } catch (error) {
-        console.error('Failed to fetch summary:', error);
-      }
-    },
-    [globalData?.summaryData?.lastUpdated]
-  );
+      storage.setData(STORAGE_KEYS.FUNNELS, newData);
+      setGlobalData((prev) => ({
+        ...prev!,
+        funnelData: newData,
+      }));
+    } catch (error) {
+      console.error('Failed to fetch funnels:', error);
+    }
+  }, []);
+
+  const refreshSummary = useCallback(async () => {
+    try {
+      const pS: PersonalSummarize = await personalSummarize();
+      setGlobalData((prev) => ({
+        ...prev!,
+        summaryData: {
+          unseenFeedsCount: pS.unseen,
+          tasksCount: pS.ongoingTask,
+          lastUpdated: Date.now(),
+        },
+      }));
+    } catch (error) {
+      console.error('Failed to fetch summary:', error);
+    }
+  }, []);
 
   const refreshAll = useCallback(async () => {
     if (!authService.isAuthenticated()) return;
 
     await Promise.all([
-      refreshMembers(true),
-      refreshObjectTypes(true),
-      refreshTags(true),
-      refreshFunnels(true),
-      refreshSummary(true),
+      refreshMembers(),
+      refreshObjectTypes(),
+      refreshTags(),
+      refreshFunnels(),
+      refreshSummary(),
     ]);
   }, [
-    refreshFunnels,
     refreshMembers,
     refreshObjectTypes,
-    refreshSummary,
     refreshTags,
+    refreshFunnels,
+    refreshSummary,
   ]);
 
-  const setGlobalPerPage = (perPage: number) => {
+  const setGlobalPerPage = useCallback((perPage: number) => {
+    localStorage.setItem(STORAGE_KEYS.PER_PAGE, perPage.toString());
     setGlobalData((prev) => (prev ? { ...prev, perPage } : null));
-    localStorage.setItem('perPage', perPage.toString());
-  };
+  }, []);
 
-  // Initial setup effect
+  // Initialize data from storage or fetch fresh data
   useEffect(() => {
     const initializeData = async () => {
       if (authService.isAuthenticated() && !initialized) {
-        // Initialize with stored perPage
+        const storedData = loadFromStorage();
+
+        // Initialize with stored data first
         setGlobalData({
-          memberData: null,
-          objectTypeData: null,
-          tagData: null,
-          funnelData: null,
+          memberData: storedData?.memberData?.data ?? null,
+          objectTypeData: storedData?.objectTypeData?.data ?? null,
+          tagData: storedData?.tagData?.data ?? null,
+          funnelData: storedData?.funnelData?.data ?? null,
           summaryData: null,
-          perPage: parseInt(localStorage.getItem('perPage') || '5'),
+          perPage: storedData?.perPage ?? 5,
         });
 
-        // Initial load of all data
-        await refreshAll();
+        // Refresh stale data
+        if (
+          !storedData?.memberData ||
+          isCacheStale(storedData.memberData.lastUpdated)
+        ) {
+          await refreshMembers(true);
+        }
+        if (
+          !storedData?.objectTypeData ||
+          isCacheStale(storedData.objectTypeData.lastUpdated)
+        ) {
+          await refreshObjectTypes(true);
+        }
+        if (
+          !storedData?.tagData ||
+          isCacheStale(storedData.tagData.lastUpdated)
+        ) {
+          await refreshTags(true);
+        }
+        if (
+          !storedData?.funnelData ||
+          isCacheStale(storedData.funnelData.lastUpdated)
+        ) {
+          await refreshFunnels(true);
+        }
+
+        // Always fetch fresh summary
+        await refreshSummary();
+
         setInitialized(true);
       }
     };
 
     initializeData();
-  }, [initialized, refreshAll]);
+  }, [
+    initialized,
+    isCacheStale,
+    loadFromStorage,
+    refreshAll,
+    refreshSummary,
+    refreshFunnels,
+    refreshObjectTypes,
+    refreshTags,
+    refreshMembers,
+  ]);
 
-  // Keep only the summary on a short interval as it's most time-sensitive
+  // Set up periodic refreshes
   useEffect(() => {
     if (!initialized || !authService.isAuthenticated()) {
       return;
     }
 
-    // Only set up summary refresh interval
     const summaryInterval = setInterval(() => {
       refreshSummary();
     }, SUMMARY_REFRESH_INTERVAL);
 
-    // Safety net refresh for all data every 10 minutes
     const dataInterval = setInterval(() => {
       refreshAll();
     }, CACHE_DURATION);
@@ -267,7 +352,7 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
       clearInterval(summaryInterval);
       clearInterval(dataInterval);
     };
-  }, [initialized, refreshSummary, refreshAll]);
+  }, [initialized, refreshAll, refreshSummary]);
 
   return (
     <GlobalContext.Provider

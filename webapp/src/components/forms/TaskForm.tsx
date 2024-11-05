@@ -83,6 +83,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   );
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   useEffect(() => {
     const convertedTask = converTaskToNewOrUpdateTask(
       initialTask,
@@ -108,6 +109,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         value = '';
       }
     }
+    setIsDirty(true);
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -128,6 +130,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         duration: 5000,
         isClosable: true,
       });
+      setIsDirty(false);
       onClose();
     } catch (e: any) {
       toast({
@@ -183,10 +186,21 @@ const TaskForm: React.FC<TaskFormProps> = ({
       toAddObjectIds: toAddObjectIds,
       toRemoveObjectIds: toRemoveObjectIds,
     };
+    setIsDirty(false);
     handleCreateOrUpdateTask(toSubmitTask);
   };
+
+  const handleClose = () => {
+    if (isDirty) {
+      const cfm = window.confirm(
+        'Are you sure you want to abandon all changes?'
+      );
+      if (!cfm) return;
+    }
+    onClose();
+  };
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size='xl'>
+    <Modal isOpen={isOpen} onClose={handleClose} size='xl'>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
@@ -263,7 +277,11 @@ const TaskForm: React.FC<TaskFormProps> = ({
             </FormControl>
           </VStack>
           <HStack height={4} mt={3}>
-            <Button colorScheme='gray' onClick={onClose} isDisabled={isLoading}>
+            <Button
+              colorScheme='gray'
+              onClick={handleClose}
+              isDisabled={isLoading}
+            >
               Reset
             </Button>
             <Spacer />

@@ -1,3 +1,4 @@
+import { UnsavedChangesProvider } from 'src/contexts/unsaved-changes/UnsavedChange';
 import {
   AdvancedFilterContainer,
   AdvancedFilterContainerProps,
@@ -21,7 +22,16 @@ export const AdvancedFilter: React.FC<AdvancedFilterProps> = ({
       initialConfig={initialFilter}
       onChange={onFilterChange}
     >
-      <AdvancedFilterContainer {...viewProps} />
+      <UnsavedChangesProvider
+        enabled={true}
+        bypassUrls={['/login', '/logout']}
+        onBeforeUnload={async () => {
+          // Optional: Perform any cleanup or last-minute saves
+          return true; // Return true to show confirmation, false to allow navigation
+        }}
+      >
+        <AdvancedFilterContainer {...viewProps} />
+      </UnsavedChangesProvider>
     </AdvancedFilterProvider>
   );
 };

@@ -25,6 +25,7 @@ import { SortButton } from './SortButton';
 import { createExportCsvAction } from 'src/features/advanced-filter/actions/export-csv';
 import { createAddTagAction } from 'src/features/advanced-filter/actions/add-tag';
 import { createAddToFunnelAction } from 'src/features/advanced-filter/actions/add-to-funnel';
+import { Link } from 'react-router-dom';
 
 interface ResultsTableProps {
   data: any[];
@@ -93,6 +94,8 @@ const getCellValue = (
           return typeValue ? (
             <ChkTag
               key={typeValue.id}
+              variant={'outline'}
+              colorScheme={'blue'}
               title={window.Object.keys(item.type_values).join(', ')}
             >
               {typeValue.name}
@@ -118,7 +121,6 @@ const formatValue = (value: any, column: ColumnConfig) => {
     case 'react.element':
       return value;
     case 'md':
-      console.log('md value:', value);
       return <MarkdownDisplay content={value} />;
     default:
       return value.toString();
@@ -345,16 +347,25 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
                       overflow='hidden'
                       textOverflow='ellipsis'
                       whiteSpace='nowrap'
-                      cursor={i === 0 ? 'pointer' : 'default'}
-                      _hover={i === 0 ? { textDecoration: 'underline' } : {}}
-                      onClick={() => {
-                        if (i === 0)
-                          window.open(`/objects/${item.id}`, '_blank');
-                      }}
                     >
-                      {formatValue(
-                        getCellValue(item, column, { tags, typeValues }),
-                        column
+                      {i === 0 ? (
+                        <Link
+                          to={`/objects/${item.id}`}
+                          style={{
+                            textDecoration: 'underline',
+                          }}
+                          color={'blue.500'}
+                        >
+                          {formatValue(
+                            getCellValue(item, column, { tags, typeValues }),
+                            column
+                          )}
+                        </Link>
+                      ) : (
+                        formatValue(
+                          getCellValue(item, column, { tags, typeValues }),
+                          column
+                        )
                       )}
                     </Td>
                   ))}

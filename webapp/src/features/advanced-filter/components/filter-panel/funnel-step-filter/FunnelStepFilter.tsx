@@ -12,6 +12,7 @@ import { useAdvancedFilter } from '../../../contexts/AdvancedFilterContext';
 import { SubStatus } from 'src/features/advanced-filter/constants';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { getSubStatusLabel } from 'src/utils/substatus';
+import { useUnsavedChangesContext } from 'src/contexts/unsaved-changes/UnsavedChange';
 
 const allStatuses = [
   SubStatus.TO_ENGAGE,
@@ -23,6 +24,7 @@ export const FunnelStepFilter: React.FC = () => {
   const { filterConfig, updateFilter } = useAdvancedFilter();
   const { globalData } = useGlobalContext();
   const funnels = globalData?.funnelData?.funnels || [];
+  const { setDirty } = useUnsavedChangesContext();
 
   const currentFilter = filterConfig.funnelStepFilter;
   const selectedFunnel = funnels.find((f) => f.id === currentFilter?.funnelId);
@@ -33,7 +35,7 @@ export const FunnelStepFilter: React.FC = () => {
   ];
   const handleStepToggle = (stepIds: string[]) => {
     if (!currentFilter) return;
-
+    setDirty(true);
     if (stepIds.length === 0) {
       // If no steps selected, remove the entire funnel filter
       updateFilter({
@@ -59,7 +61,7 @@ export const FunnelStepFilter: React.FC = () => {
       });
       return;
     }
-
+    setDirty(true);
     // Set all steps active by default
     updateFilter({
       funnelStepFilter: {
@@ -76,6 +78,7 @@ export const FunnelStepFilter: React.FC = () => {
     if (selected.length === 0) return;
     // Convert back to numbers, ensuring 0 is properly handled
     const numericValues = selected.map((val) => parseInt(val, 10));
+    setDirty(true);
     updateFilter({
       funnelStepFilter: {
         ...currentFilter,
@@ -99,7 +102,8 @@ export const FunnelStepFilter: React.FC = () => {
         <Text
           fontSize='sm'
           fontWeight={'light'}
-          color='blue.300'
+          color='gray.500'
+          textDecoration={'underline'}
           cursor='pointer'
           onClick={clearAll}
         >
