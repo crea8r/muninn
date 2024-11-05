@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Box, Heading, Button, VStack, Container } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
+import authService from 'src/services/authService';
 
 const LandingPage: React.FC = () => {
+  useEffect(() => {
+    authService.isAuthenticated() && window.location.replace('/feed');
+  }, []);
   return (
     <Box
       minH='100vh'

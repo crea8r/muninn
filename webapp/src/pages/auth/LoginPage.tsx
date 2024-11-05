@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   VStack,
@@ -24,6 +24,10 @@ const LoginPage: React.FC = () => {
   const history = useHistory();
   const toast = useToast();
   const { refreshAll } = useGlobalContext();
+
+  useEffect(() => {
+    authService.isAuthenticated() && history.push('/feed');
+  });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
