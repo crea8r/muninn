@@ -143,14 +143,20 @@ export const AddToFunnelDialog: React.FC<AddToFunnelDialogProps> = ({
     >
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Add to Funnel</ModalHeader>
+        <ModalHeader>
+          <Box>Funnel changes</Box>
+          <Box fontWeight={'light'} fontSize={'sm'}>
+            Add to funnel, change step or change status
+          </Box>
+        </ModalHeader>
         {!isProcessing && <ModalCloseButton />}
         <ModalBody>
           <VStack spacing={4} align='stretch'>
             {!isProcessing ? (
               <>
                 <Text mb={4}>
-                  Select funnel and step for {selectedObjects.length} objects:
+                  Select funnel, step and status for {selectedObjects.length}{' '}
+                  objects:
                 </Text>
                 <FormControl isRequired>
                   <FormLabel>Funnel</FormLabel>

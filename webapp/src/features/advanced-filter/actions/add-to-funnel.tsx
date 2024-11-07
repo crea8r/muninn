@@ -30,7 +30,7 @@ export const createAddToFunnelAction = (onRefresh: () => void): TableAction => {
 
   return {
     id: 'add-to-funnel',
-    label: 'Add to Funnel',
+    label: 'Funnel Changes',
     icon: <FaFunnelDollar />,
     tooltip: 'Add selected objects to a funnel step',
     onClick: (selectedItems) => {
