@@ -27,13 +27,11 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   DeleteIcon,
-  InfoIcon,
-  StarIcon,
-  ArrowForwardIcon,
 } from '@chakra-ui/icons';
 import { NewFunnel, NewFunnelStep } from 'src/types';
 import MarkdownEditor from 'src/components/mardown/MardownEditor';
 import { useUnsavedChangesContext } from 'src/contexts/unsaved-changes/UnsavedChange';
+import { RenderStepHeader } from './helper';
 
 interface CreateFunnelFormProps {
   isOpen: boolean;
@@ -217,24 +215,7 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
                   </HStack>
                   <AccordionPanel pb={4}>
                     <VStack spacing={3} align='stretch'>
-                      <VStack align={'left'}>
-                        <HStack>
-                          <InfoIcon />
-                          <Text>
-                            Step Definition: Explain current status of the
-                            object in the step.
-                          </Text>
-                        </HStack>
-
-                        <Text
-                          color='gray.500'
-                          fontSize='sm'
-                          fontWeight={'light'}
-                        >
-                          A personal has been to an event, a contact has been
-                          connected, a project has been created, etc.
-                        </Text>
-                      </VStack>
+                      {RenderStepHeader({ type: 'defition' })}
                       <MarkdownEditor
                         initialValue={step.definition}
                         onChange={(content: string) =>
@@ -243,23 +224,7 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
                         filters={[]}
                       />
                       <Divider />
-
-                      <VStack align={'left'}>
-                        <HStack>
-                          <StarIcon />
-                          <Text>
-                            Step Example: What is the example of this step?
-                          </Text>
-                        </HStack>
-
-                        <Text
-                          color='gray.500'
-                          fontSize='sm'
-                          fontWeight={'light'}
-                        >
-                          A person name, a project name, etc.
-                        </Text>
-                      </VStack>
+                      {RenderStepHeader({ type: 'example' })}
                       <MarkdownEditor
                         initialValue={step.example}
                         onChange={(c: string) =>
@@ -267,24 +232,7 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
                         }
                         filters={[]}
                       />
-                      <VStack align={'left'}>
-                        <HStack>
-                          <ArrowForwardIcon />
-                          <Text>
-                            Step Action: What action <mark>YOU</mark> are going
-                            to take to move this object to the next step?
-                          </Text>
-                        </HStack>
-
-                        <Text
-                          color='gray.500'
-                          fontSize='sm'
-                          fontWeight={'light'}
-                        >
-                          Send an email, make a call, send a message, invite to
-                          a meeting, etc.
-                        </Text>
-                      </VStack>
+                      {RenderStepHeader({ type: 'action' })}
                       <MarkdownEditor
                         initialValue={step.action}
                         onChange={(c: string) =>

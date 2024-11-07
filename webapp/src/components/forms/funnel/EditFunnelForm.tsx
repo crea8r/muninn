@@ -38,15 +38,13 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   DeleteIcon,
-  InfoIcon,
-  StarIcon,
-  ArrowForwardIcon,
   WarningIcon,
   EditIcon,
 } from '@chakra-ui/icons';
 import { Funnel, FunnelStep, FunnelUpdate } from 'src/types';
 import MarkdownEditor from 'src/components/mardown/MardownEditor';
 import { useUnsavedChangesContext } from 'src/contexts/unsaved-changes/UnsavedChange';
+import { RenderStepHeader } from './helper';
 
 interface EditFunnelFormProps {
   isOpen: boolean;
@@ -223,32 +221,13 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
     onClose();
   };
 
-  const isStepNameUnique = (name: string, currentIndex: number) => {
-    return !newSteps.some(
-      (step, index) => index !== currentIndex && step.name === name
-    );
-  };
-
   const renderStepContent = (
     step: FunnelStep,
     index: number,
     isNewStep: boolean = true
   ) => (
     <VStack spacing={3} align='stretch'>
-      <Input
-        placeholder='Step Name'
-        value={step.name}
-        onChange={(e) => handleStepChange(index, 'name', e.target.value)}
-        isInvalid={!isStepNameUnique(step.name, index)}
-        isReadOnly={!isNewStep}
-        sx={{
-          backgroundColor: !isNewStep ? 'gray.100' : 'white',
-        }}
-      />
-      <HStack>
-        <InfoIcon />
-        <Text>Definition</Text>
-      </HStack>
+      {RenderStepHeader({ type: 'defition' })}
       <MarkdownEditor
         initialValue={step.definition}
         onChange={(content: string) =>
@@ -256,10 +235,7 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
         }
         filters={[]}
       />
-      <HStack>
-        <StarIcon />
-        <Text>Example</Text>
-      </HStack>
+      {RenderStepHeader({ type: 'example' })}
       <MarkdownEditor
         initialValue={step.example}
         onChange={(content: string) =>
@@ -267,10 +243,7 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
         }
         filters={[]}
       />
-      <HStack>
-        <ArrowForwardIcon />
-        <Text>Action</Text>
-      </HStack>
+      {RenderStepHeader({ type: 'action' })}
       <MarkdownEditor
         initialValue={step.action}
         onChange={(content: string) =>
@@ -599,17 +572,29 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
           >
             Reset
           </Button>
-          <Button
-            colorScheme='blue'
-            mr={3}
-            onClick={handleSave}
-            isDisabled={shouldSaveButtonDisabled()}
-          >
-            Save Changes
-          </Button>
           <Button variant='ghost' onClick={handleClose}>
             Cancel
           </Button>
+          {shouldSaveButtonDisabled() ? (
+            <Button
+              colorScheme='blue'
+              mr={3}
+              onClick={() => {
+                setCurrentPhase(currentPhase + 1);
+              }}
+            >
+              Move to {currentPhase === 0 ? 'Map Steps' : 'Preview Changes'}
+            </Button>
+          ) : (
+            <Button
+              colorScheme='blue'
+              mr={3}
+              onClick={handleSave}
+              isDisabled={shouldSaveButtonDisabled()}
+            >
+              Save Changes
+            </Button>
+          )}
         </ModalFooter>
       </ModalContent>
     </Modal>
