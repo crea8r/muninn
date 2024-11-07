@@ -20,6 +20,7 @@ import {
 } from '@chakra-ui/react';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { addOrMoveObjectInFunnel } from 'src/api/object';
+import { getSubStatusLabel, getSubStatusOptions } from 'src/utils/substatus';
 
 interface AddToFunnelDialogProps {
   isOpen: boolean;
@@ -44,6 +45,7 @@ export const AddToFunnelDialog: React.FC<AddToFunnelDialogProps> = ({
   const { globalData } = useGlobalContext();
   const [selectedFunnelId, setSelectedFunnelId] = useState<string>('');
   const [selectedStepId, setSelectedStepId] = useState<string>('');
+  const [selectedSubStatus, setSelectedSubStatus] = useState<number>(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<ProgressStatus | null>(null);
   const toast = useToast();
@@ -75,7 +77,11 @@ export const AddToFunnelDialog: React.FC<AddToFunnelDialogProps> = ({
         const object = selectedObjects[i];
 
         try {
-          await addOrMoveObjectInFunnel(object.id, selectedStepId);
+          await addOrMoveObjectInFunnel(
+            object.id,
+            selectedStepId,
+            selectedSubStatus
+          );
 
           setProgress((prev) => ({
             completed: (prev?.completed || 0) + 1,
@@ -172,6 +178,25 @@ export const AddToFunnelDialog: React.FC<AddToFunnelDialogProps> = ({
                       {selectedFunnelSteps.map((step) => (
                         <option key={step.id} value={step.id}>
                           {step.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+
+                {selectedStepId && (
+                  <FormControl isRequired>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      placeholder='Select status'
+                      value={selectedSubStatus}
+                      onChange={(e) =>
+                        setSelectedSubStatus(parseInt(e.target.value))
+                      }
+                    >
+                      {getSubStatusOptions().map((opt) => (
+                        <option key={opt} value={opt}>
+                          {getSubStatusLabel(opt)}
                         </option>
                       ))}
                     </Select>

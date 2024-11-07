@@ -1,14 +1,7 @@
 // components/filter-panel/type-value-filter/TypeValueCriteria.tsx
 import React from 'react';
-import {
-  VStack,
-  HStack,
-  Button,
-  Text,
-  IconButton,
-  Box,
-} from '@chakra-ui/react';
-import { AddIcon, CloseIcon } from '@chakra-ui/icons';
+import { VStack, HStack, Button, Text, Box } from '@chakra-ui/react';
+import { AddIcon } from '@chakra-ui/icons';
 import { CriteriaBuilder } from './CriteriaBuilder';
 import { TypeValueFilter as TypeValueFilterInterface } from '../../../types/criteria';
 import { useAdvancedFilter } from '../../../contexts/AdvancedFilterContext';
@@ -69,20 +62,12 @@ export const TypeValueFilter: React.FC = () => {
             borderRadius='md'
             position='relative'
           >
-            <IconButton
-              aria-label='Remove criteria'
-              icon={<CloseIcon />}
-              size='xs'
-              position='absolute'
-              top={2}
-              right={2}
-              onClick={() => handleCriteriaChange(index, undefined)}
-            />
             <CriteriaBuilder
               value={criteria}
               onChange={(newCriteria) =>
                 handleCriteriaChange(index, newCriteria)
               }
+              onRemove={() => handleCriteriaChange(index, undefined)}
             />
           </Box>
         );

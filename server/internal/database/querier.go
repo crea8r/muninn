@@ -103,6 +103,7 @@ type Querier interface {
 	RemoveObjectsFromFact(ctx context.Context, arg RemoveObjectsFromFactParams) error
 	RemoveObjectsFromTask(ctx context.Context, arg RemoveObjectsFromTaskParams) error
 	RemoveTagFromObject(ctx context.Context, arg RemoveTagFromObjectParams) error
+	// Ensure we only get one row
 	SoftDeleteObjStep(ctx context.Context, id uuid.UUID) error
 	UpdateCreatorList(ctx context.Context, arg UpdateCreatorListParams) (CreatorList, error)
 	UpdateFact(ctx context.Context, arg UpdateFactParams) (Fact, error)

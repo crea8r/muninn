@@ -20,9 +20,11 @@ func NewObjStepHandler(objectModel *models.ObjectModel) *ObjStepHandler {
 }
 
 func (h *ObjStepHandler) Create(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Creating obj step")
 	var input struct {
 		ObjID  uuid.UUID `json:"objId"`
 		StepID uuid.UUID `json:"stepId"`
+		SubStatus int32 `json:"subStatus"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -37,6 +39,15 @@ func (h *ObjStepHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	fmt.Println("Created obj step ",objStep)
+	if input.SubStatus != 0 {
+		err = h.ObjectModel.UpdateObjStepSubStatus(r.Context(), objStep.ID, input.SubStatus)
+		if err != nil {
+			fmt.Println("Error updating sub status ",err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

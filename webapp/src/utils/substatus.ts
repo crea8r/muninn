@@ -7,3 +7,7 @@ export const getSubStatusLabel = (s: number) => {
     ? 'Drop Out'
     : 'Unknown';
 };
+
+export const getSubStatusOptions = () => {
+  return [0, 1, 2];
+};

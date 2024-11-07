@@ -530,16 +530,20 @@ func (q *Queries) CreateFunnel(ctx context.Context, arg CreateFunnelParams) (Fun
 }
 
 const createObjStep = `-- name: CreateObjStep :one
-WITH new_step AS (
+WITH existing_step AS (
+    -- First check if the step already exists
+    SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM obj_step
+    WHERE obj_step.obj_id = $1 AND obj_step.step_id = $2 AND obj_step.deleted_at IS NULL
+),
+new_step AS (
+    -- Try to insert if it doesn't exist
     INSERT INTO obj_step (obj_id, step_id, creator_id)
     SELECT $1, $2, $3
-    WHERE NOT EXISTS (
-        SELECT 1 FROM obj_step
-        WHERE obj_id = $1 AND step_id = $2 AND deleted_at IS NULL
-    )
+    WHERE NOT EXISTS (SELECT 1 FROM existing_step)
     RETURNING id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at
 ),
 update_old_steps AS (
+    -- Update other steps in the same funnel
     UPDATE obj_step
     SET deleted_at = CURRENT_TIMESTAMP
     WHERE obj_id = $1
@@ -550,8 +554,15 @@ update_old_steps AS (
       )
       AND step_id != $2
       AND deleted_at IS NULL
+),
+combined_result AS (
+    -- Combine both existing and new steps
+    SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM existing_step
+    UNION ALL
+    SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM new_step
 )
-SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM new_step
+SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM combined_result 
+LIMIT 1
 `
 
 type CreateObjStepParams struct {
@@ -2320,11 +2331,13 @@ func (q *Queries) RemoveTagFromObject(ctx context.Context, arg RemoveTagFromObje
 }
 
 const softDeleteObjStep = `-- name: SoftDeleteObjStep :exec
+
 UPDATE obj_step
 SET deleted_at = CURRENT_TIMESTAMP
 WHERE id = $1 AND deleted_at IS NULL
 `
 
+// Ensure we only get one row
 func (q *Queries) SoftDeleteObjStep(ctx context.Context, id uuid.UUID) error {
 	_, err := q.exec(ctx, q.softDeleteObjStepStmt, softDeleteObjStep, id)
 	return err

@@ -10,6 +10,7 @@ import {
   RadioGroup,
   Stack,
   Divider,
+  Spacer,
 } from '@chakra-ui/react';
 import { TriangleUpIcon, TriangleDownIcon } from '@chakra-ui/icons';
 import { useAdvancedFilter } from '../../contexts/AdvancedFilterContext';
@@ -158,7 +159,11 @@ export const SortingControl: React.FC = () => {
 
       <HStack>
         <Text fontSize='sm' color='gray.600'>
-          Order:
+          Order
+        </Text>
+        <Spacer />
+        <Text fontSize='sm' color='gray.600'>
+          {filterConfig.ascending ? 'Ascending' : 'Descending'}
         </Text>
         <IconButton
           aria-label='Toggle sort direction'
@@ -168,9 +173,6 @@ export const SortingControl: React.FC = () => {
           size='sm'
           onClick={toggleDirection}
         />
-        <Text fontSize='sm' color='gray.600'>
-          {filterConfig.ascending ? 'Ascending' : 'Descending'}
-        </Text>
       </HStack>
     </VStack>
   );

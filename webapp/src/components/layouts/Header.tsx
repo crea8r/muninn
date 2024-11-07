@@ -95,15 +95,17 @@ const Header: React.FC = () => {
           maxW='800px'
         >
           <InputGroup maxW='500px'>
-            <InputLeftElement pointerEvents='none' height={'32px'}>
+            <InputLeftElement height={'32px'}>
               <SearchIcon color='gray.300' fontSize={'16px'} />
             </InputLeftElement>
             <Input
               placeholder='Search...'
               width={'100%'}
               size={'sm'}
-              pointerEvents={'none'}
-              readOnly={true}
+              value={''}
+              onChange={() => {
+                handleOpenSearch();
+              }}
               onClick={handleOpenSearch}
             />
           </InputGroup>

@@ -97,12 +97,14 @@ export const updateObjectTypeValue = async (
 
 export const addOrMoveObjectInFunnel = async (
   objectId: string,
-  stepId: string
+  stepId: string,
+  subStatus?: number
 ) => {
   //r.Post("/steps", objStepHandler.Create)
   const response = await axiosWithAuth().post(`${API_URL}/objects/steps`, {
     objId: objectId,
     stepId,
+    subStatus,
   });
   return response.data;
 };
