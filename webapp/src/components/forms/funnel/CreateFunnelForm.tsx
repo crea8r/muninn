@@ -15,10 +15,12 @@ import {
   AccordionButton,
   AccordionPanel,
   AccordionIcon,
-  Box,
   Text,
   IconButton,
   HStack,
+  Spacer,
+  useToast,
+  Divider,
 } from '@chakra-ui/react';
 import {
   AddIcon,
@@ -48,6 +50,7 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
   const [description, setDescription] = useState('');
   const [steps, setSteps] = useState<NewFunnelStep[]>([]);
   const { isDirty, setDirty } = useUnsavedChangesContext();
+  const toast = useToast();
 
   useEffect(() => {
     if (!isOpen) {
@@ -117,7 +120,42 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
     setDirty(false);
   };
 
+  const validate = () => {
+    // all steps must have a name
+    if (steps.some((step) => !step.name)) {
+      toast({
+        title: 'Step Name is required',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return false;
+    }
+    if (steps.length < 2) {
+      toast({
+        title: 'Funnel must have at least 2 steps',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return false;
+    }
+    if (name === '') {
+      toast({
+        title: 'Funnel Name is required',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return false;
+    }
+    return true;
+  };
+
   const handleSave = () => {
+    if (!validate()) {
+      return;
+    }
     const newFunnel: NewFunnel = {
       name,
       description,
@@ -136,7 +174,7 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
         <ModalBody>
           <VStack spacing={4} align='stretch'>
             <Input
-              placeholder='Funnel Name'
+              placeholder='Funnel Name *'
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -157,27 +195,46 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
             <Accordion allowMultiple>
               {steps.map((step, index) => (
                 <AccordionItem key={index}>
-                  <h2>
-                    <AccordionButton>
-                      <Box flex='1' textAlign='left'>
-                        {index + 1}. {step.name || 'Untitled Step'}
-                      </Box>
+                  <HStack py={1}>
+                    <Text textAlign='left' width={'32px'}>
+                      {index + 1}.{' '}
+                    </Text>
+                    <Input
+                      display={'inline'}
+                      placeholder='Step Name *'
+                      value={step.name}
+                      onChange={(e) =>
+                        handleStepChange(index, 'name', e.target.value)
+                      }
+                      size={'sm'}
+                      required
+                    />
+
+                    <Spacer />
+                    <AccordionButton display={'flex'} width={'fit-content'}>
                       <AccordionIcon />
                     </AccordionButton>
-                  </h2>
+                  </HStack>
                   <AccordionPanel pb={4}>
                     <VStack spacing={3} align='stretch'>
-                      <Input
-                        placeholder='Step Name'
-                        value={step.name}
-                        onChange={(e) =>
-                          handleStepChange(index, 'name', e.target.value)
-                        }
-                      />
-                      <HStack>
-                        <InfoIcon />
-                        <Text>Definition</Text>
-                      </HStack>
+                      <VStack align={'left'}>
+                        <HStack>
+                          <InfoIcon />
+                          <Text>
+                            Step Definition: Explain current status of the
+                            object in the step.
+                          </Text>
+                        </HStack>
+
+                        <Text
+                          color='gray.500'
+                          fontSize='sm'
+                          fontWeight={'light'}
+                        >
+                          A personal has been to an event, a contact has been
+                          connected, a project has been created, etc.
+                        </Text>
+                      </VStack>
                       <MarkdownEditor
                         initialValue={step.definition}
                         onChange={(content: string) =>
@@ -185,10 +242,24 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
                         }
                         filters={[]}
                       />
-                      <HStack>
-                        <StarIcon />
-                        <Text>Example</Text>
-                      </HStack>
+                      <Divider />
+
+                      <VStack align={'left'}>
+                        <HStack>
+                          <StarIcon />
+                          <Text>
+                            Step Example: What is the example of this step?
+                          </Text>
+                        </HStack>
+
+                        <Text
+                          color='gray.500'
+                          fontSize='sm'
+                          fontWeight={'light'}
+                        >
+                          A person name, a project name, etc.
+                        </Text>
+                      </VStack>
                       <MarkdownEditor
                         initialValue={step.example}
                         onChange={(c: string) =>
@@ -196,10 +267,24 @@ const CreateFunnelForm: React.FC<CreateFunnelFormProps> = ({
                         }
                         filters={[]}
                       />
-                      <HStack>
-                        <ArrowForwardIcon />
-                        <Text>Action</Text>
-                      </HStack>
+                      <VStack align={'left'}>
+                        <HStack>
+                          <ArrowForwardIcon />
+                          <Text>
+                            Step Action: What action <mark>YOU</mark> are going
+                            to take to move this object to the next step?
+                          </Text>
+                        </HStack>
+
+                        <Text
+                          color='gray.500'
+                          fontSize='sm'
+                          fontWeight={'light'}
+                        >
+                          Send an email, make a call, send a message, invite to
+                          a meeting, etc.
+                        </Text>
+                      </VStack>
                       <MarkdownEditor
                         initialValue={step.action}
                         onChange={(c: string) =>
