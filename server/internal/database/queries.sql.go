@@ -601,7 +601,7 @@ func (q *Queries) CreateObjStep(ctx context.Context, arg CreateObjStepParams) (C
 const createObject = `-- name: CreateObject :one
 INSERT INTO obj (name, description, id_string, creator_id)
 VALUES ($1, $2, $3, $4)
-RETURNING id, name, description, id_string, creator_id, created_at, deleted_at
+RETURNING id, name, photo, description, id_string, creator_id, created_at, deleted_at
 `
 
 type CreateObjectParams struct {
@@ -622,6 +622,7 @@ func (q *Queries) CreateObject(ctx context.Context, arg CreateObjectParams) (Obj
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Photo,
 		&i.Description,
 		&i.IDString,
 		&i.CreatorID,
@@ -1135,7 +1136,7 @@ func (q *Queries) GetObjStep(ctx context.Context, id uuid.UUID) (ObjStep, error)
 
 const getObjectDetails = `-- name: GetObjectDetails :one
 WITH object_data AS (
-    SELECT o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at,
+    SELECT o.id, o.name, o.photo, o.description, o.id_string, o.creator_id, o.created_at,
            c.org_id,
            coalesce(
             json_agg(DISTINCT jsonb_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema)) FILTER (WHERE t.id IS NOT NULL), '[]') 
@@ -1194,7 +1195,7 @@ WITH object_data AS (
     WHERE o.id = $1 AND c.org_id = $2
     GROUP BY o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at, c.org_id
 )
-SELECT id, name, description, id_string, creator_id, created_at, org_id, tags, type_values, tasks, steps_and_funnels, facts
+SELECT id, name, photo, description, id_string, creator_id, created_at, org_id, tags, type_values, tasks, steps_and_funnels, facts
 FROM object_data
 `
 
@@ -1206,6 +1207,7 @@ type GetObjectDetailsParams struct {
 type GetObjectDetailsRow struct {
 	ID              uuid.UUID   `json:"id"`
 	Name            string      `json:"name"`
+	Photo           string      `json:"photo"`
 	Description     string      `json:"description"`
 	IDString        string      `json:"id_string"`
 	CreatorID       uuid.UUID   `json:"creator_id"`
@@ -1224,6 +1226,7 @@ func (q *Queries) GetObjectDetails(ctx context.Context, arg GetObjectDetailsPara
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Photo,
 		&i.Description,
 		&i.IDString,
 		&i.CreatorID,
@@ -2441,7 +2444,7 @@ const updateObject = `-- name: UpdateObject :one
 UPDATE obj
 SET name = $2, description = $3, id_string = $4
 WHERE id = $1
-RETURNING id, name, description, id_string, creator_id, created_at, deleted_at
+RETURNING id, name, photo, description, id_string, creator_id, created_at, deleted_at
 `
 
 type UpdateObjectParams struct {
@@ -2462,6 +2465,7 @@ func (q *Queries) UpdateObject(ctx context.Context, arg UpdateObjectParams) (Obj
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Photo,
 		&i.Description,
 		&i.IDString,
 		&i.CreatorID,

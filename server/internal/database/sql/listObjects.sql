@@ -3,7 +3,8 @@ WITH object_data AS (
     -- First get all the searchable text and metadata for each object
     SELECT 
         o.id, 
-        o.name, 
+        o.name,
+        o.photo,
         o.description, 
         o.id_string, 
         o.creator_id,
@@ -33,7 +34,7 @@ WITH object_data AS (
     LEFT JOIN obj_fact of ON o.id = of.obj_id
     LEFT JOIN fact f ON of.fact_id = f.id
     WHERE c.org_id = $1 AND o.deleted_at IS NULL
-    GROUP BY o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at, o.deleted_at
+    GROUP BY o.id, o.name, o.photo, o.description, o.id_string, o.creator_id, o.created_at, o.deleted_at
 ),
 ranked_results AS (
     -- Calculate search ranking and highlighting for each source
@@ -84,6 +85,7 @@ ranked_results AS (
 SELECT 
     rr.id, 
     rr.name, 
+    rr.photo,
     rr.description, 
     rr.id_string, 
     rr.created_at,

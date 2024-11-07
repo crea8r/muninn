@@ -134,6 +134,7 @@ CREATE TABLE task (
 CREATE TABLE obj (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
+    photo TEXT NOT NULL DEFAULT '',
     description TEXT NOT NULL,
     id_string TEXT NOT NULL,
     creator_id UUID NOT NULL REFERENCES creator(id) ON DELETE CASCADE,

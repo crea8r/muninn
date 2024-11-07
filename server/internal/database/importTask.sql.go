@@ -183,7 +183,7 @@ func (q *Queries) GetImportTaskHistory(ctx context.Context, arg GetImportTaskHis
 }
 
 const getObjectByIDString = `-- name: GetObjectByIDString :one
-SELECT id, name, description, id_string, creator_id, created_at, deleted_at FROM obj
+SELECT id, name, photo, description, id_string, creator_id, created_at, deleted_at FROM obj
 WHERE id_string = $1
 LIMIT 1
 `
@@ -194,6 +194,7 @@ func (q *Queries) GetObjectByIDString(ctx context.Context, idString string) (Obj
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Photo,
 		&i.Description,
 		&i.IDString,
 		&i.CreatorID,

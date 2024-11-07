@@ -14,7 +14,7 @@ import (
 
 const countObjectsByOrgID = `-- name: CountObjectsByOrgID :one
 WITH objs AS (
-    SELECT o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at, o.deleted_at, 
+    SELECT o.id, o.name, o.photo, o.description, o.id_string, o.creator_id, o.created_at, o.deleted_at, 
     (
         SELECT string_agg(otv.search_vector::text, ' ')::tsvector 
         FROM obj_type_value otv 
@@ -66,7 +66,8 @@ WITH object_data AS (
     -- First get all the searchable text and metadata for each object
     SELECT 
         o.id, 
-        o.name, 
+        o.name,
+        o.photo,
         o.description, 
         o.id_string, 
         o.creator_id,
@@ -96,12 +97,12 @@ WITH object_data AS (
     LEFT JOIN obj_fact of ON o.id = of.obj_id
     LEFT JOIN fact f ON of.fact_id = f.id
     WHERE c.org_id = $1 AND o.deleted_at IS NULL
-    GROUP BY o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at, o.deleted_at
+    GROUP BY o.id, o.name, o.photo, o.description, o.id_string, o.creator_id, o.created_at, o.deleted_at
 ),
 ranked_results AS (
     -- Calculate search ranking and highlighting for each source
     SELECT 
-        od.id, od.name, od.description, od.id_string, od.creator_id, od.created_at, od.deleted_at, od.obj_search, od.fact_search, od.type_value_search, od.obj_text, od.fact_text, od.type_value_text, od.tag_ids, od.type_value_ids,
+        od.id, od.name, od.photo, od.description, od.id_string, od.creator_id, od.created_at, od.deleted_at, od.obj_search, od.fact_search, od.type_value_search, od.obj_text, od.fact_text, od.type_value_text, od.tag_ids, od.type_value_ids,
         CASE WHEN $2 = '' THEN 0
              ELSE ts_rank(obj_search, websearch_to_tsquery('english', $2)) 
         END AS obj_rank,
@@ -147,6 +148,7 @@ ranked_results AS (
 SELECT 
     rr.id, 
     rr.name, 
+    rr.photo,
     rr.description, 
     rr.id_string, 
     rr.created_at,
@@ -184,6 +186,7 @@ type ListObjectsByOrgIDParams struct {
 type ListObjectsByOrgIDRow struct {
 	ID                uuid.UUID   `json:"id"`
 	Name              string      `json:"name"`
+	Photo             string      `json:"photo"`
 	Description       string      `json:"description"`
 	IDString          string      `json:"id_string"`
 	CreatedAt         time.Time   `json:"created_at"`
@@ -213,6 +216,7 @@ func (q *Queries) ListObjectsByOrgID(ctx context.Context, arg ListObjectsByOrgID
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
+			&i.Photo,
 			&i.Description,
 			&i.IDString,
 			&i.CreatedAt,

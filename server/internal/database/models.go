@@ -101,6 +101,7 @@ type List struct {
 type Obj struct {
 	ID          uuid.UUID    `json:"id"`
 	Name        string       `json:"name"`
+	Photo       string       `json:"photo"`
 	Description string       `json:"description"`
 	IDString    string       `json:"id_string"`
 	CreatorID   uuid.UUID    `json:"creator_id"`

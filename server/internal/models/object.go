@@ -26,6 +26,7 @@ type Object struct {
 type ListObjectsByOrgIdRow struct {
 	ID          uuid.UUID         `json:"id"`
 	Name        string            `json:"name"`
+	Photo			  string            `json:"photo"`
 	Description string            `json:"description"`
 	IDString    string            `json:"idString"`
 	CreatedAt   time.Time         `json:"createdAt"`
@@ -162,7 +163,7 @@ func (m *ObjectModel) List(ctx context.Context, orgID uuid.UUID, search string, 
 	for i,obj := range objects {
 		var tags []database.Tag
 		var typeValues []ObjectTypeValue
-
+		
 		tagBytes,_ := obj.Tags.([]byte)
 		typeValuesBytes,_ := obj.TypeValues.([]byte)
 
@@ -184,6 +185,7 @@ func (m *ObjectModel) List(ctx context.Context, orgID uuid.UUID, search string, 
 		result[i] = ListObjectsByOrgIdRow{
 			ID: 				obj.ID,
 			Name: 				obj.Name,
+			Photo: 				obj.Photo,
 			Description: 		obj.Description,
 			IDString: 			obj.IDString,
 			CreatedAt: 			obj.CreatedAt,

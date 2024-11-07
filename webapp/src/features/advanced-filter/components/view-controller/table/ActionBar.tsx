@@ -8,8 +8,8 @@ import {
   Slide,
   useColorModeValue,
   Tooltip,
-  CloseButton,
   Spacer,
+  useToast,
 } from '@chakra-ui/react';
 import { TableAction } from '../../../types/table-actions';
 
@@ -34,7 +34,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 }) => {
   const actionBarBg = useColorModeValue('white', 'gray.800');
   const actionBarBorder = useColorModeValue('gray.200', 'gray.600');
-
+  const toast = useToast();
   return (
     <>
       <Slide direction='top' in={selectedCount > 0} style={{ zIndex: 10 }}>
@@ -69,7 +69,21 @@ export const ActionBar: React.FC<ActionBarProps> = ({
                     <Button
                       size='sm'
                       leftIcon={action.icon}
-                      onClick={() => action.onClick(selectedData)}
+                      onClick={() => {
+                        const errorMsg = action.onClick(selectedData);
+                        if (
+                          errorMsg !== undefined &&
+                          typeof errorMsg === 'string'
+                        ) {
+                          toast({
+                            title: 'Error',
+                            description: errorMsg,
+                            status: 'error',
+                            duration: 5000,
+                            isClosable: true,
+                          });
+                        }
+                      }}
                       isDisabled={action.disabled}
                     >
                       {action.label}
@@ -79,7 +93,14 @@ export const ActionBar: React.FC<ActionBarProps> = ({
               </HStack>
             </HStack>
             <Spacer />
-            <CloseButton onClick={onClose} />
+            <Text
+              color={'gray.500'}
+              textDecor={'underline'}
+              onClick={onClose}
+              cursor={'pointer'}
+            >
+              Clear All
+            </Text>
           </HStack>
         </Box>
       </Slide>

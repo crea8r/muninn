@@ -255,7 +255,7 @@ UPDATE obj SET deleted_at = NOW() WHERE id = $1;
 
 -- name: GetObjectDetails :one
 WITH object_data AS (
-    SELECT o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at,
+    SELECT o.id, o.name, o.photo, o.description, o.id_string, o.creator_id, o.created_at,
            c.org_id,
            coalesce(
             json_agg(DISTINCT jsonb_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema)) FILTER (WHERE t.id IS NOT NULL), '[]') 

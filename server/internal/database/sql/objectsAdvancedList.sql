@@ -3,7 +3,8 @@ WITH object_data AS (
     -- First get all the searchable text and metadata for each object
     SELECT 
         o.id, 
-        o.name, 
+        o.name,
+        o.photo,
         o.description, 
         o.id_string, 
         o.creator_id,
@@ -145,7 +146,8 @@ filtered_objects AS (
 )
 SELECT 
     fo.id, 
-    fo.name, 
+    fo.name,
+    fo.photo, 
     fo.description, 
     fo.id_string, 
     fo.created_at,

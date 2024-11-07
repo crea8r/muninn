@@ -19,7 +19,8 @@ WITH object_data AS (
     -- First get all the searchable text and metadata for each object
     SELECT 
         o.id, 
-        o.name, 
+        o.name,
+        o.photo,
         o.description, 
         o.id_string, 
         o.creator_id,
@@ -70,7 +71,7 @@ WITH object_data AS (
     GROUP BY o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at, o.deleted_at
 ),
 filtered_objects AS (
-    SELECT od.id, od.name, od.description, od.id_string, od.creator_id, od.created_at, od.deleted_at, od.fact_count, od.first_fact_date, od.last_fact_date, od.obj_search, od.fact_search, od.type_value_search, od.step_ids, od.step_substatus, od.tag_ids, od.type_ids, od.type_value_ids, od.obj_step_ids, od.all_type_values,
+    SELECT od.id, od.name, od.photo, od.description, od.id_string, od.creator_id, od.created_at, od.deleted_at, od.fact_count, od.first_fact_date, od.last_fact_date, od.obj_search, od.fact_search, od.type_value_search, od.step_ids, od.step_substatus, od.tag_ids, od.type_ids, od.type_value_ids, od.obj_step_ids, od.all_type_values,
         -- Calculate search ranks for different sources
         CASE WHEN $2 = '' THEN NULL
              ELSE COALESCE(ts_rank(obj_search, websearch_to_tsquery('english', $2)) * 3.0, 0.0)
@@ -161,7 +162,8 @@ filtered_objects AS (
 )
 SELECT 
     fo.id, 
-    fo.name, 
+    fo.name,
+    fo.photo, 
     fo.description, 
     fo.id_string, 
     fo.created_at,
@@ -335,6 +337,7 @@ type ListObjectsAdvancedParams struct {
 type ListObjectsAdvancedRow struct {
 	ID            uuid.UUID   `json:"id"`
 	Name          string      `json:"name"`
+	Photo         string      `json:"photo"`
 	Description   string      `json:"description"`
 	IDString      string      `json:"id_string"`
 	CreatedAt     time.Time   `json:"created_at"`
@@ -374,6 +377,7 @@ func (q *Queries) ListObjectsAdvanced(ctx context.Context, arg ListObjectsAdvanc
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
+			&i.Photo,
 			&i.Description,
 			&i.IDString,
 			&i.CreatedAt,

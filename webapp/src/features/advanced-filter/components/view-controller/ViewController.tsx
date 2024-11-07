@@ -109,15 +109,15 @@ export const ViewController: React.FC<ViewControllerProps> = ({
   return (
     <Box position='relative' height='100%'>
       {/* Config Button */}
-      <Box position='absolute' top={0.1} right={4} zIndex={'docked'}>
+      <Box position='absolute' top={0} right={1} zIndex={'docked'}>
         <IconButton
           ref={handleConfigButtonRef}
           aria-label='Configure view'
           icon={<SettingsIcon />}
           onClick={onOpen}
-          size='xs'
-          variant='ghost'
-          colorScheme='gray'
+          size={config.density === 'compact' ? 'sm' : 'lg'}
+          variant='text'
+          color='blue.500'
           isDisabled={!viewRestrictions.allowCustomization}
         />
       </Box>
