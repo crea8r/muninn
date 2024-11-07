@@ -221,12 +221,28 @@ const EditFunnelForm: React.FC<EditFunnelFormProps> = ({
     onClose();
   };
 
+  const isStepNameUnique = (name: string, currentIndex: number) => {
+    return !newSteps.some(
+      (step, index) => index !== currentIndex && step.name === name
+    );
+  };
+
   const renderStepContent = (
     step: FunnelStep,
     index: number,
     isNewStep: boolean = true
   ) => (
     <VStack spacing={3} align='stretch'>
+      <Input
+        placeholder='Step Name'
+        value={step.name}
+        onChange={(e) => handleStepChange(index, 'name', e.target.value)}
+        isInvalid={!isStepNameUnique(step.name, index)}
+        isReadOnly={!isNewStep}
+        sx={{
+          backgroundColor: !isNewStep ? 'gray.100' : 'white',
+        }}
+      />
       {RenderStepHeader({ type: 'defition' })}
       <MarkdownEditor
         initialValue={step.definition}
