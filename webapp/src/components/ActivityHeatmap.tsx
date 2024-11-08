@@ -12,8 +12,6 @@ import {
   Heading,
   SimpleGrid,
   Flex,
-  Button,
-  useTheme,
   HStack,
   VStack,
 } from '@chakra-ui/react';
@@ -193,7 +191,7 @@ const ActivityHeatmap = ({
   const [selectedMetrics, setSelectedMetrics] = useState<DailyMetrics | null>(
     null
   );
-  const theme = useTheme();
+  // const theme = useTheme();
 
   // Convert array to map for easier lookup
   const metricsMap = useMemo(() => {
