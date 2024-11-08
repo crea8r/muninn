@@ -361,10 +361,16 @@ func (q *Queries) UpdateImportTaskStatus(ctx context.Context, arg UpdateImportTa
 }
 
 const upsertObjectTypeValue = `-- name: UpsertObjectTypeValue :one
-INSERT INTO obj_type_value (obj_id, type_id, type_values)
+INSERT INTO obj_type_value (
+    obj_id,
+    type_id,
+    type_values
+)
 VALUES ($1, $2, $3)
 ON CONFLICT (obj_id, type_id) 
-DO UPDATE SET type_values = EXCLUDED.type_values
+DO UPDATE SET 
+    type_values = EXCLUDED.type_values,
+    last_updated = CURRENT_TIMESTAMP
 RETURNING id, obj_id, type_id, type_values, created_at, last_updated, deleted_at, search_vector
 `
 

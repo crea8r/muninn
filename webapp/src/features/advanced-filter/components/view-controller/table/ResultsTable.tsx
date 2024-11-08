@@ -26,9 +26,12 @@ import { createExportCsvAction } from 'src/features/advanced-filter/actions/expo
 import { createAddTagAction } from 'src/features/advanced-filter/actions/add-tag';
 import { createAddToFunnelAction } from 'src/features/advanced-filter/actions/add-to-funnel';
 import { Link } from 'react-router-dom';
+import { createMergeObjectsAction } from 'src/features/advanced-filter/actions/merge-objects';
 
 interface ResultsTableProps {
   data: any[];
+  selectedItems: any[];
+  setSelectedItems: (items: any) => void;
   totalCount: number;
   columns: ColumnConfig[];
   isLoading: boolean;
@@ -129,6 +132,8 @@ const formatValue = (value: any, column: ColumnConfig) => {
 
 export const ResultsTable: React.FC<ResultsTableProps> = ({
   data,
+  selectedItems,
+  setSelectedItems,
   columns,
   isLoading,
   density,
@@ -143,9 +148,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
   const { filterConfig, updateFilter } = useAdvancedFilter();
   const { page = 1, pageSize = 10 } = filterConfig;
   const { globalData } = useGlobalContext();
-  const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>(
-    {}
-  );
+
   const [selectAll, setSelectAll] = useState(false);
 
   const tags = globalData?.tagData?.tags || [];
@@ -181,10 +184,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
   };
 
   // select data
-  const selectedCount = useMemo(
-    () => Object.values(selectedItems).filter(Boolean).length,
-    [selectedItems]
-  );
+  const selectedCount = useMemo(() => selectedItems.length, [selectedItems]);
 
   const isAllSelected = useMemo(
     () => data && data.length > 0 && selectedCount === data.length,
@@ -198,49 +198,53 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
 
   const handleSelectAll = useCallback(() => {
     if (isAllSelected) {
-      setSelectedItems({});
+      setSelectedItems([]);
       setSelectAll(false);
     } else {
-      const newSelected = data.reduce((acc, item) => {
-        acc[item.id] = true;
-        return acc;
-      }, {} as Record<string, boolean>);
+      const newSelected = [
+        ...data.filter((item) => !selectedItems[item.id]),
+        ...selectedItems,
+      ];
       setSelectedItems(newSelected);
       setSelectAll(true);
     }
-  }, [data, isAllSelected]);
+  }, [data, isAllSelected, selectedItems, setSelectedItems]);
 
-  const handleSelectItem = useCallback((id: string) => {
-    setSelectedItems((prev) => {
-      const newSelected = { ...prev };
-      if (newSelected[id]) {
-        delete newSelected[id];
+  const handleSelectItem = useCallback(
+    (id: string) => {
+      const newSelected = [...selectedItems];
+      // if item is already selected, remove it
+      if (newSelected.filter((item) => item.id === id).length > 0) {
+        newSelected.splice(
+          newSelected.findIndex((item) => item.id === id),
+          1
+        );
       } else {
-        newSelected[id] = true;
+        newSelected.push(data.find((item) => item.id === id));
       }
-      return newSelected;
-    });
-  }, []);
-
-  const selectedData = useMemo(
-    () => data?.filter((item) => selectedItems[item.id]),
-    [data, selectedItems]
+      setSelectedItems(newSelected);
+    },
+    [data, selectedItems, setSelectedItems]
   );
 
   const actions = useMemo(
     () => [
       createExportCsvAction({ columns, getColumnLabel }),
       createAddTagAction(() => {
-        setSelectedItems({});
+        setSelectedItems([]);
         onRefresh();
       }),
       createAddToFunnelAction(() => {
-        setSelectedItems({});
+        setSelectedItems([]);
+        onRefresh();
+      }),
+      createMergeObjectsAction(() => {
+        setSelectedItems([]);
         onRefresh();
       }),
       // ... other actions
     ],
-    [columns, getColumnLabel, onRefresh]
+    [columns, getColumnLabel, onRefresh, setSelectedItems]
   );
 
   return (
@@ -251,8 +255,8 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
           totalCount={totalCount}
           isSelectedAll={selectAll}
           actions={actions}
-          selectedData={selectedData}
-          onClose={() => setSelectedItems({})}
+          selectedData={selectedItems}
+          onClose={() => setSelectedItems([])}
         />
       ) : null}
       <Box overflowX='auto'>
@@ -336,7 +340,9 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
                 >
                   <Td px={2}>
                     <Checkbox
-                      isChecked={!!selectedItems[item.id]}
+                      isChecked={
+                        selectedItems.findIndex((i) => i.id === item.id) > -1
+                      }
                       onChange={() => handleSelectItem(item.id)}
                     />
                   </Td>

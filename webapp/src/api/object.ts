@@ -140,3 +140,23 @@ export const updateObjectStepSubStatus = async (
   );
   return response.data;
 };
+
+export interface MergeObjectsPayload {
+  target_object_id: string;
+  source_object_ids: string[];
+  type_values?: {
+    typeId: string;
+    typeValues: { [key: string]: any };
+  }[];
+  name: string;
+  description?: string;
+  id_string: string;
+}
+
+export const mergeObjects = async (payload: MergeObjectsPayload) => {
+  const response = await axiosWithAuth().post(
+    `${API_URL}/objects/merge`,
+    payload
+  );
+  return response.data;
+};

@@ -52,6 +52,8 @@ interface ViewControllerProps {
   initialConfig?: ViewConfigBase;
   onConfigChange?: (config: ViewConfigBase) => void;
   data: any[];
+  selectedItems: any[];
+  setSelectedItems: (items: any[]) => void;
   isLoading?: boolean;
   totalCount: number;
   refetch: () => void;
@@ -62,6 +64,8 @@ export const ViewController: React.FC<ViewControllerProps> = ({
   initialConfig,
   onConfigChange,
   data,
+  selectedItems,
+  setSelectedItems,
   isLoading = false,
   totalCount,
   refetch,
@@ -148,6 +152,8 @@ export const ViewController: React.FC<ViewControllerProps> = ({
         {config.displayMode === 'table' ? (
           <ResultsTable
             data={data}
+            selectedItems={selectedItems}
+            setSelectedItems={setSelectedItems}
             columns={visibleColumns}
             isLoading={isLoading}
             density={config.density}

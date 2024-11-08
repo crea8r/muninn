@@ -6,6 +6,7 @@ import { useDebounceFilter } from './useDebounceFilter';
 
 export const useAdvancedFilterData = (filterConfig: FilterConfig) => {
   const [data, setData] = useState<any[]>([]);
+  const [selectedItems, setSelectedItems] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [stepCounts, setStepCounts] = useState<any>();
   const [isLoading, setIsLoading] = useState(false);
@@ -53,5 +54,14 @@ export const useAdvancedFilterData = (filterConfig: FilterConfig) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedFilter]);
 
-  return { data, totalCount, stepCounts, isLoading, error, refetch: fetchData };
+  return {
+    data,
+    totalCount,
+    stepCounts,
+    isLoading,
+    error,
+    refetch: fetchData,
+    selectedItems,
+    setSelectedItems,
+  };
 };

@@ -56,10 +56,16 @@ WHERE id_string = $1
 LIMIT 1;
 
 -- name: UpsertObjectTypeValue :one
-INSERT INTO obj_type_value (obj_id, type_id, type_values)
+INSERT INTO obj_type_value (
+    obj_id,
+    type_id,
+    type_values
+)
 VALUES ($1, $2, $3)
 ON CONFLICT (obj_id, type_id) 
-DO UPDATE SET type_values = EXCLUDED.type_values
+DO UPDATE SET 
+    type_values = EXCLUDED.type_values,
+    last_updated = CURRENT_TIMESTAMP
 RETURNING *;
 
 -- name: GetObjectTypeValue :one

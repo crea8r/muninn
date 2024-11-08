@@ -99,6 +99,16 @@ type Querier interface {
 	// Add this new query to your existing queries.sql file
 	ListTasksWithFilter(ctx context.Context, arg ListTasksWithFilterParams) ([]ListTasksWithFilterRow, error)
 	MarkFeedAsSeen(ctx context.Context, dollar_1 []uuid.UUID) error
+	// Update fact references
+	// Update task references
+	// Copy tags
+	// Update steps
+	// Update type values references
+	// Update fact text
+	// Update task text
+	// Mark source objects as deleted
+	// Create merge history record
+	MergeObjects(ctx context.Context, arg MergeObjectsParams) error
 	RemoveObjectTypeValue(ctx context.Context, arg RemoveObjectTypeValueParams) error
 	RemoveObjectsFromFact(ctx context.Context, arg RemoveObjectsFromFactParams) error
 	RemoveObjectsFromTask(ctx context.Context, arg RemoveObjectsFromTaskParams) error
@@ -125,6 +135,7 @@ type Querier interface {
 	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (Creator, error)
 	UpdateUserRoleAndStatus(ctx context.Context, arg UpdateUserRoleAndStatusParams) (Creator, error)
 	UpsertObjectTypeValue(ctx context.Context, arg UpsertObjectTypeValueParams) (ObjTypeValue, error)
+	ValidateMergeObjects(ctx context.Context, arg ValidateMergeObjectsParams) (ValidateMergeObjectsRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

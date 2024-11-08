@@ -220,11 +220,6 @@ const ObjectsPage: React.FC = () => {
               onClick={loadObjects}
             />
             <IconButton
-              aria-label='Merge objects'
-              icon={<FiGitMerge />}
-              onClick={() => history.push('/merge')}
-            />
-            <IconButton
               aria-label='Advanced Filter'
               icon={<FiFilter />}
               onClick={() => history.push('/advanced-filter')}

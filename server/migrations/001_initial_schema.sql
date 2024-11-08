@@ -478,3 +478,17 @@ CREATE INDEX idx_obj_text_search ON obj USING gin (to_tsvector('english', name |
 
 CREATE INDEX idx_obj_type_value_type_id ON obj_type_value(type_id);
 CREATE INDEX idx_tag_name ON tag USING gin(to_tsvector('english', name));
+
+-- Add merge history table to track object merges
+CREATE TABLE object_merge_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    target_object_id UUID NOT NULL REFERENCES obj(id),
+    source_object_ids UUID[] NOT NULL,
+    merged_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    creator_id UUID NOT NULL REFERENCES creator(id),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add index for querying merge history
+CREATE INDEX idx_object_merge_history_target ON object_merge_history(target_object_id);
+CREATE INDEX idx_object_merge_history_creator ON object_merge_history(creator_id);

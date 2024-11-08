@@ -132,7 +132,6 @@ export const useStoredConfigWithVersion = () => {
     (filter: FilterConfig, view: ViewConfigBase) => {
       try {
         const { search, page, ...filterToStore } = filter;
-        console.log('view: ', view);
         const configToStore: StoredConfigWithVersion = {
           version: CURRENT_CONFIG_VERSION,
           filter: filterToStore,

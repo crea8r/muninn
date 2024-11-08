@@ -12,6 +12,7 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import { TableAction } from '../../../types/table-actions';
+import { FaQuestionCircle } from 'react-icons/fa';
 
 interface ActionBarProps {
   selectedCount: number;
@@ -52,6 +53,10 @@ export const ActionBar: React.FC<ActionBarProps> = ({
         >
           <HStack alignContent={'space-between'}>
             <HStack spacing={4}>
+              <FaQuestionCircle
+                title={selectedData.map((itm: any) => itm.name).join(',')}
+                cursor={'help'}
+              />
               <Text fontWeight='medium'>
                 {/* TODO: build select all action */}
                 {/* {isSelectedAll

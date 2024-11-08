@@ -47,6 +47,7 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 	summarizeHandler := handlers.NewSummarizeHandler(queries)
 	listHandler := handlers.NewListHandler(queries)
 	importHandler := handlers.NewImportTaskHandler(db)
+	mergeHandler := handlers.NewMergeObjectsHandler(db)
 
 	// Public routes
 	r.Post("/auth/signup", handlers.SignUp(queries))
@@ -123,6 +124,9 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 
 			// Object Advanced routes
 			r.Get("/advanced", advancedObjectHandler.ListObjects)
+
+			// Merge objects
+			r.Post("/merge", wrapWithFeed(mergeHandler.MergeObjects))
 		})
 		
 		r.Route("/facts", func(r chi.Router) {

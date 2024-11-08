@@ -31,7 +31,6 @@ import GlobalImageFallback from 'src/components/GlobalImageFallback';
 import FunnelBoard from './pages/settings/FunnelBoard';
 import ListObjectByTypesPage from './pages/settings/ListObjectByTypesPage';
 import FunnelConfigPage from './pages/settings/funnel-config-page/FunnelConfigPage';
-import MergeObjectsPage from './pages/merge/MergeObjectsPage';
 import AdvancedListingPage from './pages/object/AdvancedListingPage';
 
 const theme = extendTheme({
@@ -117,11 +116,6 @@ const App: React.FC = () => {
                             exact
                             path='/advanced-filter'
                             component={AdvancedListingPage}
-                          />
-                          <ProtectedRoute
-                            exact
-                            path='/merge'
-                            component={MergeObjectsPage}
                           />
                           <ProtectedRoute
                             exact

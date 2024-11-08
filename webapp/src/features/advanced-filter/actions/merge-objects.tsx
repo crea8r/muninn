@@ -9,9 +9,7 @@ export const createMergeObjectsAction = (
 ): TableAction => {
   let openMergeDialog: (data: any[]) => void;
 
-  const MergeDialogWrapper: React.FC<{ onSuccess?: () => void }> = ({
-    onSuccess,
-  }) => {
+  const MergeDialogWrapper: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedObjects, setSelectedObjects] = useState<any[]>([]);
 
@@ -38,6 +36,9 @@ export const createMergeObjectsAction = (
     onClick: (selectedItems) => {
       if (selectedItems.length < 2) {
         return 'Please select at least 2 objects to merge';
+      }
+      if (selectedItems.length > 5) {
+        return 'Please select at most 5 objects to merge';
       }
       openMergeDialog(selectedItems);
     },

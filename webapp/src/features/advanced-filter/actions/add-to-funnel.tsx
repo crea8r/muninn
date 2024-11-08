@@ -7,9 +7,7 @@ import { FaFunnelDollar } from 'react-icons/fa';
 export const createAddToFunnelAction = (onRefresh: () => void): TableAction => {
   let openAddToFunnelDialog: (data: any[]) => void;
 
-  const AddToFunnelDialogWrapper: React.FC<{ onSuccess?: () => void }> = ({
-    onSuccess,
-  }) => {
+  const AddToFunnelDialogWrapper: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedObjects, setSelectedObjects] = useState<any[]>([]);
 
@@ -23,7 +21,7 @@ export const createAddToFunnelAction = (onRefresh: () => void): TableAction => {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         selectedObjects={selectedObjects}
-        onSuccess={onSuccess}
+        onSuccess={onRefresh}
       />
     );
   };

@@ -273,6 +273,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.markFeedAsSeenStmt, err = db.PrepareContext(ctx, markFeedAsSeen); err != nil {
 		return nil, fmt.Errorf("error preparing query MarkFeedAsSeen: %w", err)
 	}
+	if q.mergeObjectsStmt, err = db.PrepareContext(ctx, mergeObjects); err != nil {
+		return nil, fmt.Errorf("error preparing query MergeObjects: %w", err)
+	}
 	if q.removeObjectTypeValueStmt, err = db.PrepareContext(ctx, removeObjectTypeValue); err != nil {
 		return nil, fmt.Errorf("error preparing query RemoveObjectTypeValue: %w", err)
 	}
@@ -347,6 +350,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.upsertObjectTypeValueStmt, err = db.PrepareContext(ctx, upsertObjectTypeValue); err != nil {
 		return nil, fmt.Errorf("error preparing query UpsertObjectTypeValue: %w", err)
+	}
+	if q.validateMergeObjectsStmt, err = db.PrepareContext(ctx, validateMergeObjects); err != nil {
+		return nil, fmt.Errorf("error preparing query ValidateMergeObjects: %w", err)
 	}
 	return &q, nil
 }
@@ -768,6 +774,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing markFeedAsSeenStmt: %w", cerr)
 		}
 	}
+	if q.mergeObjectsStmt != nil {
+		if cerr := q.mergeObjectsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing mergeObjectsStmt: %w", cerr)
+		}
+	}
 	if q.removeObjectTypeValueStmt != nil {
 		if cerr := q.removeObjectTypeValueStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing removeObjectTypeValueStmt: %w", cerr)
@@ -893,6 +904,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing upsertObjectTypeValueStmt: %w", cerr)
 		}
 	}
+	if q.validateMergeObjectsStmt != nil {
+		if cerr := q.validateMergeObjectsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing validateMergeObjectsStmt: %w", cerr)
+		}
+	}
 	return err
 }
 
@@ -1015,6 +1031,7 @@ type Queries struct {
 	listTasksByOrgIDStmt                     *sql.Stmt
 	listTasksWithFilterStmt                  *sql.Stmt
 	markFeedAsSeenStmt                       *sql.Stmt
+	mergeObjectsStmt                         *sql.Stmt
 	removeObjectTypeValueStmt                *sql.Stmt
 	removeObjectsFromFactStmt                *sql.Stmt
 	removeObjectsFromTaskStmt                *sql.Stmt
@@ -1040,6 +1057,7 @@ type Queries struct {
 	updateUserProfileStmt                    *sql.Stmt
 	updateUserRoleAndStatusStmt              *sql.Stmt
 	upsertObjectTypeValueStmt                *sql.Stmt
+	validateMergeObjectsStmt                 *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
@@ -1129,6 +1147,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		listTasksByOrgIDStmt:                     q.listTasksByOrgIDStmt,
 		listTasksWithFilterStmt:                  q.listTasksWithFilterStmt,
 		markFeedAsSeenStmt:                       q.markFeedAsSeenStmt,
+		mergeObjectsStmt:                         q.mergeObjectsStmt,
 		removeObjectTypeValueStmt:                q.removeObjectTypeValueStmt,
 		removeObjectsFromFactStmt:                q.removeObjectsFromFactStmt,
 		removeObjectsFromTaskStmt:                q.removeObjectsFromTaskStmt,
@@ -1154,5 +1173,6 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		updateUserProfileStmt:                    q.updateUserProfileStmt,
 		updateUserRoleAndStatusStmt:              q.updateUserRoleAndStatusStmt,
 		upsertObjectTypeValueStmt:                q.upsertObjectTypeValueStmt,
+		validateMergeObjectsStmt:                 q.validateMergeObjectsStmt,
 	}
 }

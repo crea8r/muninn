@@ -160,6 +160,15 @@ type ObjTypeValue struct {
 	SearchVector interface{} `json:"search_vector"`
 }
 
+type ObjectMergeHistory struct {
+	ID              uuid.UUID   `json:"id"`
+	TargetObjectID  uuid.UUID   `json:"target_object_id"`
+	SourceObjectIds []uuid.UUID `json:"source_object_ids"`
+	MergedAt        time.Time   `json:"merged_at"`
+	CreatorID       uuid.UUID   `json:"creator_id"`
+	CreatedAt       time.Time   `json:"created_at"`
+}
+
 type Org struct {
 	ID        uuid.UUID       `json:"id"`
 	Name      string          `json:"name"`
