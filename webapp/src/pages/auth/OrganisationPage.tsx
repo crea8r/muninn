@@ -31,6 +31,9 @@ import {
   Spacer,
   useToast,
   Divider,
+  Select,
+  Flex,
+  Text,
 } from '@chakra-ui/react';
 import BreadcrumbComponent from 'src/components/Breadcrumb';
 import { addNewOrgMember, listOrgMembers, updateUserPassword } from 'src/api';
@@ -38,12 +41,36 @@ import authService from 'src/services/authService';
 import { OrgMember } from 'src/types/Org';
 import { ChevronDownIcon, CopyIcon } from '@chakra-ui/icons';
 import { normalise, generateRandomPassword } from 'src/utils';
+import ActivityHeatmap from 'src/components/ActivityHeatmap';
+import dayjs from 'dayjs';
+import { fetchMetrics } from 'src/api/metrics';
+import LoadingPanel from 'src/components/LoadingPanel';
+
+interface MetricSummary {
+  totalActivityScore: number;
+  averageActivityScore: number;
+  totalTasksCompleted: number;
+  totalObjectsProcessed: number;
+  mostActiveDate: string;
+}
+
+function numberWithCommas(x: number) {
+  if (isNaN(x)) {
+    return '';
+  } else {
+    return x
+      .toFixed(2)
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+}
 
 const OrganisationPage: React.FC = () => {
   const [forceUpdate, setForceUpdate] = useState(0);
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [currentEditingUserId, setCurrentEditingUserId] = useState('');
   const details = authService.getDetails();
+  const toast = useToast();
   const handleLoadPage = async () => {
     const members = await listOrgMembers();
     setMembers(members);
@@ -82,6 +109,33 @@ const OrganisationPage: React.FC = () => {
   useEffect(() => {
     handleLoadPage();
   }, [forceUpdate]);
+
+  const [selectedMember, setSelectedMember] = useState('');
+  const [metricData, setMetricData] = useState<any[]>([]);
+  const [metricSummary, setMetricSummary] = useState<MetricSummary>(undefined);
+  const [isMetricLoading, setIsMetricLoading] = useState(false);
+  useEffect(() => {
+    const fetchMetricsData = async () => {
+      setIsMetricLoading(true);
+      try {
+        if (selectedMember) {
+          const data = await fetchMetrics(selectedMember);
+          setMetricData(data.metrics);
+          setMetricSummary(data.summary);
+        }
+      } catch (e) {
+        toast({
+          title: 'Failed to fetch metrics data',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setIsMetricLoading(false);
+      }
+    };
+    fetchMetricsData();
+  }, [selectedMember, toast]);
 
   return (
     <Box>
@@ -160,6 +214,42 @@ const OrganisationPage: React.FC = () => {
           <Button mt={4} colorScheme='blue' onClick={onOpenAddDialog}>
             Add Member
           </Button>
+        </Box>
+        <Box>
+          <Heading as='h2' size='lg' mb={4}>
+            30-days activity heatmap
+          </Heading>
+          <Select
+            placeholder='Select a member'
+            value={selectedMember}
+            onChange={(e) => setSelectedMember(e.target.value)}
+            mb={2}
+          >
+            {members.map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.profile?.fullname || member.username}
+              </option>
+            ))}
+          </Select>
+          {isMetricLoading && <LoadingPanel />}
+          {selectedMember && metricData.length > 0 && metricSummary && (
+            <Flex>
+              <ActivityHeatmap
+                startDate={dayjs().subtract(29, 'day').toDate()}
+                metricsData={metricData}
+              />
+              <Box ml={4}>
+                <Box fontWeight={'bold'}>Activity Detail</Box>
+                {Object.entries(metricSummary).map(([key, value]) => (
+                  <Box key={key} mb={2} my={1}>
+                    <Text>
+                      {key}: {numberWithCommas(value)}
+                    </Text>
+                  </Box>
+                ))}
+              </Box>
+            </Flex>
+          )}
         </Box>
       </VStack>
       <AddMemberDialog

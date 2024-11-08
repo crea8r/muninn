@@ -48,6 +48,8 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 	listHandler := handlers.NewListHandler(queries)
 	importHandler := handlers.NewImportTaskHandler(db)
 	mergeHandler := handlers.NewMergeObjectsHandler(db)
+	metricsService := service.NewMetricsService(queries)
+	metricsHandler := handlers.NewMetricsHandler(metricsService)
 
 	// Public routes
 	r.Post("/auth/signup", handlers.SignUp(queries))
@@ -71,6 +73,11 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 				}
 			}
 		}
+		r.Route("/metrics", func(r chi.Router) {
+			r.Use(middleware.Permission)
+			r.Get("/creator/{creatorId}", metricsHandler.GetCreatorMetrics)
+			r.Get("/team", metricsHandler.GetTeamMetrics)
+		})
 
 		r.Route("/setting/tags", func(r chi.Router) {
 			r.Use(middleware.Permission)

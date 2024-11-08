@@ -62,6 +62,7 @@ type Querier interface {
 	GetCreator(ctx context.Context, id uuid.UUID) (Creator, error)
 	GetCreatorByID(ctx context.Context, id uuid.UUID) (Creator, error)
 	GetCreatorByUsername(ctx context.Context, arg GetCreatorByUsernameParams) (GetCreatorByUsernameRow, error)
+	GetCreatorDailyActivity(ctx context.Context, creatorID uuid.UUID) ([]GetCreatorDailyActivityRow, error)
 	GetCreatorListByID(ctx context.Context, id uuid.UUID) (GetCreatorListByIDRow, error)
 	GetFactByID(ctx context.Context, id uuid.UUID) (GetFactByIDRow, error)
 	GetFeed(ctx context.Context, creatorID uuid.UUID) ([]Feed, error)

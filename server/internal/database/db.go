@@ -165,6 +165,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getCreatorByUsernameStmt, err = db.PrepareContext(ctx, getCreatorByUsername); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCreatorByUsername: %w", err)
 	}
+	if q.getCreatorDailyActivityStmt, err = db.PrepareContext(ctx, getCreatorDailyActivity); err != nil {
+		return nil, fmt.Errorf("error preparing query GetCreatorDailyActivity: %w", err)
+	}
 	if q.getCreatorListByIDStmt, err = db.PrepareContext(ctx, getCreatorListByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCreatorListByID: %w", err)
 	}
@@ -594,6 +597,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getCreatorByUsernameStmt: %w", cerr)
 		}
 	}
+	if q.getCreatorDailyActivityStmt != nil {
+		if cerr := q.getCreatorDailyActivityStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getCreatorDailyActivityStmt: %w", cerr)
+		}
+	}
 	if q.getCreatorListByIDStmt != nil {
 		if cerr := q.getCreatorListByIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getCreatorListByIDStmt: %w", cerr)
@@ -995,6 +1003,7 @@ type Queries struct {
 	getCreatorStmt                           *sql.Stmt
 	getCreatorByIDStmt                       *sql.Stmt
 	getCreatorByUsernameStmt                 *sql.Stmt
+	getCreatorDailyActivityStmt              *sql.Stmt
 	getCreatorListByIDStmt                   *sql.Stmt
 	getFactByIDStmt                          *sql.Stmt
 	getFeedStmt                              *sql.Stmt
@@ -1111,6 +1120,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getCreatorStmt:                           q.getCreatorStmt,
 		getCreatorByIDStmt:                       q.getCreatorByIDStmt,
 		getCreatorByUsernameStmt:                 q.getCreatorByUsernameStmt,
+		getCreatorDailyActivityStmt:              q.getCreatorDailyActivityStmt,
 		getCreatorListByIDStmt:                   q.getCreatorListByIDStmt,
 		getFactByIDStmt:                          q.getFactByIDStmt,
 		getFeedStmt:                              q.getFeedStmt,
