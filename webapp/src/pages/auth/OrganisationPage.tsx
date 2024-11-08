@@ -232,24 +232,27 @@ const OrganisationPage: React.FC = () => {
             ))}
           </Select>
           {isMetricLoading && <LoadingPanel />}
-          {selectedMember && metricData.length > 0 && metricSummary && (
-            <Flex>
-              <ActivityHeatmap
-                startDate={dayjs().subtract(29, 'day').toDate()}
-                metricsData={metricData}
-              />
-              <Box ml={4}>
-                <Box fontWeight={'bold'}>Activity Detail</Box>
-                {Object.entries(metricSummary).map(([key, value]) => (
-                  <Box key={key} mb={2} my={1}>
-                    <Text>
-                      {key}: {numberWithCommas(value)}
-                    </Text>
-                  </Box>
-                ))}
-              </Box>
-            </Flex>
-          )}
+          {!isMetricLoading &&
+            selectedMember &&
+            metricData.length > 0 &&
+            metricSummary && (
+              <Flex>
+                <ActivityHeatmap
+                  startDate={dayjs().subtract(29, 'day').toDate()}
+                  metricsData={metricData}
+                />
+                <Box ml={4}>
+                  <Box fontWeight={'bold'}>Activity Detail</Box>
+                  {Object.entries(metricSummary).map(([key, value]) => (
+                    <Box key={key} mb={2} my={1}>
+                      <Text>
+                        {key}: {numberWithCommas(value)}
+                      </Text>
+                    </Box>
+                  ))}
+                </Box>
+              </Flex>
+            )}
         </Box>
       </VStack>
       <AddMemberDialog
