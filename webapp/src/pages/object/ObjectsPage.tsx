@@ -26,7 +26,7 @@ import { ObjectForm } from 'src/components/forms/';
 import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 import { shortenText } from 'src/utils';
 import SmartImage from 'src/components/SmartImage';
-import { FiFilter, FiGitMerge, FiRefreshCw } from 'react-icons/fi';
+import { FiFilter, FiRefreshCw } from 'react-icons/fi';
 import queryString from 'query-string';
 import debounce from 'lodash/debounce';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
