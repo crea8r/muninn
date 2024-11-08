@@ -58,7 +58,7 @@ function numberWithCommas(x: number) {
   if (isNaN(x)) {
     return '';
   } else {
-    return x
+    return (x || 0)
       .toFixed(2)
       .toString()
       .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
