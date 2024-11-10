@@ -50,22 +50,23 @@ export const AdvancedFilterContainer: React.FC<
     <Flex height='100%' overflow='hidden'>
       {/* Filter Panel */}
       <Box
-        width={showFilterPanel ? '300px' : '8px'}
+        width={showFilterPanel ? '300px' : '16px'}
         height='100%'
         borderRight='2px'
         borderColor='gray.200'
-        overflowY='visible'
+        overflowY='scroll'
         position={'relative'}
         background={showFilterPanel ? 'transparent' : 'gray.200'}
         cursor={showFilterPanel ? 'auto' : 'pointer'}
         onClick={showFilterPanel ? null : () => setShowFilterPanel(true)}
+        title={showFilterPanel ? '' : 'Show filters'}
       >
         {/* Toggle Button */}
         <IconButton
           aria-label={showFilterPanel ? 'Hide filters' : 'Show filters'}
           icon={showFilterPanel ? <ChevronLeftIcon /> : <ChevronRightIcon />}
           position='absolute'
-          right='0'
+          right={showFilterPanel ? '0' : '-6px'}
           top='0'
           size='xs'
           onClick={() => setShowFilterPanel(!showFilterPanel)}
