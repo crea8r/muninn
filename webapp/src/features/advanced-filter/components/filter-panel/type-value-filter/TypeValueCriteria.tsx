@@ -36,7 +36,7 @@ export const TypeValueFilter: React.FC = () => {
   };
 
   return (
-    <VStack align='stretch' spacing={4}>
+    <VStack align='stretch' spacing={4} overflowX={'hidden'}>
       <HStack justify='space-between'>
         <Text fontWeight='medium' fontSize='sm'>
           Type Value Filters

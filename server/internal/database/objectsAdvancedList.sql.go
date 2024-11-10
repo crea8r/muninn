@@ -219,21 +219,21 @@ ORDER BY
         CASE WHEN NOT COALESCE($10, false) THEN fo.fact_count END
     END DESC NULLS LAST,
     -- Handle timestamp types
-    CASE WHEN $9 IN ('created_at', 'first_fact', 'last_fact') THEN 
+    CASE WHEN $9 IN ('created_at', 'first_fact_date', 'last_fact_date') THEN 
         CASE WHEN COALESCE($10, false) THEN
             CASE $9
                 WHEN 'created_at' THEN fo.created_at
-                WHEN 'first_fact' THEN COALESCE(fo.first_fact_date, fo.created_at)
-                WHEN 'last_fact' THEN COALESCE(fo.last_fact_date, fo.created_at)
+                WHEN 'first_fact_date' THEN COALESCE(fo.first_fact_date, fo.created_at)
+                WHEN 'last_fact_date' THEN COALESCE(fo.last_fact_date, fo.created_at)
             END
         END
     END ASC NULLS LAST,
-    CASE WHEN $9 IN ('created_at', 'first_fact', 'last_fact') THEN 
+    CASE WHEN $9 IN ('created_at', 'first_fact_date', 'last_fact_date') THEN 
         CASE WHEN NOT COALESCE($10, false) THEN
             CASE $9
                 WHEN 'created_at' THEN fo.created_at
-                WHEN 'first_fact' THEN COALESCE(fo.first_fact_date, fo.created_at)
-                WHEN 'last_fact' THEN COALESCE(fo.last_fact_date, fo.created_at)
+                WHEN 'first_fact_date' THEN COALESCE(fo.first_fact_date, fo.created_at)
+                WHEN 'last_fact_date' THEN COALESCE(fo.last_fact_date, fo.created_at)
             END
         END
     END DESC NULLS LAST,

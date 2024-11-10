@@ -1,6 +1,6 @@
 // features/advanced-filter/AdvancedFilterContainer.tsx
 import React from 'react';
-import { Box, Flex, VStack, useToast } from '@chakra-ui/react';
+import { Box, Flex, IconButton, VStack, useToast } from '@chakra-ui/react';
 import { FilterPanel } from './components/filter-panel/FilterPanel';
 import { ViewController } from './components/view-controller/ViewController';
 import { useAdvancedFilter } from './contexts/AdvancedFilterContext';
@@ -8,6 +8,7 @@ import { useAdvancedFilterData } from './hooks/useAdvancedFilterData';
 import { ViewConfigBase, ViewConfigSource } from './types/view-config';
 import { FilterOptions } from './types/filters';
 import { StepCountsDisplay } from './components/StepCountsDisplay';
+import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 
 export interface AdvancedFilterContainerProps {
   viewSource: ViewConfigSource;
@@ -43,17 +44,35 @@ export const AdvancedFilterContainer: React.FC<
     });
   }
 
+  const [showFilterPanel, setShowFilterPanel] = React.useState(true);
+
   return (
     <Flex height='100%' overflow='hidden'>
       {/* Filter Panel */}
       <Box
-        width='300px'
+        width={showFilterPanel ? '300px' : '8px'}
         height='100%'
-        borderRight='1px'
+        borderRight='2px'
         borderColor='gray.200'
-        overflowY='auto'
+        overflowY='visible'
+        position={'relative'}
+        background={showFilterPanel ? 'transparent' : 'gray.200'}
+        cursor={showFilterPanel ? 'auto' : 'pointer'}
+        onClick={showFilterPanel ? null : () => setShowFilterPanel(true)}
       >
-        <FilterPanel options={filterOptions} />
+        {/* Toggle Button */}
+        <IconButton
+          aria-label={showFilterPanel ? 'Hide filters' : 'Show filters'}
+          icon={showFilterPanel ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+          position='absolute'
+          right='0'
+          top='0'
+          size='xs'
+          onClick={() => setShowFilterPanel(!showFilterPanel)}
+          borderRadius='0 xs xs 0'
+          variant={'ghost'}
+        />
+        {showFilterPanel && <FilterPanel options={filterOptions} />}
       </Box>
 
       {/* Main Content Area */}

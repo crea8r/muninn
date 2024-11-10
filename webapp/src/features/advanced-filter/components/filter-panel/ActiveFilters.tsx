@@ -41,7 +41,7 @@ export const ActiveFilters: React.FC = () => {
     if (!funnel) return null;
 
     return (
-      <>
+      <Box overflowX={'hidden'}>
         <Tag size='md' variant='subtle' colorScheme='purple'>
           <TagLabel>Funnel: {funnel.name}</TagLabel>
         </Tag>
@@ -62,7 +62,7 @@ export const ActiveFilters: React.FC = () => {
             </TagLabel>
           </Tag>
         )}
-      </>
+      </Box>
     );
   };
 

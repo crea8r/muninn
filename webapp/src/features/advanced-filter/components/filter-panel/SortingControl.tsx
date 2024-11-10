@@ -68,7 +68,7 @@ export const SortingControl: React.FC = () => {
     updateFilter({ ascending: !filterConfig.ascending });
   };
   return (
-    <VStack align='stretch' spacing={3}>
+    <VStack align='stretch' spacing={3} overflowX={'hidden'}>
       <Divider my={2} />
       <Text fontWeight='bold' fontSize='md' color={'blue.500'}>
         Sort By
@@ -104,7 +104,7 @@ export const SortingControl: React.FC = () => {
         </Select>
       ) : (
         // Object type and field selection
-        <VStack align='stretch' spacing={2}>
+        <VStack align='stretch' spacing={2} overflowX={'hidden'}>
           <Select
             size='sm'
             value={currentSort.typeId}
@@ -157,7 +157,7 @@ export const SortingControl: React.FC = () => {
         </VStack>
       )}
 
-      <HStack>
+      <HStack overflowX={'hidden'}>
         <Text fontSize='sm' color='gray.600'>
           Order
         </Text>

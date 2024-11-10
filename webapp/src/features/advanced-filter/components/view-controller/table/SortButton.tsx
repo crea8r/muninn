@@ -30,6 +30,8 @@ export const SortButton = ({
 }: SortButtonProps) => {
   const sortedByThisColumn = isSortedByColumn(column, sortBy);
   const handleSort = (asc: boolean) => {
+    console.log('handle sort: ', column);
+    console.log('sortTypeValueField: ', sortTypeValueField);
     sort(column.field, asc, column.objectTypeId);
   };
   return !sortedByThisColumn ? (

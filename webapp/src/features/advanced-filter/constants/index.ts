@@ -1,8 +1,8 @@
 export const STANDARD_SORT_OPTIONS = [
   { value: 'created_at', label: 'Created Date' },
   { value: 'fact_count', label: 'Fact Count' },
-  { value: 'first_fact', label: 'First Fact Date' },
-  { value: 'last_fact', label: 'Last Fact Date' },
+  { value: 'first_fact_date', label: 'First Fact Date' },
+  { value: 'last_fact_date', label: 'Last Fact Date' },
   { value: 'name', label: 'Name' },
 ];
 

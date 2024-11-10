@@ -14,7 +14,6 @@ import {
   RadioGroup,
   Text,
   Box,
-  Divider,
   FormControl,
   FormLabel,
   useToast,
@@ -30,6 +29,7 @@ import { shortenText } from 'src/utils';
 import { ObjectTypeValue } from 'src/types';
 import { mergeObjects, MergeObjectsPayload } from 'src/api/object';
 import { useHistory } from 'react-router-dom';
+import { capitalize } from 'lodash';
 
 interface MergeObjectsDialogProps {
   isOpen: boolean;
@@ -219,7 +219,6 @@ export const MergeObjectsDialog: React.FC<MergeObjectsDialogProps> = ({
       const sourceObjectIds = selectedObjects
         .filter((obj) => obj.id !== targetObjectId)
         .map((obj) => obj.id);
-      // TODO: Call API to merge objects
       const payload: MergeObjectsPayload = {
         target_object_id: targetObjectId,
         source_object_ids: sourceObjectIds,
@@ -233,7 +232,6 @@ export const MergeObjectsDialog: React.FC<MergeObjectsDialogProps> = ({
         description: mergedObject.description,
         id_string: mergedObject.id_string,
       };
-      console.log('Merging objects with payload:', payload);
       await mergeObjects(payload);
       toast({
         title: 'Objects merged successfully',
@@ -311,44 +309,50 @@ export const MergeObjectsDialog: React.FC<MergeObjectsDialogProps> = ({
         <ModalCloseButton />
         <ModalBody>
           <VStack spacing={4} align='stretch'>
-            <Text>Choose values for the merged object:</Text>
-
-            {/* Basic Fields */}
-            <Box>
-              <Text fontWeight='bold' mb={2}>
-                Basic Fields
-              </Text>
-              {(['name', 'description', 'id_string'] as const).map((field) => (
-                <FormControl key={field} mt={2}>
-                  <FormLabel textTransform={'capitalize'}>{field}</FormLabel>
-                  <RadioGroup
-                    onChange={handleBasicFieldChange(field)}
-                    value={mergeConfig[field]}
-                  >
-                    <VStack align='start'>
-                      {selectedObjects.map((obj) => (
-                        <Radio key={obj.id} value={obj.id}>
-                          {renderObjectValue(field, obj.id)}
-                        </Radio>
-                      ))}
-                    </VStack>
-                  </RadioGroup>
-                </FormControl>
-              ))}
-            </Box>
-            {overlappingTypes?.length > 0 && (
-              <>
-                <Divider />
-                <Text fontWeight='bold' mb={2}>
-                  Merge Object Type Fields
-                </Text>
-                {/* Object Type Fields */}
-                <Accordion allowMultiple>
-                  {overlappingTypes.map((type) => (
+            <Text fontWeight='bold' color='red.500'>
+              Choose the values to merge:
+            </Text>
+            <>
+              <Accordion allowToggle defaultIndex={0}>
+                <AccordionItem key={'basic_fields'}>
+                  <AccordionButton>
+                    <Box flex='1' textAlign='left'>
+                      <Text fontWeight='bold'>Basic Fields</Text>
+                    </Box>
+                    <AccordionIcon />
+                  </AccordionButton>
+                  <AccordionPanel>
+                    {(['name', 'description', 'id_string'] as const).map(
+                      (field) => (
+                        <FormControl key={field} mt={2}>
+                          <FormLabel textTransform={'capitalize'}>
+                            {field}
+                          </FormLabel>
+                          <RadioGroup
+                            onChange={handleBasicFieldChange(field)}
+                            value={mergeConfig[field]}
+                          >
+                            <VStack align='start'>
+                              {selectedObjects.map((obj) => (
+                                <Radio key={obj.id} value={obj.id}>
+                                  {renderObjectValue(field, obj.id)}
+                                </Radio>
+                              ))}
+                            </VStack>
+                          </RadioGroup>
+                        </FormControl>
+                      )
+                    )}
+                  </AccordionPanel>
+                </AccordionItem>
+                {overlappingTypes?.length &&
+                  overlappingTypes.map((type) => (
                     <AccordionItem key={type.typeId}>
                       <AccordionButton>
                         <Box flex='1' textAlign='left'>
-                          <Text fontWeight='bold'>{type.typeName}</Text>
+                          <Text fontWeight='bold'>
+                            {capitalize(type.typeName)}
+                          </Text>
                         </Box>
                         <AccordionIcon />
                       </AccordionButton>
@@ -414,9 +418,8 @@ export const MergeObjectsDialog: React.FC<MergeObjectsDialogProps> = ({
                       </AccordionPanel>
                     </AccordionItem>
                   ))}
-                </Accordion>
-              </>
-            )}
+              </Accordion>
+            </>
           </VStack>
         </ModalBody>
 

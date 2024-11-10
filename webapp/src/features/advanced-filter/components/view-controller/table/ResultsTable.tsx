@@ -202,7 +202,9 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
       setSelectAll(false);
     } else {
       const newSelected = [
-        ...data.filter((item) => !selectedItems[item.id]),
+        ...data.filter(
+          (item) => !selectedItems.map((i) => i.id).includes(item.id)
+        ),
         ...selectedItems,
       ];
       setSelectedItems(newSelected);
@@ -263,7 +265,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
         <Table size={density === 'compact' ? 'sm' : 'md'} variant='simple'>
           <Thead>
             <Tr>
-              <Th px={2} width='24px'>
+              <Th px={2} width='24px' zIndex={100}>
                 <Checkbox
                   isChecked={isAllSelected}
                   isIndeterminate={isIndeterminate}

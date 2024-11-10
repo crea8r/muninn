@@ -24,7 +24,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ options }) => {
       overflowY={'scroll'}
       overflowX={'hidden'}
     >
-      <VStack spacing={4} align='stretch'>
+      <VStack spacing={4} align='stretch' overflowX={'hidden'}>
         <SearchFilter />
         <ActiveFilters />
         <FunnelStepFilter />
