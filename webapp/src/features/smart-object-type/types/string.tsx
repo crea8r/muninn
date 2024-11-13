@@ -38,7 +38,7 @@ const StringDisplay: React.FC<{ value: string; validation: any }> = ({
       </Text>
     );
   }
-  return <Text>{value.toString()}</Text>;
+  return <Text>{value?.toString()}</Text>;
 };
 
 const StringInput: React.FC<{
