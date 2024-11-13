@@ -29,16 +29,16 @@ const StringDisplay: React.FC<{ value: string; validation: any }> = ({
   if (value?.startsWith('http')) {
     return (
       <Text
-        onClick={() => window.open(value, '_blank')}
+        onClick={() => window.open(value.toString(), '_blank')}
         color={'blue.500'}
         textDecoration={'underline'}
         cursor={'pointer'}
       >
-        {value}
+        {value.toString()}
       </Text>
     );
   }
-  return <Text>{value}</Text>;
+  return <Text>{value.toString()}</Text>;
 };
 
 const StringInput: React.FC<{
