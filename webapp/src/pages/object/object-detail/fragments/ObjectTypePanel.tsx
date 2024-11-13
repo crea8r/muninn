@@ -92,7 +92,8 @@ const ObjectTypePanel: React.FC<ObjectTypePanelProps> = ({
   return (
     <Box>
       <VStack align='stretch' spacing={4}>
-        <SimpleGrid columns={[1, 2]} spacing={4}>
+        {/* <SimpleGrid columns={[1, 2]} spacing={4}> */}
+        <SimpleGrid gap={2}>
           {objectTypes.map((typeValue) => (
             <ObjectTypeCard
               key={typeValue.id}

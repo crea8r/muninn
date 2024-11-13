@@ -158,9 +158,9 @@ const SpotLight: React.FC = () => {
 
         if (objectRes.status === 'fulfilled')
           setObjectResponse(objectRes.value);
-        if (factRes.status === 'fulfilled') setFactResponse(factRes.value);
-        if (taskRes.status === 'fulfilled') setTaskResponse(taskRes.value);
-        if (creatorRes.status === 'fulfilled')
+        if (factRes?.status === 'fulfilled') setFactResponse(factRes.value);
+        if (taskRes?.status === 'fulfilled') setTaskResponse(taskRes.value);
+        if (creatorRes?.status === 'fulfilled')
           setCreatorResponse(creatorRes.value);
       } catch (error) {
         console.error('Error performing search:', error);

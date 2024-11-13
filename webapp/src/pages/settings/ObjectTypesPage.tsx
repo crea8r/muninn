@@ -84,6 +84,7 @@ const ObjectTypesPage: React.FC = () => {
         query: searchQuery,
       };
       const response = await listObjectTypes(params);
+      console.log('response.objectTypes:', response.objectTypes);
       setObjectTypes(response.objectTypes || []);
       setTotalCount(response.totalCount || 0);
     } catch (error) {
@@ -280,7 +281,10 @@ const ObjectTypesPage: React.FC = () => {
                   <Td>
                     {Object.keys(objectType.fields).map((k, index) => (
                       <Badge key={index} mr={2} mb={1}>
-                        {k}: {objectType.fields[k]}
+                        {k}:{' '}
+                        {typeof objectType.fields[k] === 'string'
+                          ? objectType.fields[k]
+                          : objectType.fields[k].type}
                       </Badge>
                     ))}
                   </Td>

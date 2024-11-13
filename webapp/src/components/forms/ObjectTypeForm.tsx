@@ -11,13 +11,6 @@ import {
   FormControl,
   FormLabel,
   Input,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Select,
   IconButton,
   InputGroup,
   Menu,
@@ -27,12 +20,11 @@ import {
   InputLeftElement,
   useToast,
 } from '@chakra-ui/react';
-import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import { ObjectType } from 'src/types';
 import MarkdownEditor from '../mardown/MardownEditor';
 import { IconType } from 'react-icons';
 import FaIconList from '../FaIconList';
-import { ObjectTypeElement } from '../rich-object-form/ObjectType';
+import { SmartObjectFormConfigure } from 'src/features/smart-object-type/components/SmartObjectFormConfigure';
 
 // Define the props for the ObjectTypeForm component
 interface ObjectTypeFormProps {
@@ -40,12 +32,6 @@ interface ObjectTypeFormProps {
   onClose: () => void;
   onSave: (objectType: ObjectType) => void;
   initialData?: ObjectType;
-}
-
-// Define the structure for a field in the ObjectType
-interface Field {
-  name: string;
-  type: 'string' | 'number' | 'datetime';
 }
 
 const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
@@ -58,7 +44,8 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedIcon, setSelectedIcon] = useState<string>('file');
-  const [fields, setFields] = useState<Field[]>([]);
+  const [initialConfig, setInitialConfig] = useState<any>();
+  const [editingConfig, setEditingConfig] = useState<any>();
   const toast = useToast();
 
   // Effect to populate form when editing an existing ObjectType
@@ -66,55 +53,37 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
     if (initialData) {
       setName(initialData.name);
       setDescription(initialData.description || '');
-      setFields(
-        Object.entries(initialData.fields).map(([key, value]) => ({
-          name: key,
-          type: value as Field['type'],
-        }))
-      );
+      setInitialConfig({
+        fields: initialData.fields,
+      });
+      setEditingConfig({
+        fields: initialData.fields,
+      });
     } else {
       // Clear form when creating a new ObjectType
       setName('');
       setDescription('');
-      setFields([]);
+      setInitialConfig({
+        fields: {},
+      });
+      setEditingConfig({
+        fields: {},
+      });
     }
   }, [initialData, isOpen]);
-
-  // Handler to add a new field
-  const handleAddField = () => {
-    setFields([...fields, { name: '', type: 'string' }]);
-  };
-
-  // Handler to update a field
-  const handleFieldChange = (
-    index: number,
-    key: keyof Field,
-    value: string
-  ) => {
-    const updatedFields = [...fields];
-    updatedFields[index] = { ...updatedFields[index], [key]: value };
-    setFields(updatedFields);
-  };
-
-  // Handler to remove a field
-  const handleRemoveField = (index: number) => {
-    if (fields[index].name !== '' || initialData) {
-      const cfm = window.confirm(
-        'Removing field are highly encourage except on a new form. Are you sure you want to remove this field?'
-      );
-      if (!cfm) {
-        return;
-      }
-    }
-    setFields(fields.filter((_, i) => i !== index));
-  };
 
   // Handler to save the ObjectType
   const handleSave = () => {
     // check if any field name is empty
-    if (fields.some((field) => field.name === '') || fields.length === 0) {
+    if (
+      window.Object.keys(editingConfig.fields).some(
+        (field) => field === '' || editingConfig.fields[field].label === ''
+      ) ||
+      window.Object.keys(editingConfig.fields).length === 0
+    ) {
       toast({
-        title: 'Field name is required and a data type need at least one field',
+        title:
+          'Field and field label is required and a data type need at least one field',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -135,10 +104,9 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
       icon: selectedIcon,
       name,
       description,
-      fields: Object.fromEntries(
-        fields.map((field) => [field.name, field.type])
-      ),
+      fields: editingConfig.fields,
     };
+    setInitialConfig(editingConfig);
     onSave(objectType);
     onClose();
   };
@@ -147,7 +115,7 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
-          {initialData ? 'Edit Data Type' : 'Create Data Type'}
+          {/* {initialData ? 'Edit Data Type' : 'Create Data Type'} */}
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -189,63 +157,10 @@ const ObjectTypeForm: React.FC<ObjectTypeFormProps> = ({
               onChange={(c: string) => setDescription(c)}
             />
           </FormControl>
-          <FormControl>
-            <FormLabel>Fields</FormLabel>
-            <Table variant='simple'>
-              <Thead>
-                <Tr>
-                  <Th>Name</Th>
-                  <Th>Type</Th>
-                  <Th width='50px'></Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {fields.map((field, index) => (
-                  <Tr key={index}>
-                    <Td>
-                      <Input
-                        value={field.name}
-                        onChange={(e) =>
-                          handleFieldChange(index, 'name', e.target.value)
-                        }
-                      />
-                    </Td>
-                    <Td>
-                      <Select
-                        value={field.type}
-                        onChange={(e) =>
-                          handleFieldChange(
-                            index,
-                            'type',
-                            e.target.value as Field['type']
-                          )
-                        }
-                      >
-                        {/* Use the rich-object-form ObjectType */}
-                        {window.Object.keys(ObjectTypeElement).map((key) => (
-                          <option key={key} value={key}>
-                            {key.charAt(0).toUpperCase() + key.slice(1)}
-                          </option>
-                        ))}
-                      </Select>
-                    </Td>
-                    <Td>
-                      <IconButton
-                        aria-label='Remove field'
-                        icon={<DeleteIcon />}
-                        colorScheme={'red'}
-                        onClick={() => handleRemoveField(index)}
-                        size='sm'
-                      />
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-            <Button leftIcon={<AddIcon />} onClick={handleAddField} mt={2}>
-              Add Field
-            </Button>
-          </FormControl>
+          <SmartObjectFormConfigure
+            initialConfig={initialConfig}
+            onConfigChange={(newConfig) => setEditingConfig(newConfig)}
+          />
         </ModalBody>
         <ModalFooter>
           <Button colorScheme='blue' mr={3} onClick={handleSave}>

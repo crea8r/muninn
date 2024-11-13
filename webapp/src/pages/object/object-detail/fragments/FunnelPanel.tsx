@@ -88,7 +88,6 @@ const FunnelPanel: React.FC<FunnelPanelProps> = ({
             />
           </FormControl>
         </HStack>
-
         <SimpleGrid columns={[1, 2]} spacing={4}>
           {stepsAndFunnels
             .filter((sf: StepAndFunnel) => sf.deletedAt === null)

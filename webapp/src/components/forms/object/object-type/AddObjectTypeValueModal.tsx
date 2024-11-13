@@ -14,7 +14,7 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { ObjectType } from 'src/types/';
-import { MasterFormElement } from 'src/components/rich-object-form/MasterFormElement';
+import { SmartObjectForm } from 'src/features/smart-object-type';
 
 interface AddObjectTypeValueModalProps {
   isOpen: boolean;
@@ -30,7 +30,7 @@ const AddObjectTypeValueModal: React.FC<AddObjectTypeValueModalProps> = ({
   onAddType,
 }) => {
   const [selectedType, setSelectedType] = useState<string>('');
-  const [typeValues, setTypeValues] = useState<{ [key: string]: string }>({});
+  const [typeValues, setTypeValues] = useState<{ [key: string]: any }>({});
   const [isDirty, setIsDirty] = useState(false);
 
   const handleAddType = () => {
@@ -96,22 +96,19 @@ const AddObjectTypeValueModal: React.FC<AddObjectTypeValueModalProps> = ({
                 ))}
               </Select>
             </FormControl>
-            {Object.entries(typeValues).map(([field, value]) => {
-              const dataType = availableTypes.find((t) => t.id === selectedType)
-                ?.fields[field];
-              return (
-                <MasterFormElement
-                  key={field}
-                  field={field}
-                  dataType={dataType}
-                  value={value}
-                  onChange={(value) => {
-                    setIsDirty(true);
-                    setTypeValues({ ...typeValues, [field]: value });
-                  }}
-                />
-              );
-            })}
+            <SmartObjectForm
+              config={{
+                fields:
+                  availableTypes?.find((t) => t.id === selectedType)?.fields ||
+                  {},
+              }}
+              mode='edit'
+              onChange={(values) => {
+                setIsDirty(true);
+                setTypeValues(values);
+              }}
+              initialValues={{}}
+            />
           </VStack>
         </ModalBody>
         <ModalFooter>

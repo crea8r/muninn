@@ -12,9 +12,9 @@ import { ObjectWithTags } from 'src/api/objType';
 import dayjs from 'dayjs';
 import { ObjectType, ObjectTypeFilter } from 'src/types';
 import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
-import { MasterFormElement } from 'src/components/rich-object-form/MasterFormElement';
 import { Link } from 'react-router-dom';
 import { shortenText } from 'src/utils';
+import { SmartObjectTypeValue } from 'src/features/smart-object-type';
 
 interface ResizableTableProps {
   objectType: ObjectType;
@@ -196,26 +196,28 @@ const ResizableTable: React.FC<ResizableTableProps> = ({
               >
                 {dayjs(obj.created_at).format('DD MMM YY HH:mm')}
               </Box>
-              {filter.displayColumns?.map((field) => (
-                <Box
-                  key={field}
-                  flexShrink={0}
-                  width={`${columnWidths[field]}px`}
-                  p={2}
-                  borderRight={1}
-                  borderStyle='solid'
-                  borderColor={'gray.300'}
-                >
-                  {/* {obj.typeValues?.[field]} , {objectType.fields[field]} */}
-                  <MasterFormElement
+              {filter.displayColumns?.map((field) => {
+                console.log('field:', field);
+                console.log('value:', obj.typeValues?.[field]);
+                return (
+                  <Box
                     key={field}
-                    field={field}
-                    dataType={objectType.fields[field]}
-                    value={obj.typeValues?.[field]}
-                    style={{ width: '100%' }}
-                  />
-                </Box>
-              ))}
+                    flexShrink={0}
+                    width={`${columnWidths[field]}px`}
+                    p={2}
+                    borderRight={1}
+                    borderStyle='solid'
+                    borderColor={'gray.300'}
+                  >
+                    {/* {obj.typeValues?.[field]} , {objectType.fields[field]} */}
+                    <SmartObjectTypeValue
+                      field={field}
+                      value={obj.typeValues?.[field]}
+                      config={objectType.fields[field]}
+                    />
+                  </Box>
+                );
+              })}
             </Flex>
           ))}
         </VStack>

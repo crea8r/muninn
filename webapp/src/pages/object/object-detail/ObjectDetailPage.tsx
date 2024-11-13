@@ -115,6 +115,7 @@ const ObjectDetailPage: React.FC = () => {
       window.Object.entries(otv.type_values).forEach(([_, value]) => {
         if (
           value &&
+          typeof value === 'string' &&
           (value.includes('http://') ||
             value.includes('https://') ||
             value.includes('data:image'))
@@ -151,6 +152,7 @@ const ObjectDetailPage: React.FC = () => {
           setTabIndex(0);
         }
       } catch (error) {
+        console.error(error);
         toast({
           title: 'Error loading object details',
           description: 'Please try again later.',

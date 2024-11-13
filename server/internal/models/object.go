@@ -42,7 +42,7 @@ type ListObjectsByOrgIdRow struct {
 type ObjectTypeValue struct {
 	ID           uuid.UUID         `json:"id"`
 	ObjectTypeID uuid.UUID         `json:"objectTypeId"`
-	TypeValues       map[string]string `json:"type_values"`
+	TypeValues       map[string]interface{} `json:"type_values"`
 }
 
 type ObjectModel struct {
@@ -232,6 +232,7 @@ func (m *ObjectModel) GetDetails(ctx context.Context, id, orgID uuid.UUID) (*Obj
 	}
 	err = json.Unmarshal(typeValuesBytes, &typeValues)
 	if err != nil {
+		fmt.Println("Error unmarshalling type values:", err)
 		return nil, err
 	}
 
@@ -303,7 +304,7 @@ func (m *ObjectModel) AddObjectTypeValue(ctx context.Context, objectID, typeID u
 	if err != nil {
 		return nil, err
 	}
-	var parsedValues map[string]string
+	var parsedValues map[string]interface{}
 	err = json.Unmarshal(result.TypeValues, &parsedValues)
 	if err != nil {
 		return nil, err
@@ -333,7 +334,7 @@ func (m *ObjectModel) UpdateObjectTypeValue(ctx context.Context, typeValueID, or
 		return nil, err
 	}
 
-	var parsedValues map[string]string
+	var parsedValues map[string]interface{}
 	err = json.Unmarshal(result.TypeValues, &parsedValues)
 	if err != nil {
 		return nil, err

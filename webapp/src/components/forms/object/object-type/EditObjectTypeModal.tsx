@@ -11,13 +11,12 @@ import {
   Spacer,
   Text,
   useToast,
-  VStack,
   Switch,
 } from '@chakra-ui/react';
 import React from 'react';
 import { IconType } from 'react-icons';
 import FaIconList from 'src/components/FaIconList';
-import { MasterFormElement } from 'src/components/rich-object-form/MasterFormElement';
+import { SmartObjectForm } from 'src/features/smart-object-type';
 import { ObjectTypeValue, ObjectType } from 'src/types';
 
 interface EditObjectTypeValueModalProps {
@@ -40,10 +39,6 @@ const EditObjectTypeValueModal = ({
   const [editedValues, setEditedValues] = React.useState(
     objectTypeValue.type_values
   );
-  const allFields = window.Object.keys({
-    ...objectType?.fields,
-    ...editedValues,
-  }).sort();
   const [isDirty, setIsDirty] = React.useState(false);
   const toast = useToast();
 
@@ -115,29 +110,17 @@ const EditObjectTypeValueModal = ({
           </Flex>
         </ModalHeader>
         <ModalBody>
-          <VStack spacing={4} align='stretch'>
-            {allFields.map((key) => {
-              const shouldDisplay = isEditMode || editedValues[key];
-              return (
-                shouldDisplay && (
-                  <MasterFormElement
-                    key={key}
-                    field={key}
-                    value={editedValues[key]}
-                    onChange={
-                      isEditMode
-                        ? (value) => {
-                            setIsDirty(true);
-                            setEditedValues({ ...editedValues, [key]: value });
-                          }
-                        : undefined
-                    }
-                    dataType={objectType?.fields[key]}
-                  />
-                )
-              );
-            })}
-          </VStack>
+          <SmartObjectForm
+            config={{
+              fields: objectType.fields,
+            }}
+            initialValues={objectTypeValue.type_values}
+            mode={isEditMode ? 'edit' : 'view'}
+            onChange={(values) => {
+              setEditedValues(values);
+              setIsDirty(true);
+            }}
+          />
         </ModalBody>
         <ModalFooter>
           {isEditMode && (

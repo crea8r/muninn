@@ -1,9 +1,12 @@
 // ObjectTypeCard.tsx
-import React from 'react';
-import { Box, Heading, Text } from '@chakra-ui/react';
+import React, { useMemo } from 'react';
+import { Box, Flex, Heading, Spacer, Text, VStack } from '@chakra-ui/react';
 import { ObjectType, ObjectTypeValue } from 'src/types/';
 import FaIconList from 'src/components/FaIconList';
 import { IconType } from 'react-icons';
+import { capitalize } from 'lodash';
+import { SmartObjectTypeValue } from 'src/features/smart-object-type';
+import { SmartObjectFormConfig } from 'src/features/smart-object-type/type';
 
 interface ObjectTypeCardProps {
   objectType: ObjectType | undefined;
@@ -16,18 +19,8 @@ const ObjectTypeCard = ({
   objectType,
   onOpen,
 }: ObjectTypeCardProps) => {
-  const cardContent = Object.entries(objectTypeValue.type_values)
-    .filter(
-      ([, value]) =>
-        value !== null &&
-        value !== undefined &&
-        value !== '' &&
-        !value.includes('http')
-    )
-    .map(([key, value]) => `${key}: ${value}`)
-    .join(', ')
-    .slice(0, 200);
-
+  const DefaultIcon = FaIconList['question'];
+  const FaIcon = objectType?.icon ? FaIconList[objectType.icon] : DefaultIcon;
   return (
     <>
       <Box
@@ -36,14 +29,63 @@ const ObjectTypeCard = ({
         p={4}
         onClick={() => onOpen(objectType as ObjectType, objectTypeValue)}
         cursor='pointer'
+        maxHeight={'200px'}
+        overflowY={'scroll'}
       >
-        <Heading size='sm' display={'flex'} alignItems={'center'}>
-          {FaIconList[objectType?.icon as keyof IconType]}{' '}
-          <Text ml={1}>{objectType?.name || 'Unknown Type'}</Text>
+        <Heading size='sm' display={'flex'} alignItems={'center'} mb={4}>
+          {FaIcon}
+          <Text ml={1}>{capitalize(objectType?.name) || 'Unknown Type'}</Text>
         </Heading>
-        <Text noOfLines={3}>{cardContent}</Text>
+        <SimpleObjectTypeView
+          config={objectType as SmartObjectFormConfig}
+          values={objectTypeValue.type_values}
+        />
       </Box>
     </>
+  );
+};
+
+interface SimpleObjectTypeViewProps {
+  config: SmartObjectFormConfig;
+  values: { [key: string]: any };
+}
+
+const SimpleObjectTypeView = ({
+  config,
+  values,
+}: SimpleObjectTypeViewProps) => {
+  const sortedFields = useMemo(() => {
+    return Object.entries(config.fields).sort(
+      ([, a], [, b]) => (a.meta?.order ?? 0) - (b.meta?.order ?? 0)
+    );
+  }, [config]);
+  const DefaultIcon = FaIconList['question'];
+  return (
+    <VStack spacing={2} align='stretch' width={'100%'}>
+      {sortedFields.map(([field, fieldConfig]) => {
+        // skip images for now
+        if (fieldConfig.type === 'image') return null;
+        return (
+          values[field] && (
+            <Flex key={field} overflowX={'hidden'}>
+              <Flex alignItems={'center'}>
+                {FaIconList[fieldConfig.meta?.icon as keyof IconType] ||
+                  DefaultIcon}
+                <Text ml={1}>{capitalize(field)}</Text>
+              </Flex>
+              <Spacer />
+              <Box maxWidth={'60%'} overflow={'hidden'} maxHeight={'200px'}>
+                <SmartObjectTypeValue
+                  field={field}
+                  value={values[field]}
+                  config={fieldConfig}
+                />
+              </Box>
+            </Flex>
+          )
+        );
+      })}
+    </VStack>
   );
 };
 

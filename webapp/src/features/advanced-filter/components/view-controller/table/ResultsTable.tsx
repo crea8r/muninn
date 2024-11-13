@@ -27,6 +27,7 @@ import { createAddTagAction } from 'src/features/advanced-filter/actions/add-tag
 import { createAddToFunnelAction } from 'src/features/advanced-filter/actions/add-to-funnel';
 import { Link } from 'react-router-dom';
 import { createMergeObjectsAction } from 'src/features/advanced-filter/actions/merge-objects';
+import { SmartObjectTypeValue } from 'src/features/smart-object-type';
 
 interface ResultsTableProps {
   data: any[];
@@ -52,10 +53,20 @@ const getCellValue = (
   }
 ) => {
   if (column.objectTypeId) {
-    const typeValues = item.type_values?.find(
+    const itemTypeValues = item.type_values?.find(
       (tv: any) => tv.objectTypeId === column.objectTypeId
     );
-    return typeValues?.type_values[column.field];
+    const dataType = typeValues.find((t) => t.id === column.objectTypeId)
+      .fields[column.field];
+    return (
+      <SmartObjectTypeValue
+        field={column.field}
+        config={{
+          type: dataType,
+        }}
+        value={itemTypeValues?.type_values[column.field]}
+      />
+    );
   }
   if (column.field === 'tags') {
     // render all tags
@@ -113,7 +124,9 @@ const getCellValue = (
 
 const formatValue = (value: any, column: ColumnConfig) => {
   if (!value) return '';
-
+  if (column.objectTypeId) {
+    return value;
+  }
   switch (column.formatType) {
     case 'date':
       return new Date(value).toLocaleDateString();

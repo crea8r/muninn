@@ -139,7 +139,7 @@ const markdownStyles = {
     backgroundColor: '#fff',
     borderTop: '1px solid #c6cbd1',
   },
-  'tr:nth-child(2n)': {
+  'tr:nth-of-type(2n)': {
     backgroundColor: '#f6f8fa',
   },
   img: {
@@ -153,8 +153,8 @@ const markdownStyles = {
     borderLeft: '.25em solid #dfe2e5',
     marginBottom: PARAPGRAPH_M,
   },
-  'blockquote > :first-child': { marginTop: '0' },
-  'blockquote > :last-child': { marginBottom: '0' },
+  'blockquote > :first-of-type': { marginTop: '0' },
+  'blockquote > :last-of-type': { marginBottom: '0' },
   hr: {
     height: '.25em',
     padding: '0',
