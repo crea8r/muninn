@@ -27,7 +27,12 @@ import { fetchAllFunnels, createFunnel } from 'src/api/funnel';
 import { useHistory } from 'react-router-dom';
 import LoadingPanel from 'src/components/LoadingPanel';
 import { debounce } from 'lodash';
-import { FaEdit, FaFunnelDollar } from 'react-icons/fa';
+import {
+  FaEdit,
+  FaFilter,
+  FaFunnelDollar,
+  FaQuestionCircle,
+} from 'react-icons/fa';
 import { shortenText } from 'src/utils';
 import {
   UnsavedChangesProvider,
@@ -36,6 +41,8 @@ import {
 import { STORAGE_KEYS, useGlobalContext } from 'src/contexts/GlobalContext';
 import LoadingScreen from 'src/components/LoadingScreen';
 import { SearchInput } from 'src/components/SearchInput';
+import { InfoDialogButton } from 'src/components/InfoDialog';
+import { InfoIcon } from '@chakra-ui/icons';
 
 const ITEMS_PER_PAGE =
   parseInt(localStorage.getItem(STORAGE_KEYS.PER_PAGE)) || 10;
@@ -55,6 +62,7 @@ const FunnelsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingFunnelList, setIsLoadingFunnelList] = useState(true);
+  const [isShowHelp, setIsShowHelp] = useState(false);
   const {
     isOpen: isCreateOpen,
     onOpen: onCreateOpen,
@@ -113,9 +121,9 @@ const FunnelsPage: React.FC = () => {
         isClosable: true,
       });
     } finally {
+      refreshFunnels();
       setIsLoading(false);
     }
-    refreshFunnels();
   };
 
   const handleSearchChange = (q: string) => {
@@ -137,120 +145,156 @@ const FunnelsPage: React.FC = () => {
   return (
     <Box>
       <BreadcrumbComponent />
-      <HStack justify='space-between' mb={3}>
-        <Heading as='h1' size='xl' color='var(--color-primary)'>
-          Funnels
-        </Heading>
-        <Button
-          colorScheme='blue'
-          bg='var(--color-primary)'
-          onClick={onCreateOpen}
-          isDisabled={isLoadingFunnelList}
-        >
-          New Funnel
-        </Button>
-      </HStack>
-      <SearchInput
-        initialSearchQuery={searchQuery}
-        setSearchQuery={handleSearchChange}
-        placeholder='Search in name and description'
-        isLoading={isLoadingFunnelList}
-      />
-      {isLoadingFunnelList ? (
-        <LoadingPanel />
-      ) : (
-        <>
-          <Table variant='simple'>
-            <Thead>
-              <Tr>
-                <Th>Name</Th>
-                <Th>Steps</Th>
-                <Th>Actions</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {funnels.map((funnel) => (
-                <Tr key={funnel.id}>
-                  <Td maxWidth='250px'>
-                    <VStack align='left'>
-                      <Text
-                        fontWeight='bold'
-                        textDecoration={'underline'}
-                        cursor={'pointer'}
-                        onClick={() => handleClickFunnelName(funnel)}
-                      >
-                        {funnel.name}
-                      </Text>
-                      <Box>{shortenText(funnel.description, 30)}</Box>
-                    </VStack>
-                  </Td>
-                  <Td>
-                    <UnorderedList>
-                      {funnel.steps?.map((step, index) => (
-                        <ListItem key={index}>
-                          {shortenText(step.name, 20)}
-                        </ListItem>
-                      ))}
-                    </UnorderedList>
-                  </Td>
-                  <Td width='250px'>
-                    <IconButton
-                      icon={<FaEdit />}
-                      onClick={() => handleView(funnel)}
-                      aria-label=''
-                      size='sm'
-                      mr={2}
-                    />
-                    <IconButton
-                      size='sm'
-                      icon={<FaFunnelDollar />}
-                      onClick={() => handleClickFunnelName(funnel)}
-                      aria-label={''}
-                      mr={2}
-                    />
-                  </Td>
+      <VStack p={4} background={'white'} gap={3}>
+        <HStack justify='space-between' width={'100%'} mb={6}>
+          <HStack gap={1}>
+            <FaFilter size={'36px'} color='var(--color-primary)' />
+            <Heading as='h1' size='xl' color='var(--color-primary)'>
+              Funnels
+            </Heading>
+          </HStack>
+          <HStack gap={1}>
+            <Button
+              colorScheme='blue'
+              bg='var(--color-primary)'
+              onClick={onCreateOpen}
+              isDisabled={isLoadingFunnelList}
+            >
+              New Funnel
+            </Button>
+            <InfoDialogButton
+              onClose={() => setIsShowHelp(false)}
+              isOpen={isShowHelp}
+              title={
+                <HStack gap={1}>
+                  <InfoIcon />
+                  <Text>What is a funnel?</Text>
+                </HStack>
+              }
+              content={
+                'A funnel is a structured path that guides individuals from initial engagement to a desired outcome, such as joining, participating, or advocating for a community. In community management, funnels help convert casual members into engaged and active participants. By clearly mapping stages like awareness, interest, engagement, and loyalty, a funnel enables community managers to identify where members might need support or encouragement to progress to the next level.'
+              }
+              button={
+                <IconButton
+                  aria-label='help'
+                  icon={<FaQuestionCircle />}
+                  onClick={() => setIsShowHelp(true)}
+                  variant={'outline'}
+                  color={'var(--color-primary)'}
+                />
+              }
+            />
+          </HStack>
+        </HStack>
+        <SearchInput
+          initialSearchQuery={searchQuery}
+          setSearchQuery={handleSearchChange}
+          placeholder='Search in name and description'
+          isLoading={isLoadingFunnelList}
+        />
+        {isLoadingFunnelList ? (
+          <LoadingPanel />
+        ) : (
+          <>
+            <Table variant='simple'>
+              <Thead>
+                <Tr>
+                  <Th>Name</Th>
+                  <Th>Steps</Th>
+                  <Th>Actions</Th>
                 </Tr>
-              ))}
-            </Tbody>
-          </Table>
+              </Thead>
+              <Tbody>
+                {funnels.map((funnel) => (
+                  <Tr key={funnel.id}>
+                    <Td maxWidth='250px'>
+                      <VStack align='left'>
+                        <Text
+                          fontWeight='bold'
+                          textDecoration={'underline'}
+                          cursor={'pointer'}
+                          onClick={() => handleClickFunnelName(funnel)}
+                        >
+                          {funnel.name}
+                        </Text>
+                        <Box>{shortenText(funnel.description, 30)}</Box>
+                      </VStack>
+                    </Td>
+                    <Td>
+                      <UnorderedList>
+                        {funnel.steps?.map((step, index) => (
+                          <ListItem key={index}>
+                            {shortenText(step.name, 20)}
+                          </ListItem>
+                        ))}
+                      </UnorderedList>
+                    </Td>
+                    <Td width='250px'>
+                      <IconButton
+                        icon={<FaEdit />}
+                        onClick={() => handleView(funnel)}
+                        aria-label=''
+                        size='sm'
+                        mr={2}
+                      />
+                      <IconButton
+                        size='sm'
+                        icon={<FaFunnelDollar />}
+                        onClick={() => handleClickFunnelName(funnel)}
+                        aria-label={''}
+                        mr={2}
+                      />
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
 
-          <Flex justifyContent='space-between' alignItems='center' mt={4}>
-            <Text>
-              Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
-              {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of{' '}
-              {totalCount} funnels
-            </Text>
-            <HStack>
-              <Button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <Select
-                value={currentPage}
-                onChange={(e) => setCurrentPage(Number(e.target.value))}
-              >
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <option key={page} value={page}>
-                      Page {page}
-                    </option>
-                  )
-                )}
-              </Select>
-              <Button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </HStack>
-          </Flex>
-        </>
-      )}
+            <Flex
+              justifyContent='space-between'
+              alignItems='center'
+              mt={4}
+              width={'100%'}
+            >
+              <Box display={['none', 'none', 'none', 'block']}>
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
+                {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of{' '}
+                {totalCount} funnels
+              </Box>
+              <HStack>
+                <Button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <Select
+                  value={currentPage}
+                  onChange={(e) => setCurrentPage(Number(e.target.value))}
+                >
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <option key={page} value={page}>
+                        Page {page}
+                      </option>
+                    )
+                  )}
+                </Select>
+                <Button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </HStack>
+            </Flex>
+          </>
+        )}
+      </VStack>
 
       <CreateFunnelForm
         isOpen={isCreateOpen && !isLoading}

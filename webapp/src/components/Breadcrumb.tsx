@@ -19,6 +19,7 @@ const BreadcrumbComponent: React.FC<BreadcrumbComponentProps> = ({
       spacing='8px'
       separator={<ChevronRightIcon color='gray.500' />}
       mb={4}
+      fontWeight={'light'}
     >
       <BreadcrumbItem>
         <BreadcrumbLink as={RouterLink} to='/feed'>

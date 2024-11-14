@@ -17,13 +17,13 @@ import { deleteFunnel, getFunnel, updateFunnel } from 'src/api/funnel';
 import ResizableFunnelTable from './ResizableFunnelTable';
 import EditStepNameDialog from './EditStepNameDialog';
 import MarkdownModal from './MarkdownModal';
-import ReactMarkdown from 'react-markdown';
 import LoadingPanel from 'src/components/LoadingPanel';
 import { DeleteIcon, EditIcon } from '@chakra-ui/icons';
 import { EditFunnelForm } from 'src/components/forms';
 import { FaFunnelDollar } from 'react-icons/fa';
 import { UnsavedChangesProvider } from 'src/contexts/unsaved-changes/UnsavedChange';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
+import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 
 const FunnelConfigPageWrapper: React.FC = () => {
   return (
@@ -135,9 +135,9 @@ const FunnelConfigPage: React.FC = () => {
         isClosable: true,
       });
     } finally {
+      refreshFunnels();
       setIsLoading(false);
     }
-    refreshFunnels();
   };
 
   const handleClickEditFunnel = () => {
@@ -170,9 +170,9 @@ const FunnelConfigPage: React.FC = () => {
           isClosable: true,
         });
       } finally {
+        refreshFunnels();
         setIsLoading(false);
       }
-      refreshFunnels();
     }
   };
 
@@ -182,61 +182,65 @@ const FunnelConfigPage: React.FC = () => {
         <LoadingPanel />
       ) : (
         <>
-          <VStack align='stretch' spacing={4}>
-            <Flex direction='row'>
-              <Breadcrumb>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href='/'>Home</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href='/settings'>Setting</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href='/settings/funnels'>
-                    Funnels
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbItem
-                  isCurrentPage
-                  p={0.5}
-                  background={'yellow.100'}
-                  fontWeight={'bold'}
-                >
-                  <BreadcrumbLink href='#'>{funnel.name}</BreadcrumbLink>
-                </BreadcrumbItem>
-              </Breadcrumb>
-              <Spacer />
-              <Box>
-                <IconButton
-                  colorScheme='blue'
-                  variant={'outline'}
-                  aria-label='Edit funnel'
-                  icon={<EditIcon />}
-                  onClick={handleClickEditFunnel}
-                  mr={2}
-                  isDisabled={isLoading || !funnel}
-                />
-                <IconButton
-                  colorScheme='red'
-                  variant={'outline'}
-                  aria-label='Delete funnel'
-                  icon={<DeleteIcon />}
-                  onClick={handleDeleteFunnel}
-                  isDisabled={isLoading || !funnel}
-                  mr={2}
-                />
-                <IconButton
-                  colorScheme='blue'
-                  variant={'outline'}
-                  icon={<FaFunnelDollar />}
-                  onClick={handleClickFunnel}
-                  aria-label={''}
-                  mr={2}
-                />
-              </Box>
-            </Flex>
-
-            <ReactMarkdown>{funnel.description}</ReactMarkdown>
+          <Flex direction='row' mb={3}>
+            <Breadcrumb fontWeight={'light'}>
+              <BreadcrumbItem>
+                <BreadcrumbLink href='/'>Home</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbItem>
+                <BreadcrumbLink href='/settings'>Setting</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbItem>
+                <BreadcrumbLink href='/settings/funnels'>
+                  Funnels
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbItem
+                isCurrentPage
+                p={0.5}
+                background={'yellow.100'}
+                fontWeight={'bold'}
+              >
+                <BreadcrumbLink href='#'>{funnel.name}</BreadcrumbLink>
+              </BreadcrumbItem>
+            </Breadcrumb>
+            <Spacer />
+            <Box>
+              <IconButton
+                variant={'outline'}
+                aria-label='Edit funnel'
+                icon={<EditIcon />}
+                onClick={handleClickEditFunnel}
+                mr={2}
+                isDisabled={isLoading || !funnel}
+                size={'sm'}
+              />
+              <IconButton
+                colorScheme='red'
+                variant={'outline'}
+                aria-label='Delete funnel'
+                icon={<DeleteIcon />}
+                onClick={handleDeleteFunnel}
+                isDisabled={isLoading || !funnel}
+                mr={2}
+                size={'sm'}
+              />
+              <IconButton
+                colorScheme='blue'
+                variant={'outline'}
+                icon={<FaFunnelDollar />}
+                onClick={handleClickFunnel}
+                aria-label={''}
+                mr={2}
+                size={'sm'}
+              />
+            </Box>
+          </Flex>
+          <VStack align='stretch' spacing={3} background={'white'} p={4}>
+            <MarkdownDisplay
+              content={funnel.description}
+              characterLimit={200}
+            />
             <ResizableFunnelTable
               steps={funnel.steps || []}
               onStepNameClick={handleStepNameClick}

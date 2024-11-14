@@ -13,6 +13,9 @@ import {
   Input,
   VStack,
   useToast,
+  Flex,
+  Text,
+  Tag as ChkraTag,
 } from '@chakra-ui/react';
 import { UpdateTagParams } from 'src/api/tag';
 import { Tag } from 'src/types/Tag';
@@ -94,7 +97,14 @@ const EditTagForm: React.FC<EditTagFormProps> = ({
     >
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Edit Tag: {tag.name}</ModalHeader>
+        <ModalHeader>
+          <Flex gap={2}>
+            <Text>Edit Tag</Text>
+            <ChkraTag color={textColor} background={backgroundColor}>
+              {tag.name}
+            </ChkraTag>
+          </Flex>
+        </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <form onSubmit={handleSubmit}>

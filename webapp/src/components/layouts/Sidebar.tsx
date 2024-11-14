@@ -23,6 +23,7 @@ import {
 } from 'react-icons/fi';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import authService from 'src/services/authService';
+import { FaFilter, FaIdCard, FaShare, FaTag } from 'react-icons/fa';
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -31,7 +32,7 @@ interface SidebarItemProps {
   isActive: boolean;
   isCollapsed: boolean;
   badge?: number;
-  subItems?: { text: string; to: string }[];
+  subItems?: { text: string; to: string; icon?: React.ElementType }[];
   location: any;
 }
 
@@ -85,8 +86,10 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
             textDecoration='none'
             _hover={{ textDecoration: 'none' }}
           >
-            <Text
-              fontSize='sm'
+            <Flex
+              alignItems={'center'}
+              gap={2}
+              width={'100%'}
               p={2}
               borderRadius='md'
               bg={
@@ -101,8 +104,9 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
               }
               _hover={{ bg: 'gray.100' }}
             >
-              {subItem.text}
-            </Text>
+              {subItem.icon && <Icon as={subItem.icon} />}
+              <Text fontSize='sm'>{subItem.text}</Text>
+            </Flex>
           </Link>
         ))}
       </VStack>
@@ -154,10 +158,10 @@ const Sidebar: React.FC = () => {
   const sidebarWidth = isCollapsed ? '60px' : '250px';
 
   const settingsSubItems = [
-    { text: 'Object Types', to: '/settings/data-types' },
-    { text: 'Funnels', to: '/settings/funnels' },
-    { text: 'View Templates', to: '/settings/templates' },
-    { text: 'Tags', to: '/settings/tags' },
+    { text: 'Data Types', to: '/settings/data-types', icon: FaIdCard },
+    { text: 'Funnels', to: '/settings/funnels', icon: FaFilter },
+    { text: 'Tags', to: '/settings/tags', icon: FaTag },
+    { text: 'Templates', to: '/settings/templates', icon: FaShare },
   ];
 
   const sidebarViews =

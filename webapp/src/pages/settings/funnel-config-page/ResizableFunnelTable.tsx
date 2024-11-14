@@ -63,12 +63,12 @@ const ResizableFunnelTable: React.FC<ResizableFunnelTableProps> = ({
   }, [handleResize]);
 
   const stripMarkdown = (text: string) => {
-    return text.replace(/[#*_~`]/g, '').substring(0, 50) + '...';
+    return text.replace(/[#*_~`]/g, '');
   };
 
   return (
     <Box overflowX='auto'>
-      <Flex borderBottom='1px' borderColor='gray.200' bg='gray.50'>
+      <Flex borderBottom='1px' borderColor='gray.200'>
         {Object.entries(columnWidths).map(([column, width]) => (
           <Box
             key={column}
@@ -130,6 +130,8 @@ const ResizableFunnelTable: React.FC<ResizableFunnelTableProps> = ({
             borderColor='gray.200'
             cursor='pointer'
             onClick={() => onContentClick('Definition', step.definition)}
+            maxHeight={100}
+            overflow={'clip'}
           >
             <Text>{stripMarkdown(step.definition)}</Text>
           </Box>
@@ -141,6 +143,8 @@ const ResizableFunnelTable: React.FC<ResizableFunnelTableProps> = ({
             borderColor='gray.200'
             cursor='pointer'
             onClick={() => onContentClick('Example', step.example)}
+            maxHeight={100}
+            overflow={'clip'}
           >
             <Text>{stripMarkdown(step.example)}</Text>
           </Box>
@@ -152,6 +156,8 @@ const ResizableFunnelTable: React.FC<ResizableFunnelTableProps> = ({
             borderColor='gray.200'
             cursor='pointer'
             onClick={() => onContentClick('Action', step.action)}
+            maxHeight={100}
+            overflow={'clip'}
           >
             <Text>{stripMarkdown(step.action)}</Text>
           </Box>

@@ -17,6 +17,7 @@ import {
   useToast,
   Text,
   Badge,
+  IconButton,
 } from '@chakra-ui/react';
 import BreadcrumbComponent from 'src/components/Breadcrumb';
 import { ObjectTypeForm } from 'src/components/forms';
@@ -39,6 +40,10 @@ import {
 import { STORAGE_KEYS, useGlobalContext } from 'src/contexts/GlobalContext';
 import LoadingScreen from 'src/components/LoadingScreen';
 import { SearchInput } from 'src/components/SearchInput';
+import { FaAddressCard, FaEdit, FaFunnelDollar, FaTrash } from 'react-icons/fa';
+import { InfoDialogButton } from 'src/components/InfoDialog';
+import { InfoIcon } from '@chakra-ui/icons';
+import MarkdownDisplay from 'src/components/mardown/MarkdownDisplay';
 
 const ITEMS_PER_PAGE =
   parseInt(localStorage.getItem(STORAGE_KEYS.PER_PAGE)) || 10;
@@ -123,9 +128,9 @@ const ObjectTypesPage: React.FC = () => {
         isClosable: true,
       });
     } finally {
+      refreshObjectTypes();
       setIsLoading(false);
     }
-    refreshObjectTypes();
   };
 
   const handleUpdateObjectType = async (updatedObjectType: ObjectType) => {
@@ -156,9 +161,9 @@ const ObjectTypesPage: React.FC = () => {
         isClosable: true,
       });
     } finally {
+      refreshObjectTypes();
       setIsLoading(false);
     }
-    refreshObjectTypes();
   };
 
   const handleDeleteObjectType = async (id: string) => {
@@ -186,9 +191,9 @@ const ObjectTypesPage: React.FC = () => {
         isClosable: true,
       });
     } finally {
+      refreshObjectTypes();
       setIsLoading(false);
     }
-    refreshObjectTypes();
   };
 
   const handleSearchChange = (q: string) => {
@@ -204,143 +209,192 @@ const ObjectTypesPage: React.FC = () => {
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
+  const [isShowHelp, setIsShowHelp] = useState(false);
+
   return (
     <Box>
       <BreadcrumbComponent />
-      <HStack justify='space-between' mb={6}>
-        <Heading as='h1' size='xl' color='var(--color-primary)'>
-          Data Types
-        </Heading>
-        <Button
-          colorScheme='blue'
-          bg='var(--color-primary)'
-          onClick={() => {
-            setEditingObjectType(undefined);
-            onOpen();
-          }}
-          isDisabled={isLoadingObjectTypeList}
-        >
-          New Data Type
-        </Button>
-      </HStack>
-
-      <SearchInput
-        initialSearchQuery={searchQuery}
-        setSearchQuery={handleSearchChange}
-        isLoading={isLoadingObjectTypeList}
-        placeholder='Search data types'
-      />
-      {isLoading || isLoadingObjectTypeList ? (
-        <LoadingPanel />
-      ) : (
-        <>
-          <Table variant='simple'>
-            <Thead>
-              <Tr>
-                <Th>Name</Th>
-                <Th>Fields</Th>
-                <Th>Actions</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {objectTypes.map((objectType) => (
-                <Tr key={objectType.id}>
-                  <Td>
-                    <VStack align='start' spacing={1}>
-                      <HStack>
-                        {FaIconList[objectType.icon as keyof typeof FaIconList]}
-                        <Text
-                          fontWeight='bold'
-                          textDecoration={'underline'}
-                          _hover={{
-                            cursor: 'pointer',
-                            background: 'yellow.100',
-                          }}
-                          onClick={() =>
-                            history.push(
-                              `/settings/data-types/${objectType.id}`
-                            )
-                          }
-                        >
-                          {objectType.name}
-                        </Text>
-                      </HStack>
-
-                      <Text fontSize='sm' color='gray.600'>
-                        {objectType.description}
-                      </Text>
-                    </VStack>
-                  </Td>
-                  <Td>
-                    {Object.keys(objectType.fields).map((k, index) => (
-                      <Badge key={index} mr={2} mb={1}>
-                        {k}:{' '}
-                        {typeof objectType.fields[k] === 'string'
-                          ? objectType.fields[k]
-                          : objectType.fields[k].type}
-                      </Badge>
-                    ))}
-                  </Td>
-                  <Td minWidth='200px'>
-                    <Button
-                      size='sm'
-                      mr={2}
-                      onClick={() => handleEditObjectType(objectType)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      size='sm'
-                      colorScheme='red'
-                      onClick={() => handleDeleteObjectType(objectType.id!)}
-                    >
-                      Delete
-                    </Button>
-                  </Td>
+      <VStack p={4} background={'white'} gap={3}>
+        <HStack justify='space-between' mb={6} width='100%'>
+          <HStack gap={1}>
+            <FaAddressCard size={'36px'} color='var(--color-primary)' />
+            <Heading as='h1' size='xl' color='var(--color-primary)'>
+              Data Types
+            </Heading>
+          </HStack>
+          <HStack gap={1}>
+            <Button
+              colorScheme='blue'
+              bg='var(--color-primary)'
+              onClick={() => {
+                setEditingObjectType(undefined);
+                onOpen();
+              }}
+              isDisabled={isLoadingObjectTypeList}
+            >
+              New Data Type
+            </Button>
+            <InfoDialogButton
+              title='What is Data Types?'
+              content='A Data Type is a collection of data fields that can be used to define the structure of your data. Each object in the "Everything" can has multiple data type (one each type).'
+              isOpen={isShowHelp}
+              onClose={() => setIsShowHelp(false)}
+              button={
+                <IconButton
+                  aria-label='Info'
+                  icon={<InfoIcon />}
+                  variant='outline'
+                  color={'var(--color-primary)'}
+                  onClick={() => setIsShowHelp(true)}
+                />
+              }
+            />
+          </HStack>
+        </HStack>
+        <SearchInput
+          initialSearchQuery={searchQuery}
+          setSearchQuery={handleSearchChange}
+          isLoading={isLoadingObjectTypeList}
+          placeholder='Search data types'
+        />
+        {isLoading || isLoadingObjectTypeList ? (
+          <LoadingPanel />
+        ) : (
+          <>
+            <Table variant='simple'>
+              <Thead>
+                <Tr>
+                  <Th>Name</Th>
+                  <Th display={['none', 'none', 'none', 'table-cell']}>
+                    Fields
+                  </Th>
+                  <Th>Actions</Th>
                 </Tr>
-              ))}
-            </Tbody>
-          </Table>
+              </Thead>
+              <Tbody>
+                {objectTypes.map((objectType) => (
+                  <Tr key={objectType.id}>
+                    <Td>
+                      <VStack align='start' spacing={1}>
+                        <HStack>
+                          {
+                            FaIconList[
+                              objectType.icon as keyof typeof FaIconList
+                            ]
+                          }
+                          <Text
+                            fontWeight='bold'
+                            textDecoration={'underline'}
+                            _hover={{
+                              cursor: 'pointer',
+                              background: 'yellow.100',
+                            }}
+                            onClick={() =>
+                              history.push(
+                                `/settings/data-types/${objectType.id}`
+                              )
+                            }
+                          >
+                            {objectType.name}
+                          </Text>
+                        </HStack>
 
-          <Flex justifyContent='space-between' alignItems='center' mt={4}>
-            <Box>
-              Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
-              {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of{' '}
-              {totalCount} object types
-            </Box>
-            <HStack>
-              <Button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                isLoading={isLoading}
-              >
-                Previous
-              </Button>
-              <Select
-                value={currentPage}
-                onChange={(e) => setCurrentPage(Number(e.target.value))}
-              >
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <option key={page} value={page}>
-                      Page {page}
-                    </option>
-                  )
-                )}
-              </Select>
-              <Button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-                isLoading={isLoading}
-              >
-                Next
-              </Button>
-            </HStack>
-          </Flex>
-        </>
-      )}
+                        <Text fontSize='sm' color='gray.600'>
+                          <MarkdownDisplay content={objectType.description} />
+                        </Text>
+                      </VStack>
+                    </Td>
+                    <Td display={['none', 'none', 'none', 'table-cell']}>
+                      {Object.keys(objectType.fields).map((k, index) => (
+                        <Badge key={index} mr={2} mb={1}>
+                          {k}:{' '}
+                          {typeof objectType.fields[k] === 'string'
+                            ? objectType.fields[k]
+                            : objectType.fields[k].type}
+                        </Badge>
+                      ))}
+                    </Td>
+                    <Td minWidth='200px'>
+                      <IconButton
+                        aria-label='Edit'
+                        icon={<FaEdit />}
+                        size='sm'
+                        mr={2}
+                        onClick={() => handleEditObjectType(objectType)}
+                        variant={'outline'}
+                      />
+                      <IconButton
+                        aria-label='Delete'
+                        icon={<FaTrash />}
+                        size='sm'
+                        colorScheme='red'
+                        onClick={() => handleDeleteObjectType(objectType.id!)}
+                        variant={'outline'}
+                        mr={2}
+                      />
+                      <IconButton
+                        aria-label='Show objects'
+                        icon={<FaFunnelDollar />}
+                        size='sm'
+                        colorScheme='blue'
+                        onClick={() =>
+                          history.push(`/settings/data-types/${objectType.id}`)
+                        }
+                        variant={'outline'}
+                      />
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+
+            <Flex
+              justifyContent='space-between'
+              alignItems='center'
+              mt={4}
+              width={'100%'}
+            >
+              <Box display={['none', 'none', 'none', 'block']}>
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
+                {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of{' '}
+                {totalCount} object types
+              </Box>
+              <HStack>
+                <Button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                  isLoading={isLoading}
+                >
+                  Previous
+                </Button>
+                <Select
+                  value={currentPage}
+                  onChange={(e) => setCurrentPage(Number(e.target.value))}
+                >
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <option key={page} value={page}>
+                        Page {page}
+                      </option>
+                    )
+                  )}
+                </Select>
+                <Button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  isLoading={isLoading}
+                >
+                  Next
+                </Button>
+              </HStack>
+            </Flex>
+          </>
+        )}
+      </VStack>
 
       <ObjectTypeForm
         isOpen={isOpen && !isLoading}

@@ -13,6 +13,9 @@ import {
   Input,
   VStack,
   useToast,
+  Flex,
+  Tag as ChakraTag,
+  Text,
 } from '@chakra-ui/react';
 import { CreateTagParams } from 'src/api/tag';
 import { Tag } from 'src/types/Tag';
@@ -21,6 +24,7 @@ import {
   getRandomBrightColor,
   normalizeToTagStyle,
 } from 'src/utils';
+import { getShades } from 'src/utils/color';
 
 interface NewTagFormProps {
   isOpen: boolean;
@@ -37,8 +41,11 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [backgroundColor, setBackgroundColor] = useState(getRandomDarkColor());
-  const [textColor, setTextColor] = useState(getRandomBrightColor());
+  const [baseColor, setBaseColor] = useState(getRandomBrightColor());
+  const [backgroundColor, setBackgroundColor] = useState(
+    getShades(baseColor).lighterShade
+  );
+  const [textColor, setTextColor] = useState(getShades(baseColor).darkerShade);
   const [isDirty, setIsDirty] = useState(false);
   const toast = useToast();
 
@@ -99,7 +106,14 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
     <Modal isOpen={isOpen} onClose={handleClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Create New Tag</ModalHeader>
+        <ModalHeader>
+          <Flex gap={2}>
+            <Text>New Tag</Text>
+            <ChakraTag color={textColor} background={backgroundColor}>
+              {name || 'Untitled'}
+            </ChakraTag>
+          </Flex>
+        </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <form onSubmit={handleSubmit}>
@@ -125,24 +139,18 @@ const NewTagForm: React.FC<NewTagFormProps> = ({
                 />
               </FormControl>
               <FormControl>
-                <FormLabel>Background Color</FormLabel>
+                <FormLabel>Base Color</FormLabel>
                 <Input
                   type='color'
-                  value={backgroundColor}
+                  value={baseColor}
                   onChange={(e) => {
                     setIsDirty(true);
-                    setBackgroundColor(e.target.value);
-                  }}
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Text Color</FormLabel>
-                <Input
-                  type='color'
-                  value={textColor}
-                  onChange={(e) => {
-                    setIsDirty(true);
-                    setTextColor(e.target.value);
+                    const { lighterShade, darkerShade } = getShades(
+                      e.target.value
+                    );
+                    setBaseColor(e.target.value);
+                    setBackgroundColor(lighterShade);
+                    setTextColor(darkerShade);
                   }}
                 />
               </FormControl>
