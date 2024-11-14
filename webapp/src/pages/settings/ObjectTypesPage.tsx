@@ -265,7 +265,7 @@ const ObjectTypesPage: React.FC = () => {
                           }}
                           onClick={() =>
                             history.push(
-                              `/settings/object-types/${objectType.id}`
+                              `/settings/data-types/${objectType.id}`
                             )
                           }
                         >

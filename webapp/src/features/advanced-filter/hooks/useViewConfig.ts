@@ -1,5 +1,5 @@
 // hooks/useViewConfig.ts
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { ViewConfigBase, ViewConfigSource } from '../types/view-config';
 import { PREDEFINED_VIEWS } from '../constants/predefined-views';
 import { STANDARD_COLUMNS } from '../constants/default-columns';
@@ -16,7 +16,7 @@ export const useViewConfig = ({
   onConfigChange,
 }: UseViewConfigProps) => {
   const [config, setConfig] = useState<ViewConfigBase>(() => {
-    if (initialConfig) return initialConfig;
+    if (initialConfig) return structuredClone(initialConfig);
 
     if (source.type === 'predefined') {
       const predefinedView = PREDEFINED_VIEWS[source.id];
@@ -37,6 +37,11 @@ export const useViewConfig = ({
       })),
     };
   });
+  useEffect(() => {
+    if (initialConfig) {
+      setConfig(structuredClone(initialConfig));
+    }
+  }, [initialConfig]);
 
   // Get view restrictions
   const viewRestrictions = useMemo(() => {

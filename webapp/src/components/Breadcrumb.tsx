@@ -2,6 +2,7 @@ import React from 'react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { ChevronRightIcon } from '@chakra-ui/icons';
+import { capitalize } from 'lodash';
 
 interface BreadcrumbComponentProps {
   label?: string;
@@ -42,7 +43,7 @@ const BreadcrumbComponent: React.FC<BreadcrumbComponentProps> = ({
         ) : (
           <BreadcrumbItem key={name} isCurrentPage={isLast}>
             <BreadcrumbLink as={RouterLink} to={routeTo}>
-              {name.charAt(0).toUpperCase() + name.slice(1)}
+              {capitalize(name.replaceAll('-', ' '))}
             </BreadcrumbLink>
           </BreadcrumbItem>
         );

@@ -1,5 +1,11 @@
 // contexts/AdvancedFilterContext.tsx
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from 'react';
 import { FilterConfig } from '../types/filters';
 import { STORAGE_KEYS, useGlobalContext } from 'src/contexts/GlobalContext';
 
@@ -31,7 +37,7 @@ export const AdvancedFilterProvider: React.FC<AdvancedFilterProviderProps> = ({
 }) => {
   const [filterConfig, setFilterConfig] = useState<FilterConfig>(() => ({
     ...defaultConfig,
-    ...initialConfig,
+    ...structuredClone(initialConfig),
   }));
   const { setGlobalPerPage } = useGlobalContext();
 
@@ -66,6 +72,13 @@ export const AdvancedFilterProvider: React.FC<AdvancedFilterProviderProps> = ({
     setFilterConfig(newConfig);
     onChange?.(newConfig);
   }, [onChange]);
+
+  useEffect(() => {
+    setFilterConfig({
+      ...defaultConfig,
+      ...structuredClone(initialConfig),
+    });
+  }, [initialConfig]);
 
   return (
     <AdvancedFilterContext.Provider

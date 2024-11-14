@@ -23,7 +23,7 @@ const SettingsPage: React.FC = () => {
   const settingsSections = [
     {
       name: 'Object Types',
-      path: '/settings/object-types',
+      path: '/settings/data-types',
       lastUpdated: globalData?.objectTypeData?.lastUpdated,
       reloadButton: (
         <IconButton

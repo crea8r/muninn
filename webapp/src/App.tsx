@@ -129,6 +129,17 @@ const App: React.FC = () => {
                           />
                           <ProtectedRoute
                             exact
+                            path='/settings/data-types'
+                            component={ObjectTypesPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/settings/data-types/:typeId'
+                            component={ListObjectByTypesPage}
+                          />
+                          {/* START to facilitate previous users */}
+                          <ProtectedRoute
+                            exact
                             path='/settings/object-types'
                             component={ObjectTypesPage}
                           />
@@ -137,6 +148,7 @@ const App: React.FC = () => {
                             path='/settings/object-types/:typeId'
                             component={ListObjectByTypesPage}
                           />
+                          {/* END to facilitate previous users */}
                           <ProtectedRoute
                             exact
                             path='/settings/funnels'

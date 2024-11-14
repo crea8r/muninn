@@ -35,8 +35,8 @@ export const fetchAdvancedFilterResults = async (
   // Only include criteria that have values
   const params: Record<string, any> = {
     q: filterConfig.search,
-    tag_ids: filterConfig.tagIds?.join(','),
-    type_ids: filterConfig.typeIds?.join(','),
+    tag_ids: (filterConfig.tagIds || [])?.join(','),
+    type_ids: (filterConfig.typeIds || [])?.join(','),
     order_by: filterConfig.sortBy?.startsWith('type_value:')
       ? 'type_value' // Use type_value when sorting by type field
       : filterConfig.sortBy,
@@ -52,10 +52,12 @@ export const fetchAdvancedFilterResults = async (
 
   // Add funnel step filters
   if (filterConfig.funnelStepFilter?.funnelId) {
-    params.step_ids = filterConfig.funnelStepFilter.stepIds.join(',');
+    params.step_ids = (filterConfig.funnelStepFilter.stepIds || []).join(',');
 
     if (filterConfig.funnelStepFilter.subStatuses.length > 0) {
-      params.sub_status = filterConfig.funnelStepFilter.subStatuses.join(',');
+      params.sub_status = (
+        filterConfig.funnelStepFilter.subStatuses || []
+      ).join(',');
     }
   }
   // Add type_value_field if sorting by type value

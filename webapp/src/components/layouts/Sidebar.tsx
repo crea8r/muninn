@@ -154,7 +154,7 @@ const Sidebar: React.FC = () => {
   const sidebarWidth = isCollapsed ? '60px' : '250px';
 
   const settingsSubItems = [
-    { text: 'Object Types', to: '/settings/object-types' },
+    { text: 'Object Types', to: '/settings/data-types' },
     { text: 'Funnels', to: '/settings/funnels' },
     { text: 'View Templates', to: '/settings/templates' },
     { text: 'Tags', to: '/settings/tags' },

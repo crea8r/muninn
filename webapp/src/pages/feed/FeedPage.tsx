@@ -24,7 +24,7 @@ import { Fact } from 'src/types';
 // const FeedItemSwitch = (data: any) => {
 //   const response = data.details.response;
 //   const method = data.details.method;
-//   if (data.url === '/setting/object-types') {
+//   if (data.url === '/setting/data-types') {
 //     return <ObjectTypeFeedItem item={response} />;
 //   }
 //   if (data.url === '/tasks' || data.url.match(/\/tasks\/\d+/)) {

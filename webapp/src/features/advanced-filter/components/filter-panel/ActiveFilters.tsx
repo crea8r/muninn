@@ -174,8 +174,13 @@ export const ActiveFilters: React.FC = () => {
   return (
     <Box>
       <Divider my={2} />
-      <HStack justify='space-between' width={'100%'} alignItems={'center'}>
-        <Text fontSize='md' fontWeight='bold' color={'blue.500'}>
+      <HStack
+        justify='space-between'
+        width={'100%'}
+        alignItems={'center'}
+        mb={2}
+      >
+        <Text fontSize='md' fontWeight='bold' color={'var(--color-primary)'}>
           Filters
         </Text>
         <Text

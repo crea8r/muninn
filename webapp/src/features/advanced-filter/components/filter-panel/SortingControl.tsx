@@ -70,7 +70,7 @@ export const SortingControl: React.FC = () => {
   return (
     <VStack align='stretch' spacing={3} overflowX={'hidden'}>
       <Divider my={2} />
-      <Text fontWeight='bold' fontSize='md' color={'blue.500'}>
+      <Text fontWeight='bold' fontSize='md' color={'var(--color-primary)'}>
         Sort By
       </Text>
 
