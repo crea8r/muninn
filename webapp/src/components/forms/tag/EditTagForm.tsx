@@ -19,6 +19,8 @@ import {
 } from '@chakra-ui/react';
 import { UpdateTagParams } from 'src/api/tag';
 import { Tag } from 'src/types/Tag';
+import { getRandomBrightColor } from 'src/utils';
+import { getShades } from 'src/utils/color';
 
 interface EditTagFormProps {
   isOpen: boolean;
@@ -81,6 +83,12 @@ const EditTagForm: React.FC<EditTagFormProps> = ({
     }
   };
 
+  const handleRandomColor = () => {
+    const baseColor = getRandomBrightColor();
+    setBackgroundColor(getShades(baseColor).lighterShade);
+    setTextColor(getShades(baseColor).darkerShade);
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -136,6 +144,9 @@ const EditTagForm: React.FC<EditTagFormProps> = ({
           </form>
         </ModalBody>
         <ModalFooter>
+          <Button colorScheme='blue' mr={3} onClick={handleRandomColor}>
+            Random Color
+          </Button>
           <Button colorScheme='blue' mr={3} onClick={handleSubmit}>
             Update
           </Button>
