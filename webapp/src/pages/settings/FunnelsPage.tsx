@@ -15,15 +15,11 @@ import {
   UnorderedList,
   ListItem,
   useDisclosure,
-  Input,
   Select,
   Flex,
   useToast,
-  InputGroup,
-  InputLeftElement,
   IconButton,
 } from '@chakra-ui/react';
-import { SearchIcon } from '@chakra-ui/icons';
 import BreadcrumbComponent from '../../components/Breadcrumb';
 import { CreateFunnelForm } from '../../components/forms/';
 import { Funnel, NewFunnel } from '../../types/Funnel';
@@ -39,6 +35,7 @@ import {
 } from 'src/contexts/unsaved-changes/UnsavedChange';
 import { STORAGE_KEYS, useGlobalContext } from 'src/contexts/GlobalContext';
 import LoadingScreen from 'src/components/LoadingScreen';
+import { SearchInput } from 'src/components/SearchInput';
 
 const ITEMS_PER_PAGE =
   parseInt(localStorage.getItem(STORAGE_KEYS.PER_PAGE)) || 10;
@@ -121,8 +118,8 @@ const FunnelsPage: React.FC = () => {
     refreshFunnels();
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
+  const handleSearchChange = (q: string) => {
+    setSearchQuery(q);
     setCurrentPage(1);
   };
 
@@ -153,16 +150,12 @@ const FunnelsPage: React.FC = () => {
           New Funnel
         </Button>
       </HStack>
-      <InputGroup mb={2}>
-        <InputLeftElement pointerEvents='none'>
-          <SearchIcon color='gray.300' />
-        </InputLeftElement>
-        <Input
-          placeholder='Search in name and description'
-          value={searchQuery}
-          onChange={handleSearchChange}
-        />
-      </InputGroup>
+      <SearchInput
+        initialSearchQuery={searchQuery}
+        setSearchQuery={handleSearchChange}
+        placeholder='Search in name and description'
+        isLoading={isLoadingFunnelList}
+      />
       {isLoadingFunnelList ? (
         <LoadingPanel />
       ) : (

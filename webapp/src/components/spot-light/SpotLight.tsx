@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-} from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -23,7 +17,6 @@ import {
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSpotLight, SearchFilter } from 'src/contexts/SpotLightContext';
-import { debounce } from 'lodash';
 import { FaAddressCard, FaFileAlt, FaTasks, FaUser } from 'react-icons/fa';
 import { fetchObjects } from 'src/api/object';
 import { listTasks } from 'src/api/task';
@@ -35,7 +28,7 @@ import NoImage from 'src/assets/NoImage.jpg';
 import TaskItem from '../TaskItem';
 import FactItem from '../FactItem';
 import LoadingPanel from '../LoadingPanel';
-import SearchInput from './SearchInput';
+import { SearchInput } from 'src/components/SearchInput';
 import { shortenText } from 'src/utils';
 import { ListObjectsRow } from 'src/types/Object';
 
@@ -190,18 +183,6 @@ const SpotLight: React.FC = () => {
   }, [isOpen, openModal, closeModal]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedSearch = useMemo(
-    () =>
-      debounce((query: string) => {
-        if (query.length < 2) {
-          setSearchResults([]);
-          setFilterCounts({ object: 0, fact: 0, task: 0, creator: 0 });
-          return;
-        }
-        performSearch(query);
-      }, 300),
-    [performSearch]
-  );
 
   useEffect(() => {
     // Set search results based on active filter
@@ -265,10 +246,6 @@ const SpotLight: React.FC = () => {
     activeFilter,
     paginationState,
   ]);
-
-  useEffect(() => {
-    debouncedSearch(searchQuery);
-  }, [searchQuery, debouncedSearch]);
 
   const renderSearchResult = (result: any, index: number) => {
     switch (result.type) {
@@ -458,9 +435,22 @@ const SpotLight: React.FC = () => {
       >
         <VStack spacing={4} p={4}>
           <SearchInput
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            closeSpotLight={closeSpotLight}
+            initialSearchQuery={searchQuery}
+            setSearchQuery={(query: string) => {
+              setSearchQuery(query);
+              if (query.length < 2) {
+                setSearchResults([]);
+              } else {
+                performSearch(query);
+              }
+            }}
+            onKeyDown={(e: React.KeyboardEvent) => {
+              if (e.key === 'Escape') {
+                closeSpotLight();
+              }
+            }}
+            style={{ width: '100%' }}
+            isLoading={isLoading}
           />
           {isLoading ? (
             <LoadingPanel />

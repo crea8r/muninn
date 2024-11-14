@@ -7,13 +7,9 @@ import {
   HStack,
   useDisclosure,
   Flex,
-  Input,
-  InputGroup,
-  InputLeftElement,
   Checkbox,
   CheckboxGroup,
 } from '@chakra-ui/react';
-import { SearchIcon } from '@chakra-ui/icons';
 import { TaskForm } from 'src/components/forms';
 import { Task, NewTask, TaskStatus, UpdateTask } from 'src/types/Task';
 import { createTask, deleteTask, listTasks, updateTask } from 'src/api';
@@ -22,6 +18,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import TaskItem from 'src/components/TaskItem';
 import LoadingPanel from 'src/components/LoadingPanel';
+import { SearchInput } from 'src/components/SearchInput';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -98,8 +95,8 @@ const TasksPage: React.FC = () => {
     }
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+  const handleSearchChange = (q: string) => {
+    setSearchQuery(q);
     setCurrentPage(1); // Reset to first page on new search
   };
 
@@ -129,17 +126,12 @@ const TasksPage: React.FC = () => {
             New Task
           </Button>
         </HStack>
-        <InputGroup>
-          <InputLeftElement pointerEvents='none'>
-            <SearchIcon color='gray.300' />
-          </InputLeftElement>
-          <Input
-            placeholder='Search tasks...'
-            value={searchQuery}
-            onChange={handleSearchChange}
-            isDisabled={isLoading}
-          />
-        </InputGroup>
+        <SearchInput
+          initialSearchQuery={searchQuery}
+          setSearchQuery={handleSearchChange}
+          placeholder='Search in title and description'
+          isLoading={isLoading}
+        />
         <HStack alignItems={'center'} my={2} pl={2}>
           <CheckboxGroup
             colorScheme='blue'

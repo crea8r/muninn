@@ -12,16 +12,12 @@ import {
   Th,
   Td,
   useDisclosure,
-  Input,
-  InputGroup,
-  InputLeftElement,
   Flex,
   Select,
   useToast,
   Text,
   Badge,
 } from '@chakra-ui/react';
-import { SearchIcon } from '@chakra-ui/icons';
 import BreadcrumbComponent from 'src/components/Breadcrumb';
 import { ObjectTypeForm } from 'src/components/forms';
 import {
@@ -42,6 +38,7 @@ import {
 } from 'src/contexts/unsaved-changes/UnsavedChange';
 import { STORAGE_KEYS, useGlobalContext } from 'src/contexts/GlobalContext';
 import LoadingScreen from 'src/components/LoadingScreen';
+import { SearchInput } from 'src/components/SearchInput';
 
 const ITEMS_PER_PAGE =
   parseInt(localStorage.getItem(STORAGE_KEYS.PER_PAGE)) || 10;
@@ -194,8 +191,8 @@ const ObjectTypesPage: React.FC = () => {
     refreshObjectTypes();
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
+  const handleSearchChange = (q: string) => {
+    setSearchQuery(q);
     setCurrentPage(1);
   };
 
@@ -227,16 +224,12 @@ const ObjectTypesPage: React.FC = () => {
         </Button>
       </HStack>
 
-      <InputGroup mb={4}>
-        <InputLeftElement pointerEvents='none'>
-          <SearchIcon color='gray.300' />
-        </InputLeftElement>
-        <Input
-          placeholder='Search in name, description and field name'
-          value={searchQuery}
-          onChange={handleSearchChange}
-        />
-      </InputGroup>
+      <SearchInput
+        initialSearchQuery={searchQuery}
+        setSearchQuery={handleSearchChange}
+        isLoading={isLoadingObjectTypeList}
+        placeholder='Search data types'
+      />
       {isLoading || isLoadingObjectTypeList ? (
         <LoadingPanel />
       ) : (
