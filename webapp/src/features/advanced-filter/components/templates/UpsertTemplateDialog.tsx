@@ -61,7 +61,7 @@ const UpsertTemplateDialog = ({
           duration: 3000,
           isClosable: true,
         });
-        history.push(`/views/views/${saved.creatorListId}`);
+        history.push(`/views/${saved.creatorListId}`);
       } else {
         // update
         console.log('do not support for now');
