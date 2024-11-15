@@ -1,5 +1,5 @@
 // components/filter-panel/SearchFilter.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   InputGroup,
   InputLeftElement,
@@ -56,6 +56,9 @@ export const SearchInput: React.FC<SearchInputProps> = ({
       onKeyDown(e);
     }
   };
+  useEffect(() => {
+    setQuery(initialSearchQuery);
+  }, [initialSearchQuery]);
   return (
     <InputGroup size='md' style={style ? style : {}}>
       <InputLeftElement pointerEvents='none'>

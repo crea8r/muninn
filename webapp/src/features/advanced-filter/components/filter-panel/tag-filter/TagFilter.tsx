@@ -100,7 +100,7 @@ export const TagFilter: React.FC = () => {
           cursor='pointer'
           onClick={clearAll}
         >
-          Clear All
+          Clear
         </Text>
       </HStack>
       {/* Selected Tags */}

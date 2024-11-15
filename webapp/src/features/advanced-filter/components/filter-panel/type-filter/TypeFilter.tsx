@@ -121,7 +121,7 @@ export const TypeFilter: React.FC = () => {
           cursor='pointer'
           onClick={clearAll}
         >
-          Clear All
+          Clear
         </Text>
       </HStack>
 

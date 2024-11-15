@@ -8,7 +8,7 @@ import {
   TagCloseButton,
   Box,
   Text,
-  Divider,
+  Flex,
 } from '@chakra-ui/react';
 import { useAdvancedFilter } from '../../contexts/AdvancedFilterContext';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
@@ -16,7 +16,13 @@ import { substatus } from 'src/utils';
 import { STANDARD_SORT_OPTIONS } from '../../constants';
 import { useUnsavedChangesContext } from 'src/contexts/unsaved-changes/UnsavedChange';
 
-export const ActiveFilters: React.FC = () => {
+interface ActiveFiltersProps {
+  showCreateTemplate?: () => void;
+}
+
+export const ActiveFilters: React.FC<ActiveFiltersProps> = ({
+  showCreateTemplate,
+}: ActiveFiltersProps) => {
   const { filterConfig, updateFilter } = useAdvancedFilter();
   const { globalData } = useGlobalContext();
   const objectTypes = globalData?.objectTypeData?.objectTypes || [];
@@ -31,6 +37,21 @@ export const ActiveFilters: React.FC = () => {
       typeValueCriteria:
         Object.keys(newCriteria).length > 0 ? newCriteria : undefined,
     });
+  };
+
+  const renderSearch = () => {
+    if (!filterConfig.search) return null;
+
+    return (
+      <Tag size='md' variant='subtle' colorScheme='purple'>
+        <TagLabel>Search: {filterConfig.search}</TagLabel>
+        <TagCloseButton
+          onClick={() => {
+            updateFilter({ search: '' });
+          }}
+        />
+      </Tag>
+    );
   };
 
   const renderFunnelStepFilter = () => {
@@ -167,13 +188,13 @@ export const ActiveFilters: React.FC = () => {
       tagIds: [],
       typeValueCriteria: undefined,
       funnelStepFilter: undefined,
+      search: '',
     });
     setDirty(false);
   };
 
   return (
     <Box>
-      <Divider my={2} />
       <HStack
         justify='space-between'
         width={'100%'}
@@ -181,21 +202,34 @@ export const ActiveFilters: React.FC = () => {
         mb={2}
       >
         <Text fontSize='md' fontWeight='bold' color={'var(--color-primary)'}>
-          Filters
+          Data Explorer
         </Text>
-        <Text
-          fontSize='sm'
-          fontWeight={'light'}
-          color='gray.500'
-          textDecoration={'underline'}
-          cursor='pointer'
-          onClick={clearAll}
-        >
-          Clear All
-        </Text>
+        <Flex gap={1}>
+          <Text
+            fontSize='sm'
+            fontWeight={'light'}
+            color='blue.500'
+            textDecoration={'underline'}
+            cursor='pointer'
+            onClick={showCreateTemplate}
+          >
+            Save
+          </Text>
+          <Text
+            fontSize='sm'
+            fontWeight={'light'}
+            color='gray.500'
+            textDecoration={'underline'}
+            cursor='pointer'
+            onClick={clearAll}
+          >
+            Clear
+          </Text>
+        </Flex>
       </HStack>
 
       <HStack spacing={2} flexWrap='wrap'>
+        {renderSearch()}
         {renderTypeFilters()}
         {renderTagFilters()}
         {renderFunnelStepFilter()}

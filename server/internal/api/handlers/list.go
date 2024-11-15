@@ -54,7 +54,7 @@ func (h *ListHandler) CreateList(w http.ResponseWriter, r *http.Request) {
 	}
 	response := struct {
 		ListId uuid.UUID `json:"listId"`
-		CreatorListId uuid.UUID `json:"creatoListId"`
+		CreatorListId uuid.UUID `json:"creatorListId"`
 		ListName string `json:"listName"`
 		FilterSetting json.RawMessage `json:"filterSetting"`
 	} {

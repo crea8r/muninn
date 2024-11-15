@@ -9,6 +9,8 @@ import { ViewConfigBase, ViewConfigSource } from './types/view-config';
 import { FilterOptions } from './types/filters';
 import { StepCountsDisplay } from './components/StepCountsDisplay';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
+import { UpsertTemplateDialog } from './components/templates/UpsertTemplateDialog';
+import { useViewConfig } from './hooks/useViewConfig';
 
 export interface AdvancedFilterContainerProps {
   viewSource: ViewConfigSource;
@@ -32,6 +34,13 @@ export const AdvancedFilterContainer: React.FC<
     selectedItems,
     setSelectedItems,
   } = useAdvancedFilterData(filterConfig);
+  const [isOpenSaveTemplate, setIsOpenSaveTemplate] = React.useState(false);
+
+  const { config: viewConfig } = useViewConfig({
+    source: viewSource,
+    initialConfig: initialViewConfig,
+    onConfigChange: onViewConfigChange,
+  });
 
   const toast = useToast();
   if (error) {
@@ -73,7 +82,12 @@ export const AdvancedFilterContainer: React.FC<
           borderRadius='0 xs xs 0'
           variant={'ghost'}
         />
-        {showFilterPanel && <FilterPanel options={filterOptions} />}
+        {showFilterPanel && (
+          <FilterPanel
+            options={filterOptions}
+            showCreateTemplate={() => setIsOpenSaveTemplate(true)}
+          />
+        )}
       </Box>
 
       {/* Main Content Area */}
@@ -112,6 +126,19 @@ export const AdvancedFilterContainer: React.FC<
           </Box>
         </VStack>
       </Box>
+      <UpsertTemplateDialog
+        isOpen={isOpenSaveTemplate}
+        template={{
+          config: {
+            version: 'v1',
+            filter: filterConfig,
+            view: viewConfig,
+          },
+        }}
+        onClose={() => {
+          setIsOpenSaveTemplate(false);
+        }}
+      />
     </Flex>
   );
 };

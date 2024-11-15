@@ -24,7 +24,6 @@ export const useAdvancedFilterData = (filterConfig: FilterConfig) => {
 
   const debouncedFilter = useDebounceFilter(filterConfig, 300);
   const fetchData = async () => {
-    console.log('fetchData ...');
     if (!debouncedFilter) return;
 
     setIsLoading(true);

@@ -9,7 +9,6 @@ import {
   Radio,
   RadioGroup,
   Stack,
-  Divider,
   Spacer,
 } from '@chakra-ui/react';
 import { TriangleUpIcon, TriangleDownIcon } from '@chakra-ui/icons';
@@ -69,8 +68,7 @@ export const SortingControl: React.FC = () => {
   };
   return (
     <VStack align='stretch' spacing={3} overflowX={'hidden'}>
-      <Divider my={2} />
-      <Text fontWeight='bold' fontSize='md' color={'var(--color-primary)'}>
+      <Text fontWeight='medium' fontSize='md' color={'var(--color-primary)'}>
         Sort By
       </Text>
 

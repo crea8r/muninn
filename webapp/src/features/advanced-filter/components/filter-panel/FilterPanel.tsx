@@ -1,20 +1,34 @@
 // components/filter-panel/FilterPanel.tsx
 import React from 'react';
-import { Box, VStack } from '@chakra-ui/react';
+import { Box, VStack, Text, Divider } from '@chakra-ui/react';
 import { SearchFilter } from './SearchFilter';
 import { TagFilter } from './tag-filter/TagFilter';
 import { TypeFilter } from './type-filter/TypeFilter';
 import { SortingControl } from './SortingControl';
 import { FilterOptions } from '../../types/filters';
 import { TypeValueFilter } from './type-value-filter/TypeValueCriteria';
-import { ActiveFilters } from './ActiveFilters';
+import { ActiveFilters as DataExplorer } from './ActiveFilters';
 import { FunnelStepFilter } from './funnel-step-filter/FunnelStepFilter';
 
 interface FilterPanelProps {
   options?: FilterOptions;
+  showCreateTemplate?: () => void;
 }
 
-export const FilterPanel: React.FC<FilterPanelProps> = ({ options }) => {
+const FilterHeader = () => {
+  return (
+    <Box>
+      <Text fontWeight='medium' fontSize='md' color={'var(--color-primary)'}>
+        Filters
+      </Text>
+    </Box>
+  );
+};
+
+export const FilterPanel: React.FC<FilterPanelProps> = ({
+  options,
+  showCreateTemplate,
+}) => {
   return (
     <Box
       width='300px'
@@ -25,8 +39,10 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ options }) => {
       overflowX={'hidden'}
     >
       <VStack spacing={4} align='stretch' overflowX={'hidden'}>
+        <DataExplorer showCreateTemplate={showCreateTemplate} />
+        <Divider />
         <SearchFilter />
-        <ActiveFilters />
+        <FilterHeader />
         <FunnelStepFilter />
         <TagFilter />
         <TypeFilter />

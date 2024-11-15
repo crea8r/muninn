@@ -8,7 +8,7 @@ export const SearchFilter: React.FC = () => {
   const { filterConfig, updateFilter } = useAdvancedFilter();
   return (
     <VStack align='stretch' spacing={2}>
-      <Text fontWeight='bold' fontSize='md' color={'var(--color-primary)'}>
+      <Text fontWeight='medium' fontSize='md' color={'var(--color-primary)'}>
         Search
       </Text>
       <SearchInput
