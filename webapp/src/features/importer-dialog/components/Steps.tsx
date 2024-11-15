@@ -103,7 +103,10 @@ const Step3 = ({
         Object.entries(selectedObjectType.fields).map(([field, type]) => (
           <Flex key={field} justify='space-between' align='center'>
             <Text>
-              {field} ({type as React.ReactNode}):
+              {field}{' '}
+              {typeof type === 'string'
+                ? `(${type})`
+                : `(${(type as any).type})`}
             </Text>
             <Select
               value={fieldMapping[field] || ''}
