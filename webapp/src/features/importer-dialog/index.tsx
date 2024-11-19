@@ -195,6 +195,7 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
     const importData = {
       obj_type_id: selectedObjectType.id,
       file_name: fileName,
+      // eslint-disable-next-line array-callback-return
       rows: csvData.slice(1).map((row) => {
         const idStringIndex = csvData[0].indexOf(idStringColumn);
         const nameIndex = csvData[0].indexOf(nameColumn);
