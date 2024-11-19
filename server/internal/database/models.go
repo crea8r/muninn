@@ -107,6 +107,7 @@ type Obj struct {
 	CreatorID   uuid.UUID    `json:"creator_id"`
 	CreatedAt   time.Time    `json:"created_at"`
 	DeletedAt   sql.NullTime `json:"deleted_at"`
+	Aliases     []string     `json:"aliases"`
 }
 
 type ObjFact struct {

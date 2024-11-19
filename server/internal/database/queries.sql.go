@@ -601,7 +601,7 @@ func (q *Queries) CreateObjStep(ctx context.Context, arg CreateObjStepParams) (C
 const createObject = `-- name: CreateObject :one
 INSERT INTO obj (name, description, id_string, creator_id)
 VALUES ($1, $2, $3, $4)
-RETURNING id, name, photo, description, id_string, creator_id, created_at, deleted_at
+RETURNING id, name, photo, description, id_string, creator_id, created_at, deleted_at, aliases
 `
 
 type CreateObjectParams struct {
@@ -628,6 +628,7 @@ func (q *Queries) CreateObject(ctx context.Context, arg CreateObjectParams) (Obj
 		&i.CreatorID,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		pq.Array(&i.Aliases),
 	)
 	return i, err
 }
@@ -2444,7 +2445,7 @@ const updateObject = `-- name: UpdateObject :one
 UPDATE obj
 SET name = $2, description = $3, id_string = $4
 WHERE id = $1
-RETURNING id, name, photo, description, id_string, creator_id, created_at, deleted_at
+RETURNING id, name, photo, description, id_string, creator_id, created_at, deleted_at, aliases
 `
 
 type UpdateObjectParams struct {
@@ -2471,6 +2472,7 @@ func (q *Queries) UpdateObject(ctx context.Context, arg UpdateObjectParams) (Obj
 		&i.CreatorID,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		pq.Array(&i.Aliases),
 	)
 	return i, err
 }

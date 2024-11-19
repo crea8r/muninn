@@ -205,12 +205,15 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
             values[field] = trim(row[columnIndex]);
           }
         });
-        return {
-          id_string: normalizeToIdStyle(row[idStringIndex]),
-          name: trim(row[nameIndex] || row[idStringIndex]),
-          values: values,
-          fact: buildFact(row),
-        };
+        const normalizedIdString = normalizeToIdStyle(row[idStringIndex]);
+        if (normalizedIdString) {
+          return {
+            id_string: normalizeToIdStyle(row[idStringIndex]),
+            name: trim(row[nameIndex] || row[idStringIndex]),
+            values: values,
+            fact: buildFact(row),
+          };
+        }
       }),
       tags: selectedTags,
     };

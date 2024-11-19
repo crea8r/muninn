@@ -1,4 +1,5 @@
 export const normalizeToTagStyle = (text: string) => {
+  if (!text) return '';
   return text
     .toLowerCase() // Convert to lowercase
     .trim() // Remove leading/trailing spaces
@@ -7,6 +8,7 @@ export const normalizeToTagStyle = (text: string) => {
 };
 
 export const normalizeToIdStyle = (text: string) => {
+  if (!text) return '';
   return text
     .toLowerCase() // Convert to lowercase
     .trim() // Remove leading/trailing spaces
@@ -19,6 +21,7 @@ export const generateRandomPassword = () => {
 };
 
 export const normalise = (str: string) => {
+  if (!str) return '';
   return str.replace(/\s/g, '').toLowerCase();
 };
 

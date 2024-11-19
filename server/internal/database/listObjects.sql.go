@@ -14,7 +14,7 @@ import (
 
 const countObjectsByOrgID = `-- name: CountObjectsByOrgID :one
 WITH objs AS (
-    SELECT o.id, o.name, o.photo, o.description, o.id_string, o.creator_id, o.created_at, o.deleted_at, 
+    SELECT o.id, o.name, o.photo, o.description, o.id_string, o.creator_id, o.created_at, o.deleted_at, o.aliases, 
     (
         SELECT string_agg(otv.search_vector::text, ' ')::tsvector 
         FROM obj_type_value otv 

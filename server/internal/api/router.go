@@ -50,6 +50,7 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 	mergeHandler := handlers.NewMergeObjectsHandler(db)
 	metricsService := service.NewMetricsService(queries)
 	metricsHandler := handlers.NewMetricsHandler(metricsService)
+	externalHandler := handlers.NewExternalHandler(db, queries)
 
 	// Public routes
 	r.Post("/auth/signup", handlers.SignUp(queries))
@@ -203,6 +204,11 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 			r.Use(middleware.Permission)
 			r.Get("/personal", summarizeHandler.PersonalSummarize);
 		})
+	
+		r.Route("/external", func(r chi.Router) {
+			r.Use(middleware.Permission)
+			r.Post("/facts", externalHandler.CreateFact)
+		});
 	})
 	
 	return r

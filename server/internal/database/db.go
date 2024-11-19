@@ -156,6 +156,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.deleteTaskStmt, err = db.PrepareContext(ctx, deleteTask); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteTask: %w", err)
 	}
+	if q.findObjectByAliasOrIDStringStmt, err = db.PrepareContext(ctx, findObjectByAliasOrIDString); err != nil {
+		return nil, fmt.Errorf("error preparing query FindObjectByAliasOrIDString: %w", err)
+	}
 	if q.getCreatorStmt, err = db.PrepareContext(ctx, getCreator); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCreator: %w", err)
 	}
@@ -582,6 +585,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing deleteTaskStmt: %w", cerr)
 		}
 	}
+	if q.findObjectByAliasOrIDStringStmt != nil {
+		if cerr := q.findObjectByAliasOrIDStringStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing findObjectByAliasOrIDStringStmt: %w", cerr)
+		}
+	}
 	if q.getCreatorStmt != nil {
 		if cerr := q.getCreatorStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getCreatorStmt: %w", cerr)
@@ -1000,6 +1008,7 @@ type Queries struct {
 	deleteStepStmt                           *sql.Stmt
 	deleteTagStmt                            *sql.Stmt
 	deleteTaskStmt                           *sql.Stmt
+	findObjectByAliasOrIDStringStmt          *sql.Stmt
 	getCreatorStmt                           *sql.Stmt
 	getCreatorByIDStmt                       *sql.Stmt
 	getCreatorByUsernameStmt                 *sql.Stmt
@@ -1117,6 +1126,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		deleteStepStmt:                           q.deleteStepStmt,
 		deleteTagStmt:                            q.deleteTagStmt,
 		deleteTaskStmt:                           q.deleteTaskStmt,
+		findObjectByAliasOrIDStringStmt:          q.findObjectByAliasOrIDStringStmt,
 		getCreatorStmt:                           q.getCreatorStmt,
 		getCreatorByIDStmt:                       q.getCreatorByIDStmt,
 		getCreatorByUsernameStmt:                 q.getCreatorByUsernameStmt,

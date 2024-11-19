@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/sqlc-dev/pqtype"
 )
 
@@ -183,7 +184,7 @@ func (q *Queries) GetImportTaskHistory(ctx context.Context, arg GetImportTaskHis
 }
 
 const getObjectByIDString = `-- name: GetObjectByIDString :one
-SELECT id, name, photo, description, id_string, creator_id, created_at, deleted_at FROM obj
+SELECT id, name, photo, description, id_string, creator_id, created_at, deleted_at, aliases FROM obj
 WHERE id_string = $1
 LIMIT 1
 `
@@ -200,6 +201,7 @@ func (q *Queries) GetObjectByIDString(ctx context.Context, idString string) (Obj
 		&i.CreatorID,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		pq.Array(&i.Aliases),
 	)
 	return i, err
 }

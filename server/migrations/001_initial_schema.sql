@@ -140,6 +140,7 @@ CREATE TABLE obj (
     creator_id UUID NOT NULL REFERENCES creator(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE,
+    aliases TEXT[] NOT NULL DEFAULT '{}',
     UNIQUE (id_string, creator_id)
 );
 
@@ -231,6 +232,7 @@ CREATE INDEX idx_feed_creator_id ON feed(creator_id);
 CREATE INDEX idx_creator_username ON creator(username);
 CREATE INDEX idx_obj_name ON obj(name);
 CREATE INDEX idx_obj_id_string ON obj(id_string);
+CREATE INDEX idx_aliases ON obj USING gin (aliases);
 CREATE INDEX idx_task_status ON task(status);
 CREATE INDEX idx_fact_happened_at ON fact(happened_at);
 
@@ -473,8 +475,26 @@ CREATE INDEX idx_obj_type_value_type_values ON obj_type_value USING gin (type_va
 CREATE INDEX idx_obj_fact_obj_id ON obj_fact(obj_id);
 CREATE INDEX idx_fact_created_at ON fact(created_at);
 
+-- First create an immutable function for the text search vector
+CREATE OR REPLACE FUNCTION obj_ts_vector(
+    obj_name text,
+    obj_description text, 
+    obj_id_string text,
+    obj_aliases text[]
+) RETURNS tsvector
+    LANGUAGE sql IMMUTABLE
+    AS $$
+    SELECT to_tsvector('english',
+        obj_name || ' ' ||
+        obj_description || ' ' ||
+        obj_id_string || ' ' ||
+        coalesce(array_to_string(obj_aliases, ' '), '')
+    );
+$$;
+
 -- Index for text search
-CREATE INDEX idx_obj_text_search ON obj USING gin (to_tsvector('english', name || ' ' || description || ' ' || id_string));
+CREATE INDEX idx_obj_text_search ON obj 
+    USING gin (obj_ts_vector(name, description, id_string, aliases));
 
 CREATE INDEX idx_obj_type_value_type_id ON obj_type_value(type_id);
 CREATE INDEX idx_tag_name ON tag USING gin(to_tsvector('english', name));
