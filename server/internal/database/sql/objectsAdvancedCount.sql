@@ -7,7 +7,8 @@ WITH object_data AS (
             o.name || ' ' || 
             o.description || ' ' || 
             o.id_string || ' ' || 
-            string_agg(DISTINCT t.name, ' ')  -- Add tag names to search
+            array_to_string(o.aliases, ' ') || ' ' ||
+            COALESCE(string_agg(DISTINCT t.name, ' '), '') || ' '  -- Add tag names to search
         ) AS obj_search,
         to_tsvector('english', string_agg(DISTINCT COALESCE(f.text, ''), ' ')) AS fact_search,
         (
@@ -35,7 +36,7 @@ WITH object_data AS (
     LEFT JOIN fact f ON of.fact_id = f.id
     LEFT JOIN obj_step os ON o.id = os.obj_id AND os.deleted_at IS NULL
     WHERE c.org_id = $1 AND o.deleted_at IS NULL
-    GROUP BY o.id, o.name, o.description, o.id_string
+    GROUP BY o.id, o.name, o.description, o.id_string, o.aliases
 ),
 filtered_objects AS (
     SELECT od.id, od.step_ids, od.step_substatus

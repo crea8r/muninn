@@ -22,6 +22,7 @@ import { NewObject, UpdateObject } from 'src/types';
 import MarkdownEditor from 'src/components/mardown/MardownEditor';
 import { normalizeToIdStyle } from 'src/utils/text';
 import authService from 'src/services/authService';
+import AliasInput from './AliasInput';
 
 interface ObjectFormProps {
   isOpen: boolean;
@@ -45,6 +46,9 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
   const [description, setDescription] = useState(
     initialObject?.description || ''
   );
+  const [aliases, setAliases] = useState<string[]>(
+    initialObject?.aliases || []
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const toast = useToast();
@@ -54,7 +58,7 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
     setIsSubmitting(true);
     if (!initialObject && onCreateObject) {
       try {
-        await onCreateObject({ name, description, idString });
+        await onCreateObject({ name, description, idString, aliases });
         toast({
           title: 'Success',
           description: 'Object successfully created.',
@@ -84,6 +88,7 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
           name,
           description,
           idString,
+          aliases,
         });
         toast({
           title: 'Success',
@@ -185,6 +190,21 @@ const ObjectForm: React.FC<ObjectFormProps> = ({
                     </Button>
                   </InputRightAddon>
                 </InputGroup>
+              </FormControl>
+              <FormControl>
+                <FormLabel>Aliases</FormLabel>
+                <FormHelperText mb={2}>
+                  Alternative names, email for this object. Type and press Enter
+                  to add multiple aliases. This is useful to identify object
+                  when merging data from multiple sources.
+                </FormHelperText>
+                <AliasInput
+                  value={aliases}
+                  onChange={(newAliases) => {
+                    setIsDirty(true);
+                    setAliases(newAliases);
+                  }}
+                />
               </FormControl>
               <FormControl>
                 <FormLabel>Description</FormLabel>

@@ -1138,7 +1138,7 @@ func (q *Queries) GetObjStep(ctx context.Context, id uuid.UUID) (ObjStep, error)
 const getObjectDetails = `-- name: GetObjectDetails :one
 WITH object_data AS (
     SELECT o.id, o.name, o.photo, o.description, o.id_string, o.creator_id, o.created_at,
-           c.org_id,
+           c.org_id, o.aliases,
            coalesce(
             json_agg(DISTINCT jsonb_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema)) FILTER (WHERE t.id IS NOT NULL), '[]') 
            AS tags,
@@ -1194,9 +1194,9 @@ WITH object_data AS (
     LEFT JOIN obj_fact of ON o.id = of.obj_id
     LEFT JOIN fact ON of.fact_id = fact.id
     WHERE o.id = $1 AND c.org_id = $2
-    GROUP BY o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at, c.org_id
+    GROUP BY o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at, c.org_id, o.aliases
 )
-SELECT id, name, photo, description, id_string, creator_id, created_at, org_id, tags, type_values, tasks, steps_and_funnels, facts
+SELECT id, name, photo, description, id_string, creator_id, created_at, org_id, aliases, tags, type_values, tasks, steps_and_funnels, facts
 FROM object_data
 `
 
@@ -1214,6 +1214,7 @@ type GetObjectDetailsRow struct {
 	CreatorID       uuid.UUID   `json:"creator_id"`
 	CreatedAt       time.Time   `json:"created_at"`
 	OrgID           uuid.UUID   `json:"org_id"`
+	Aliases         []string    `json:"aliases"`
 	Tags            interface{} `json:"tags"`
 	TypeValues      interface{} `json:"type_values"`
 	Tasks           interface{} `json:"tasks"`
@@ -1233,6 +1234,7 @@ func (q *Queries) GetObjectDetails(ctx context.Context, arg GetObjectDetailsPara
 		&i.CreatorID,
 		&i.CreatedAt,
 		&i.OrgID,
+		pq.Array(&i.Aliases),
 		&i.Tags,
 		&i.TypeValues,
 		&i.Tasks,
@@ -2443,7 +2445,7 @@ func (q *Queries) UpdateObjStepSubStatus(ctx context.Context, arg UpdateObjStepS
 
 const updateObject = `-- name: UpdateObject :one
 UPDATE obj
-SET name = $2, description = $3, id_string = $4
+SET name = $2, description = $3, id_string = $4, aliases = $5
 WHERE id = $1
 RETURNING id, name, photo, description, id_string, creator_id, created_at, deleted_at, aliases
 `
@@ -2453,6 +2455,7 @@ type UpdateObjectParams struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	IDString    string    `json:"id_string"`
+	Aliases     []string  `json:"aliases"`
 }
 
 func (q *Queries) UpdateObject(ctx context.Context, arg UpdateObjectParams) (Obj, error) {
@@ -2461,6 +2464,7 @@ func (q *Queries) UpdateObject(ctx context.Context, arg UpdateObjectParams) (Obj
 		arg.Name,
 		arg.Description,
 		arg.IDString,
+		pq.Array(arg.Aliases),
 	)
 	var i Obj
 	err := row.Scan(

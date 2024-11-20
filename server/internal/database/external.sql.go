@@ -13,21 +13,22 @@ import (
 )
 
 const findObjectByAliasOrIDString = `-- name: FindObjectByAliasOrIDString :one
-SELECT o.id, o.name, o.photo, o.description, o.id_string, o.creator_id, o.created_at, o.deleted_at, o.aliases FROM obj o
+SELECT obj.id, obj.name, obj.photo, obj.description, obj.id_string, obj.creator_id, obj.created_at, obj.deleted_at, obj.aliases FROM obj
 JOIN creator c ON o.creator_id = c.id
-WHERE c.org_id = $3 
-AND o.deleted_at IS NULL
-AND (o.id_string = $1 OR $2 = ANY(o.aliases))
+WHERE c.org_id = $2 AND 
+id_string = $1 OR $1 = ANY(aliases)
+AND deleted_at IS NULL
+ORDER BY (id_string = $1) DESC
+LIMIT 1
 `
 
 type FindObjectByAliasOrIDStringParams struct {
 	IDString string    `json:"id_string"`
-	Aliases  []string  `json:"aliases"`
 	OrgID    uuid.UUID `json:"org_id"`
 }
 
 func (q *Queries) FindObjectByAliasOrIDString(ctx context.Context, arg FindObjectByAliasOrIDStringParams) (Obj, error) {
-	row := q.queryRow(ctx, q.findObjectByAliasOrIDStringStmt, findObjectByAliasOrIDString, arg.IDString, pq.Array(arg.Aliases), arg.OrgID)
+	row := q.queryRow(ctx, q.findObjectByAliasOrIDStringStmt, findObjectByAliasOrIDString, arg.IDString, arg.OrgID)
 	var i Obj
 	err := row.Scan(
 		&i.ID,

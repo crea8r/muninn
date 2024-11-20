@@ -18,7 +18,6 @@ import {
   Badge,
   HStack,
 } from '@chakra-ui/react';
-import React from 'react';
 import { ObjectType } from 'src/types';
 
 interface Step1Props {
@@ -110,6 +109,8 @@ const Step3 = ({
             </Text>
             <Select
               value={fieldMapping[field] || ''}
+              // set background if value is not ''
+              bg={fieldMapping[field] ? 'blue.100' : ''}
               onChange={(e) =>
                 setFieldMapping({
                   ...fieldMapping,
@@ -128,12 +129,16 @@ const Step3 = ({
           </Flex>
         ))}
       <Text fontWeight='bold' mt={4}>
-        Select ID String Column:
+        Select ID string (or aliases) column:
+      </Text>
+      <Text fontWeight='light'>
+        Usually email, wallet address, or any other unique identifier
       </Text>
       <Select
         value={idStringColumn}
         onChange={(e) => setIdStringColumn(e.target.value)}
         placeholder='Select ID string column'
+        background={idStringColumn ? 'blue.100' : ''}
       >
         {csvData[0]?.map((column: any, index: any) => (
           <option key={index} value={column}>
@@ -148,6 +153,7 @@ const Step3 = ({
         value={nameColumn}
         onChange={(e) => setNameColumn(e.target.value)}
         placeholder='Select object Name column'
+        background={nameColumn ? 'blue.100' : ''}
       >
         {csvData[0]?.map((column: any, index: any) => (
           <option key={index} value={column}>

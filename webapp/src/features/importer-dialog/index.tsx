@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -38,7 +44,12 @@ import {
   ImportingNotification,
 } from './components/ImportHistory';
 import { trim } from 'lodash';
-import { normalizeToIdStyle } from 'src/utils/text';
+import {
+  findSimilarText,
+  normalizeToIdStyle,
+  SIMILARITY_THRESHOLD,
+  similarityScore,
+} from 'src/utils/text';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 
 interface ImporterDialogProps {
@@ -58,6 +69,7 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
     useState<ObjectType | null>(null);
   const [csvData, setCsvData] = useState<string[][]>([]);
   const [fileName, setFileName] = useState<string>('');
+
   const [fieldMapping, setFieldMapping] = useState<Record<string, string>>({});
   const [idStringColumn, setIdStringColumn] = useState<string>('');
   const [nameColumn, setNameColumn] = useState<string>('');
@@ -78,6 +90,46 @@ const ImporterDialog: React.FC<ImporterDialogProps> = ({ isOpen, onClose }) => {
   });
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const toast = useToast();
+  // use similarityScore and SIMILARITY_THRESHOLD to find column names that are similar to the field names
+  // and suggest them as default values
+  const defaultFieldMapping = useMemo(
+    () =>
+      Object.entries(selectedObjectType?.fields || {}).reduce(
+        (acc, [field, _]) => {
+          const similarColumn = findSimilarText(field, csvData[0] || [])[0];
+          if (similarColumn) {
+            acc[field] = similarColumn;
+          }
+          return acc;
+        },
+        {}
+      ),
+    [csvData, selectedObjectType]
+  );
+  const defaultIdStringColumn = useMemo(() => {
+    // find the max similarity score between the column name and the field name
+    return csvData[0]?.find(
+      (column) =>
+        similarityScore(column, 'email') > SIMILARITY_THRESHOLD ||
+        similarityScore(column, 'wallet') > SIMILARITY_THRESHOLD
+    );
+  }, [csvData]);
+  const defaultNameColumn = useMemo(() => {
+    return csvData[0]?.find(
+      (column) =>
+        similarityScore(column, 'name') > SIMILARITY_THRESHOLD ||
+        similarityScore(column, 'title') > SIMILARITY_THRESHOLD
+    );
+  }, [csvData]);
+  useEffect(() => {
+    setIdStringColumn(defaultIdStringColumn || '');
+  }, [defaultIdStringColumn]);
+  useEffect(() => {
+    setNameColumn(defaultNameColumn || '');
+  }, [defaultNameColumn]);
+  useEffect(() => {
+    setFieldMapping(defaultFieldMapping);
+  }, [defaultFieldMapping]);
 
   const fetchImportHistory = useCallback(async () => {
     try {

@@ -240,6 +240,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
       } else {
         newSelected.push(data.find((item) => item.id === id));
       }
+      console.log('newSelected', newSelected);
       setSelectedItems(newSelected);
     },
     [data, selectedItems, setSelectedItems]

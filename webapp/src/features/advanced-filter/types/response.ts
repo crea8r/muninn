@@ -2,6 +2,7 @@ export interface AdvancedFilterResponse {
   items: {
     id: string;
     id_string: string;
+    aliases: string[];
     name: string;
     description: string;
     created_at: string;

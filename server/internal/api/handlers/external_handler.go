@@ -73,7 +73,6 @@ func (h *ExternalHandler) CreateFact(w http.ResponseWriter, r *http.Request) {
 			// Try to find object by id_string or aliases
 			obj, err := qtx.FindObjectByAliasOrIDString(ctx, database.FindObjectByAliasOrIDStringParams{
 					IDString: alias,
-					Aliases:  []string{alias}, // Using array constructor for PostgreSQL
 					OrgID:    uuid.MustParse(claims.OrgID),
 			})
 

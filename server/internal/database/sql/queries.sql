@@ -246,7 +246,7 @@ RETURNING *;
 
 -- name: UpdateObject :one
 UPDATE obj
-SET name = $2, description = $3, id_string = $4
+SET name = $2, description = $3, id_string = $4, aliases = $5
 WHERE id = $1
 RETURNING *;
 
@@ -256,7 +256,7 @@ UPDATE obj SET deleted_at = NOW() WHERE id = $1;
 -- name: GetObjectDetails :one
 WITH object_data AS (
     SELECT o.id, o.name, o.photo, o.description, o.id_string, o.creator_id, o.created_at,
-           c.org_id,
+           c.org_id, o.aliases,
            coalesce(
             json_agg(DISTINCT jsonb_build_object('id', t.id, 'name', t.name, 'color_schema', t.color_schema)) FILTER (WHERE t.id IS NOT NULL), '[]') 
            AS tags,
@@ -312,7 +312,7 @@ WITH object_data AS (
     LEFT JOIN obj_fact of ON o.id = of.obj_id
     LEFT JOIN fact ON of.fact_id = fact.id
     WHERE o.id = $1 AND c.org_id = $2
-    GROUP BY o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at, c.org_id
+    GROUP BY o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at, c.org_id, o.aliases
 )
 SELECT *
 FROM object_data;

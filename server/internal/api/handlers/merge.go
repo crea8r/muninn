@@ -35,6 +35,7 @@ type MergeObjectsRequest struct {
 	Name 				 string            	 `json:"name"`
 	Description      string          `json:"description,omitempty"`
 	IDString				 string          `json:"id_string"`
+    Aliases          []string        `json:"aliases"`
 }
 
 func (h *MergeObjectsHandler) MergeObjects(w http.ResponseWriter, r *http.Request) {
@@ -80,6 +81,7 @@ func (h *MergeObjectsHandler) MergeObjects(w http.ResponseWriter, r *http.Reques
         Name:       req.Name,
         Description: req.Description,
         IDString:   req.IDString,
+        Aliases:   req.Aliases,
     });
 
     if err != nil {

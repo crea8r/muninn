@@ -58,9 +58,10 @@ func (h *ObjectHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var input struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		IDString    string `json:"idString"`
+		Name        string   `json:"name"`
+		Description string   `json:"description"`
+		IDString    string   `json:"idString"`
+		Aliases	    []string `json:"aliases"`
 	}
 
 	err = json.NewDecoder(r.Body).Decode(&input)
@@ -69,7 +70,7 @@ func (h *ObjectHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	object, err := h.ObjectModel.Update(r.Context(), id, input.Name, input.Description, input.IDString)
+	object, err := h.ObjectModel.Update(r.Context(), id, input.Name, input.Description, input.IDString, input.Aliases)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

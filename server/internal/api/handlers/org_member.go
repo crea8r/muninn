@@ -240,10 +240,7 @@ func getUserIDFromContext(ctx context.Context) (uuid.UUID) {
 
 func isAdmin(ctx context.Context) bool {
 	claims := ctx.Value(middleware.UserClaimsKey).(*middleware.Claims)
-	if claims.Role == "admin" {
-		return true
-	}
-	return false
+	return claims.Role == "admin"
 }
 
 func hashPassword(password string) (string, error) {

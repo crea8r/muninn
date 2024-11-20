@@ -61,6 +61,7 @@ type ObjectDetail struct {
 	Tasks       []Task            `json:"tasks"`
 	StepsAndFunnels []StepAndFunnel `json:"stepsAndFunnels"`
 	Facts       []Fact            `json:"facts"`
+	Aliases		  []string				  `json:"aliases"`
 }
 
 type Task struct {
@@ -117,12 +118,13 @@ func (m *ObjectModel) Create(ctx context.Context, name, description, idString st
 	}, nil
 }
 
-func (m *ObjectModel) Update(ctx context.Context, id uuid.UUID, name, description, idString string) (*Object, error) {
+func (m *ObjectModel) Update(ctx context.Context, id uuid.UUID, name, description, idString string, aliases []string) (*Object, error) {
 	obj, err := m.DB.UpdateObject(ctx, database.UpdateObjectParams{
 		ID:          id,
 		Name:        name,
 		Description: description,
 		IDString:    idString,
+		Aliases: 		 aliases,
 	})
 	if err != nil {
 		return nil, err
@@ -276,6 +278,7 @@ func (m *ObjectModel) GetDetails(ctx context.Context, id, orgID uuid.UUID) (*Obj
 		Tasks:       tasks,
 		StepsAndFunnels: stepsAndFunnels,
 		Facts:       facts,
+		Aliases: 	   data.Aliases,
 	}, nil
 }
 

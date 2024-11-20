@@ -1,5 +1,5 @@
 // components/table/MergeObjectsDialog.tsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -23,10 +23,12 @@ import {
   AccordionPanel,
   AccordionIcon,
   Checkbox,
+  Tag,
+  TagCloseButton,
 } from '@chakra-ui/react';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { shortenText } from 'src/utils';
-import { ObjectTypeValue } from 'src/types';
+import { Object as MuninnObject, ObjectTypeValue } from 'src/types';
 import { mergeObjects, MergeObjectsPayload } from 'src/api/object';
 import { useHistory } from 'react-router-dom';
 import { capitalize } from 'lodash';
@@ -48,6 +50,7 @@ interface MergeConfig {
   description: string;
   id_string: string;
   typeValues: Record<string, Record<string, FieldSelection>>;
+  aliases: string[];
 }
 
 const combineAllObjectTypes = (selectedObjects, globalData) => {
@@ -69,12 +72,12 @@ const combineAllObjectTypes = (selectedObjects, globalData) => {
         );
         typeFrequency[tv.objectTypeId] = {
           count: 1,
-          fields: new Set(Object.keys(tv.type_values)),
+          fields: new Set(window.Object.keys(tv.type_values)),
           typeName: objectType?.name,
         };
       } else {
         typeFrequency[tv.objectTypeId].count++;
-        Object.keys(tv.type_values).forEach((field) =>
+        window.Object.keys(tv.type_values).forEach((field) =>
           typeFrequency[tv.objectTypeId].fields.add(field)
         );
       }
@@ -96,17 +99,6 @@ export const MergeObjectsDialog: React.FC<MergeObjectsDialogProps> = ({
   const history = useHistory();
   const [isDirty, setIsDirty] = useState(false);
   const { globalData } = useGlobalContext();
-  const [mergeConfig, setMergeConfig] = useState<MergeConfig>(() => {
-    const firstObject = selectedObjects[0];
-    return {
-      name: firstObject?.id,
-      description: firstObject?.id,
-      id_string: firstObject?.id,
-      typeValues: {},
-    };
-  });
-
-  // Get overlapping object types and their fields
   const overlappingTypes = useMemo(() => {
     const { typeFrequency } = combineAllObjectTypes(
       selectedObjects,
@@ -122,15 +114,54 @@ export const MergeObjectsDialog: React.FC<MergeObjectsDialogProps> = ({
         fields: Array.from(data.fields),
       }));
   }, [selectedObjects, globalData]);
+  const initMergeConfig = useMemo(() => {
+    const aliases = (selectedObjects as MuninnObject[])
+      .map((obj) => obj.aliases || [])
+      .flat();
+    const firstObject = selectedObjects[0];
+    return {
+      name: firstObject?.id,
+      description: firstObject?.id,
+      id_string: firstObject?.id,
+      typeValues: overlappingTypes.reduce((acc, type) => {
+        acc[type.typeId] = type.fields.reduce((acc, field) => {
+          acc[field] = {
+            sourceObjectId: firstObject.id,
+            combine: false,
+          };
+          return acc;
+        }, {});
+        return acc;
+      }, {}),
+      aliases,
+    };
+  }, [selectedObjects, overlappingTypes]);
+  const [mergeConfig, setMergeConfig] = useState<MergeConfig>(() => {
+    return initMergeConfig;
+  });
+  useEffect(() => {
+    setMergeConfig(initMergeConfig);
+  }, [initMergeConfig]);
+  // Get overlapping object types and their fields
 
   const handleBasicFieldChange =
     (field: keyof Pick<MergeConfig, 'name' | 'description' | 'id_string'>) =>
     (value: string) => {
       setIsDirty(true);
-      setMergeConfig((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
+      if (field === 'id_string') {
+        let currentAliases = initMergeConfig.aliases || [];
+        let newAliases = selectedObjects.map((obj) => obj.id_string);
+        // merge two array and remove duplicates
+        const selectedIdString = selectedObjects.find(
+          (obj) => obj.id === value
+        ).id_string;
+        let aliases = Array.from(
+          new Set([...currentAliases, ...newAliases])
+        ).filter((id) => id !== selectedIdString);
+        setMergeConfig({ ...mergeConfig, [field]: value, aliases });
+      } else {
+        setMergeConfig({ ...mergeConfig, [field]: value });
+      }
     };
 
   const handleTypeFieldChange =
@@ -169,6 +200,7 @@ export const MergeObjectsDialog: React.FC<MergeObjectsDialogProps> = ({
           (obj) => obj.id === mergeConfig.id_string
         )?.id_string,
         type_values: {} as Record<string, any>,
+        aliases: mergeConfig.aliases,
       };
 
       // Merge type values
@@ -231,7 +263,9 @@ export const MergeObjectsDialog: React.FC<MergeObjectsDialogProps> = ({
         name: mergedObject.name,
         description: mergedObject.description,
         id_string: mergedObject.id_string,
+        aliases: mergedObject.aliases,
       };
+      console.log('payload', payload);
       await mergeObjects(payload);
       toast({
         title: 'Objects merged successfully',
@@ -281,6 +315,9 @@ export const MergeObjectsDialog: React.FC<MergeObjectsDialogProps> = ({
       description: selectedObjects[0]?.id,
       id_string: selectedObjects[0]?.id,
       typeValues: {},
+      aliases: (selectedObjects as MuninnObject[])
+        .map((obj) => obj.aliases)
+        .flat(),
     });
   };
 
@@ -342,6 +379,30 @@ export const MergeObjectsDialog: React.FC<MergeObjectsDialogProps> = ({
                           </RadioGroup>
                         </FormControl>
                       )
+                    )}
+                    {mergeConfig.aliases.length > 0 && (
+                      <FormControl mt={2}>
+                        <FormLabel>Aliases</FormLabel>
+                        <VStack align='start'>
+                          {mergeConfig.aliases.map((alias, index) => (
+                            <Tag
+                              textTransform={'none'}
+                              background={'blue.100'}
+                              key={index}
+                            >
+                              {alias}
+                              <TagCloseButton
+                                onClick={() => {
+                                  const aliases = mergeConfig.aliases.filter(
+                                    (a) => a !== alias
+                                  );
+                                  setMergeConfig({ ...mergeConfig, aliases });
+                                }}
+                              />
+                            </Tag>
+                          ))}
+                        </VStack>
+                      </FormControl>
                     )}
                   </AccordionPanel>
                 </AccordionItem>

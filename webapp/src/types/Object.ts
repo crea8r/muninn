@@ -9,6 +9,7 @@ export interface Object {
   createdAt: string;
   updatedAt: string;
   typeValues: ObjectTypeValue[];
+  aliases: string[];
 }
 
 export interface ListObjectsRow {
@@ -16,6 +17,7 @@ export interface ListObjectsRow {
   name: string;
   idString: string;
   description: string;
+  aliases: string[];
   tags: Tag[];
   createdAt: string;
   updatedAt: string;
@@ -54,6 +56,7 @@ export interface ObjectDetail {
   name: string;
   description: string;
   idString: string;
+  aliases: string[];
   tags: Tag[];
   createdAt: string;
   updatedAt: string;

@@ -151,6 +151,7 @@ export interface MergeObjectsPayload {
   name: string;
   description?: string;
   id_string: string;
+  aliases?: string[];
 }
 
 export const mergeObjects = async (payload: MergeObjectsPayload) => {

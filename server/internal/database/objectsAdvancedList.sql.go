@@ -23,6 +23,7 @@ WITH object_data AS (
         o.photo,
         o.description, 
         o.id_string, 
+        o.aliases,
         o.creator_id,
         o.created_at, 
         o.deleted_at,
@@ -35,7 +36,8 @@ WITH object_data AS (
             o.name || ' ' || 
             o.description || ' ' || 
             o.id_string || ' ' || 
-            string_agg(DISTINCT t.name, ' ')
+            array_to_string(o.aliases, ' ') || ' ' ||
+            COALESCE(string_agg(DISTINCT t.name, ' '), '') || ' '
         ) AS obj_search,
         to_tsvector('english', string_agg(DISTINCT COALESCE(f.text, ''), ' ')) AS fact_search,
         -- Add type_value_search using search_vector
@@ -68,10 +70,10 @@ WITH object_data AS (
     LEFT JOIN fact f ON of.fact_id = f.id
     LEFT JOIN obj_step os ON o.id = os.obj_id
     WHERE c.org_id = $1 AND o.deleted_at IS NULL
-    GROUP BY o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at, o.deleted_at
+    GROUP BY o.id, o.name, o.description, o.id_string, o.aliases, o.creator_id, o.created_at, o.deleted_at
 ),
 filtered_objects AS (
-    SELECT od.id, od.name, od.photo, od.description, od.id_string, od.creator_id, od.created_at, od.deleted_at, od.fact_count, od.first_fact_date, od.last_fact_date, od.obj_search, od.fact_search, od.type_value_search, od.step_ids, od.step_substatus, od.tag_ids, od.type_ids, od.type_value_ids, od.obj_step_ids, od.all_type_values,
+    SELECT od.id, od.name, od.photo, od.description, od.id_string, od.aliases, od.creator_id, od.created_at, od.deleted_at, od.fact_count, od.first_fact_date, od.last_fact_date, od.obj_search, od.fact_search, od.type_value_search, od.step_ids, od.step_substatus, od.tag_ids, od.type_ids, od.type_value_ids, od.obj_step_ids, od.all_type_values,
         -- Calculate search ranks for different sources
         CASE WHEN $2 = '' THEN NULL
              ELSE COALESCE(ts_rank(obj_search, websearch_to_tsquery('english', $2)) * 3.0, 0.0)
@@ -166,6 +168,7 @@ SELECT
     fo.photo, 
     fo.description, 
     fo.id_string, 
+    fo.aliases,
     fo.created_at,
     fo.fact_count,
     fo.first_fact_date,
@@ -340,6 +343,7 @@ type ListObjectsAdvancedRow struct {
 	Photo         string      `json:"photo"`
 	Description   string      `json:"description"`
 	IDString      string      `json:"id_string"`
+	Aliases       []string    `json:"aliases"`
 	CreatedAt     time.Time   `json:"created_at"`
 	FactCount     int64       `json:"fact_count"`
 	FirstFactDate interface{} `json:"first_fact_date"`
@@ -380,6 +384,7 @@ func (q *Queries) ListObjectsAdvanced(ctx context.Context, arg ListObjectsAdvanc
 			&i.Photo,
 			&i.Description,
 			&i.IDString,
+			pq.Array(&i.Aliases),
 			&i.CreatedAt,
 			&i.FactCount,
 			&i.FirstFactDate,

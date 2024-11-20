@@ -7,6 +7,7 @@ WITH object_data AS (
         o.photo,
         o.description, 
         o.id_string, 
+        o.aliases,
         o.creator_id,
         o.created_at, 
         o.deleted_at,
@@ -19,7 +20,8 @@ WITH object_data AS (
             o.name || ' ' || 
             o.description || ' ' || 
             o.id_string || ' ' || 
-            string_agg(DISTINCT t.name, ' ')
+            array_to_string(o.aliases, ' ') || ' ' ||
+            COALESCE(string_agg(DISTINCT t.name, ' '), '') || ' '
         ) AS obj_search,
         to_tsvector('english', string_agg(DISTINCT COALESCE(f.text, ''), ' ')) AS fact_search,
         -- Add type_value_search using search_vector
@@ -52,7 +54,7 @@ WITH object_data AS (
     LEFT JOIN fact f ON of.fact_id = f.id
     LEFT JOIN obj_step os ON o.id = os.obj_id
     WHERE c.org_id = $1 AND o.deleted_at IS NULL
-    GROUP BY o.id, o.name, o.description, o.id_string, o.creator_id, o.created_at, o.deleted_at
+    GROUP BY o.id, o.name, o.description, o.id_string, o.aliases, o.creator_id, o.created_at, o.deleted_at
 ),
 filtered_objects AS (
     SELECT od.*,
@@ -150,6 +152,7 @@ SELECT
     fo.photo, 
     fo.description, 
     fo.id_string, 
+    fo.aliases,
     fo.created_at,
     fo.fact_count,
     fo.first_fact_date,

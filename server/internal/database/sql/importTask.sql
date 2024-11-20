@@ -52,7 +52,9 @@ WHERE org_id = $1;
 
 -- name: GetObjectByIDString :one
 SELECT * FROM obj
-WHERE id_string = $1
+WHERE id_string = $1 OR $1 = ANY(aliases)
+AND deleted_at IS NULL
+ORDER BY (id_string = $1) DESC
 LIMIT 1;
 
 -- name: UpsertObjectTypeValue :one
