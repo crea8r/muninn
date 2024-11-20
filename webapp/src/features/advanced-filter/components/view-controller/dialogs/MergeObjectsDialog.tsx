@@ -1,4 +1,4 @@
-// components/table/MergeObjectsDialog.tsx
+// components/dialogs/MergeObjectsDialog.tsx
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Modal,
@@ -115,10 +115,14 @@ export const MergeObjectsDialog: React.FC<MergeObjectsDialogProps> = ({
       }));
   }, [selectedObjects, globalData]);
   const initMergeConfig = useMemo(() => {
-    const aliases = (selectedObjects as MuninnObject[])
-      .map((obj) => obj.aliases || [])
+    let aliases = (selectedObjects as MuninnObject[])
+      .map((obj: any) => {
+        return [obj.id_string, ...(obj.aliases || [])];
+      })
       .flat();
+
     const firstObject = selectedObjects[0];
+    aliases = aliases.filter((alias) => alias !== firstObject.id_string);
     return {
       name: firstObject?.id,
       description: firstObject?.id,
@@ -133,7 +137,9 @@ export const MergeObjectsDialog: React.FC<MergeObjectsDialogProps> = ({
         }, {});
         return acc;
       }, {}),
-      aliases,
+      aliases: aliases.filter(
+        (alias) => aliases.indexOf(alias) !== firstObject?.id
+      ),
     };
   }, [selectedObjects, overlappingTypes]);
   const [mergeConfig, setMergeConfig] = useState<MergeConfig>(() => {

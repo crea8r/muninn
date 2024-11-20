@@ -1,4 +1,4 @@
-// components/table/AddToFunnelDialog.tsx
+// components/dialogs/AddToFunnelDialog.tsx
 import React, { useState, useMemo } from 'react';
 import {
   Modal,

@@ -3,7 +3,7 @@ import { TableAction } from '../types/table-actions';
 import { DownloadIcon } from '@chakra-ui/icons';
 import { ColumnConfig } from '../types/view-config';
 import { useState, useCallback } from 'react';
-import { ExportDialog } from '../components/view-controller/table/ExportDialog';
+import { ExportDialog } from '../components/view-controller/dialogs/ExportDialog';
 
 interface ExportCsvActionProps {
   columns: ColumnConfig[];

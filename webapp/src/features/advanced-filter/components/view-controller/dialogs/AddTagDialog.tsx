@@ -1,4 +1,4 @@
-// components/table/AddTagDialog.tsx
+// components/dialogs/AddTagDialog.tsx
 import React, { useState } from 'react';
 import {
   Modal,

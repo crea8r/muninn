@@ -1,6 +1,6 @@
 // actions/add-to-funnel.ts
 import { useCallback, useState } from 'react';
-import { AddToFunnelDialog } from '../components/view-controller/table/AddToFunnelDialog';
+import { AddToFunnelDialog } from '../components/view-controller/dialogs/AddToFunnelDialog';
 import { TableAction } from '../types/table-actions';
 import { FaFunnelDollar } from 'react-icons/fa';
 

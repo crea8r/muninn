@@ -2,7 +2,7 @@
 import { useCallback, useState } from 'react';
 import { TableAction } from '../types/table-actions';
 import { TagLeftIcon } from '@chakra-ui/react';
-import { AddTagDialog } from '../components/view-controller/table/AddTagDialog';
+import { AddTagDialog } from '../components/view-controller/dialogs/AddTagDialog';
 
 export const createAddTagAction = (onRefresh: () => void): TableAction => {
   let openAddTagDialog: (data: any[]) => void;

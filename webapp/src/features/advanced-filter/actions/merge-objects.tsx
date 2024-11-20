@@ -2,7 +2,7 @@
 import { TableAction } from '../types/table-actions';
 import { FaRulerCombined } from 'react-icons/fa';
 import { useCallback, useState } from 'react';
-import { MergeObjectsDialog } from '../components/view-controller/table/MergeObjectsDialog';
+import { MergeObjectsDialog } from '../components/view-controller/dialogs/MergeObjectsDialog';
 
 export const createMergeObjectsAction = (
   onSuccess: () => void
