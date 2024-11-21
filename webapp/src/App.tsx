@@ -12,7 +12,7 @@ import {
 import { FeedPage } from './pages/feed/';
 import { TasksPage } from './pages/tasks/';
 import { ViewsPage, ViewDetailPage } from './pages/views/';
-import { ObjectDetailPage } from './pages/object/';
+import { AdvancedListingPage, ObjectDetailPage } from './pages/object/';
 import {
   SettingsPage,
   ObjectTypesPage,
@@ -31,7 +31,6 @@ import GlobalImageFallback from 'src/components/GlobalImageFallback';
 import FunnelBoard from './pages/settings/FunnelBoard';
 import ListObjectByTypesPage from './pages/settings/ListObjectByTypesPage';
 import FunnelConfigPage from './pages/settings/funnel-config-page/FunnelConfigPage';
-import AdvancedListingPage from './pages/object/AdvancedListingPage';
 import ListObjectByTagPage from './pages/settings/ListObjectByTagPage';
 
 const theme = extendTheme({

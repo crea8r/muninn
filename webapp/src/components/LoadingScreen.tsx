@@ -65,6 +65,10 @@ export default function LoadingScreen() {
       style={{
         background: `linear-gradient(135deg, #8ecae6 0%, #219ebc 100%)`,
       }}
+      position={'absolute'}
+      top={0}
+      left={0}
+      zIndex={1000}
     >
       <Box p={8} textAlign={'center'} maxWidth={'2xl'} mx={'auto'}>
         {/* Logo */}

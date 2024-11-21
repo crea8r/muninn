@@ -12,6 +12,11 @@ import {
   Skeleton,
   Tag as ChkTag,
   Checkbox,
+  Drawer,
+  DrawerOverlay,
+  DrawerBody,
+  DrawerContent,
+  DrawerCloseButton,
 } from '@chakra-ui/react';
 import { ColumnConfig } from '../../../types/view-config';
 import { useResizeColumns } from '../../../hooks/useResizeColumns';
@@ -25,9 +30,9 @@ import { SortButton } from './SortButton';
 import { createExportCsvAction } from 'src/features/advanced-filter/actions/export-csv';
 import { createAddTagAction } from 'src/features/advanced-filter/actions/add-tag';
 import { createAddToFunnelAction } from 'src/features/advanced-filter/actions/add-to-funnel';
-import { Link } from 'react-router-dom';
 import { createMergeObjectsAction } from 'src/features/advanced-filter/actions/merge-objects';
 import { SmartObjectTypeValue } from 'src/features/smart-object-type';
+import ObjectDetailPanel from 'src/features/object-detail/ObjectDetailPanel';
 
 interface ResultsTableProps {
   data: any[];
@@ -166,6 +171,8 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
   const { globalData } = useGlobalContext();
 
   const [selectAll, setSelectAll] = useState(false);
+  const [focusedObjectId, setFocusedObjectId] = useState<string | null>(null);
+  const [isDrawerShowing, setIsDrawerShowing] = useState(false);
 
   const tags = globalData?.tagData?.tags || [];
   const typeValues = useMemo(
@@ -373,18 +380,25 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
                       whiteSpace='nowrap'
                     >
                       {i === 0 ? (
-                        <Link
-                          to={`/objects/${item.id}`}
+                        <Text
                           style={{
                             textDecoration: 'underline',
                           }}
                           color={'blue.500'}
+                          onClick={() => {
+                            setFocusedObjectId(item.id);
+                            setIsDrawerShowing(true);
+                          }}
+                          _hover={{
+                            background: 'yellow.100',
+                          }}
+                          cursor={'pointer'}
                         >
                           {formatValue(
                             getCellValue(item, column, { tags, typeValues }),
                             column
                           )}
-                        </Link>
+                        </Text>
                       ) : (
                         formatValue(
                           getCellValue(item, column, { tags, typeValues }),
@@ -406,6 +420,26 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
           pageSize={pageSize}
         />
       </Box>
+      {focusedObjectId && (
+        <Drawer
+          isOpen={isDrawerShowing}
+          placement='right'
+          onClose={() => {
+            setIsDrawerShowing(false);
+            setFocusedObjectId(null);
+          }}
+          size='xl'
+        >
+          <DrawerOverlay />
+          <DrawerContent>
+            <DrawerCloseButton />
+
+            <DrawerBody>
+              <ObjectDetailPanel objectId={focusedObjectId} />
+            </DrawerBody>
+          </DrawerContent>
+        </Drawer>
+      )}
     </Box>
   );
 };

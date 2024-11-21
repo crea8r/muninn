@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   VStack,
-  Button,
   useToast,
   Switch,
   FormControl,
@@ -9,8 +8,6 @@ import {
   useDisclosure,
   SimpleGrid,
   HStack,
-  Spacer,
-  Text,
 } from '@chakra-ui/react';
 import { FunnelStep } from 'src/types/';
 import { StepAndFunnel } from 'src/types/Object';
@@ -18,28 +15,22 @@ import AddObjectStepModal from 'src/components/forms/object/object-step/AddObjec
 import ObjectFunnelCard from 'src/components/forms/object/object-step/ObjectFunnelCard';
 import { FaPlus } from 'react-icons/fa';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
+import {
+  addOrMoveObjectInFunnel,
+  deleteObjectFromFunnel,
+  updateObjectStepSubStatus,
+} from 'src/api';
+import { useObjectDetail } from '../contexts/ObjectDetailContext';
 
-interface FunnelPanelProps {
-  objectId: string;
-  onAddOrMoveObjectInFunnel: (objectId: string, stepId: string) => void;
-  onDeleteObjectFromFunnel: (objectStepId: string) => void;
-  stepsAndFunnels: StepAndFunnel[];
-  onUpdateSubStatus: (objectStepId: string, subStatus: number) => void;
-}
-
-const FunnelPanel: React.FC<FunnelPanelProps> = ({
-  objectId,
-  onAddOrMoveObjectInFunnel,
-  onDeleteObjectFromFunnel,
-  onUpdateSubStatus,
-  stepsAndFunnels,
-}) => {
+export const FunnelPanel: React.FC = () => {
   const { globalData } = useGlobalContext();
   const allFunnels = globalData?.funnelData?.funnels || [];
   const [showComplete, setShowComplete] = useState(false);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const toast = useToast();
 
+  const toast = useToast();
+  const { object, refresh } = useObjectDetail();
+  const stepsAndFunnels = object?.stepsAndFunnels || [];
+  const objectId = object?.id;
   const handleSubmit = async (stepId: string, isNew: boolean) => {
     const successTitle = isNew
       ? 'Object added to new funnel'
@@ -47,15 +38,21 @@ const FunnelPanel: React.FC<FunnelPanelProps> = ({
     const errorTitle = isNew
       ? 'Error adding object to new funnel'
       : 'Error moving object to new step';
+    toast({
+      title: 'Processing...',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    });
     try {
-      await onAddOrMoveObjectInFunnel(objectId, stepId);
-      onClose();
+      await addOrMoveObjectInFunnel(objectId, stepId);
       toast({
         title: successTitle,
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
+      refresh();
     } catch (error) {
       toast({
         title: errorTitle,
@@ -72,11 +69,6 @@ const FunnelPanel: React.FC<FunnelPanelProps> = ({
     <>
       <VStack width={'100%'} align='stretch' spacing={4}>
         <HStack width={'100%'} alignItems={'center'}>
-          <Button size={'sm'} aria-label='Add funnel' onClick={onOpen}>
-            <FaPlus />
-            <Text ml={1}>Funnel</Text>
-          </Button>
-          <Spacer />
           <FormControl display='flex' alignItems='center'>
             <FormLabel htmlFor='show-hidden' mb='0'>
               Completed Funnels
@@ -116,14 +108,63 @@ const FunnelPanel: React.FC<FunnelPanelProps> = ({
                     handleSubmit(stepId, false);
                   }}
                   onDelete={async () => {
-                    await onDeleteObjectFromFunnel(currentObjectStepFunnel.id);
+                    deleteObjectFromFunnel(currentObjectStepFunnel.id);
+                    refresh();
                   }}
-                  onUpdateSubStatus={onUpdateSubStatus}
+                  onUpdateSubStatus={async (
+                    objectStepId: string,
+                    subStatus: number
+                  ) => {
+                    updateObjectStepSubStatus(objectStepId, subStatus);
+                    refresh();
+                  }}
                 />
               );
             })}
         </SimpleGrid>
       </VStack>
+    </>
+  );
+};
+
+export const CreateFunnelStepButton: React.FC = () => {
+  const { globalData } = useGlobalContext();
+  const { object, refresh } = useObjectDetail();
+  const stepsAndFunnels = object?.stepsAndFunnels || [];
+  const allFunnels = globalData?.funnelData?.funnels || [];
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const objectId = object?.id;
+  const toast = useToast();
+  const handleSubmit = async (stepId: string, isNew: boolean) => {
+    toast({
+      title: 'Processing...',
+      status: 'info',
+      duration: 1000,
+      isClosable: true,
+    });
+    try {
+      await addOrMoveObjectInFunnel(objectId, stepId);
+      toast({
+        title: 'Object added to new funnel',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      refresh();
+    } catch (error) {
+      toast({
+        title: 'Error adding object to new funnel',
+        status: 'error',
+        description:
+          typeof error === 'string' ? error : 'Please try again later.',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+  return (
+    <>
+      <FaPlus onClick={onOpen} />
       <AddObjectStepModal
         isOpen={isOpen}
         onClose={onClose}
@@ -136,5 +177,3 @@ const FunnelPanel: React.FC<FunnelPanelProps> = ({
     </>
   );
 };
-
-export default FunnelPanel;

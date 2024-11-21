@@ -1,4 +1,5 @@
-import ObjectDetailPage from './object-detail/ObjectDetailPage';
+import ObjectDetailPage from './ObjectDetailPage';
 import ObjectsPage from './ObjectsPage';
+import AdvancedListingPage from './AdvancedListingPage';
 
-export { ObjectDetailPage, ObjectsPage };
+export { ObjectDetailPage, ObjectsPage, AdvancedListingPage };

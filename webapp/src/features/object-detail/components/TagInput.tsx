@@ -10,20 +10,12 @@ import {
 import { Tag } from 'src/types';
 import { createTag, listTags } from 'src/api/tag';
 import TagSuggestion from 'src/components/TagSuggestion';
+import { addTagToObject, removeTagFromObject } from 'src/api';
+import { useObjectDetail } from '../contexts/ObjectDetailContext';
 
-interface TagInputProps {
-  tags: Tag[];
-  isReadOnly?: boolean;
-  onAddTag: (tagId: string) => void;
-  onRemoveTag: (tagId: string) => void;
-}
-
-const TagInput: React.FC<TagInputProps> = ({
-  tags,
-  isReadOnly = false,
-  onAddTag,
-  onRemoveTag,
-}) => {
+export const TagInput: React.FC = () => {
+  const { object, refresh } = useObjectDetail();
+  const tags = object?.tags || [];
   const fetchSuggestions = async (query: string): Promise<Tag[]> => {
     const response = await listTags({ page: 0, pageSize: 10, query });
     return response.tags;
@@ -32,7 +24,7 @@ const TagInput: React.FC<TagInputProps> = ({
 
   const attachTagToObject = async (tagToAttach: Tag) => {
     if (!tags.some((tag) => tag.id === tagToAttach.id)) {
-      await onAddTag(tagToAttach.id);
+      addTagToObject(object.id, tagToAttach.id);
     }
   };
 
@@ -42,12 +34,13 @@ const TagInput: React.FC<TagInputProps> = ({
       description: '',
       color_schema: { background: '#e2e8f0', text: '#2d3748' },
     });
-    await onAddTag(newTag.id);
+    await addTagToObject(object.id, newTag.id);
+    refresh();
   };
 
   const removeTag = async (id: string) => {
     try {
-      await onRemoveTag(id);
+      await removeTagFromObject(object.id, id);
 
       toast({
         title: 'Success',
@@ -64,6 +57,8 @@ const TagInput: React.FC<TagInputProps> = ({
         duration: 3000,
         isClosable: true,
       });
+    } finally {
+      refresh();
     }
   };
 
@@ -89,16 +84,12 @@ const TagInput: React.FC<TagInputProps> = ({
             <TagCloseButton onClick={() => removeTag(tag.id)} />
           </ChakraTag>
         ))}
-        {!isReadOnly && (
-          <TagSuggestion
-            onAttachTag={attachTagToObject}
-            onCreateAndAttachTag={createAndAttachTag}
-            fetchSuggestions={fetchSuggestions}
-          />
-        )}
+        <TagSuggestion
+          onAttachTag={attachTagToObject}
+          onCreateAndAttachTag={createAndAttachTag}
+          fetchSuggestions={fetchSuggestions}
+        />
       </Flex>
     </Box>
   );
 };
-
-export default TagInput;

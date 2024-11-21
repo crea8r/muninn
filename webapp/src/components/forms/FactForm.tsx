@@ -160,24 +160,7 @@ const FactForm: React.FC<FactFormProps> = ({
       toRemoveObjectIds: toRemoveObjectIds,
     };
     if (onSave) {
-      try {
-        await onSave(toSubmitFact);
-        toast({
-          title: 'Fact added',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        onClose();
-      } catch (e) {
-        toast({
-          title: 'Error adding fact',
-          description: 'Please try again later.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
+      await onSave(toSubmitFact);
     }
   };
 

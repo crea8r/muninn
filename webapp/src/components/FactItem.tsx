@@ -8,9 +8,10 @@ import { shortenText } from 'src/utils';
 type FactItemProps = {
   fact: Fact;
   handleClick?: (f: Fact) => void;
+  textLimit?: number;
 };
 
-const FactItem = ({ fact, handleClick }: FactItemProps) => {
+const FactItem = ({ fact, handleClick, textLimit = 200 }: FactItemProps) => {
   dayjs.extend(relativeTime);
   const relatedObjects = fact.relatedObjects || [];
   return (
@@ -23,8 +24,10 @@ const FactItem = ({ fact, handleClick }: FactItemProps) => {
       onClick={() => (handleClick ? handleClick(fact) : null)}
       cursor={handleClick ? 'pointer' : 'default'}
       _hover={{ boxShadow: 'md' }}
+      borderWidth={0.5}
+      borderColor={'gray.500'}
     >
-      <MarkdownDisplay content={fact.text} characterLimit={200} />
+      <MarkdownDisplay content={fact.text} characterLimit={textLimit} />
       {fact.location && (
         <Text fontSize='sm' color='gray.500' mt={2}>
           Location: {fact.location}

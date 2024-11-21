@@ -32,6 +32,8 @@ const TaskItem = ({ task, handleClick }: TaskItemProps) => {
       onClick={() => handleClick(task)}
       cursor='pointer'
       _hover={{ boxShadow: 'md' }}
+      borderColor={'gray.500'}
+      borderWidth={0.3}
     >
       <HStack justify='space-between' mb={2}>
         <Badge colorScheme={getStatusColor(task.status)}>{task.status}</Badge>

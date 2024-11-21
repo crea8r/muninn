@@ -8,7 +8,7 @@ type SmartImageProps = {
 };
 const SmartImage = ({ src, alt, style = {} }: SmartImageProps) => {
   const [currentSmartImageIndex, setCurrentSmartImageIndex] = useState(0);
-  if (!src) {
+  if (!src || (Array.isArray(src) && src.length === 0)) {
     return <img src={NoImage} alt={alt} style={style} />;
   }
   if (typeof src === 'string') {

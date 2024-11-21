@@ -1,4 +1,5 @@
 import { Tag } from './Tag';
+import { Task } from './Task';
 
 export interface Object {
   id: any;
@@ -58,6 +59,7 @@ export interface ObjectDetail {
   idString: string;
   aliases: string[];
   tags: Tag[];
+  tasks: Task[];
   createdAt: string;
   updatedAt: string;
   types: ObjectType[];

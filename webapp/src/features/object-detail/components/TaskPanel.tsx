@@ -1,33 +1,17 @@
 import React from 'react';
-import {
-  Box,
-  VStack,
-  useDisclosure,
-  Alert,
-  AlertIcon,
-  Button,
-} from '@chakra-ui/react';
+import { Box, VStack, useDisclosure, Alert, AlertIcon } from '@chakra-ui/react';
 import { NewTask, Task, TaskStatus, UpdateTask } from 'src/types/';
 import { TaskForm } from 'src/components/forms/';
 import TaskItem from 'src/components/TaskItem';
+import { useObjectDetail } from '../contexts/ObjectDetailContext';
+import { createTask, deleteTask, updateTask } from 'src/api';
+import { FaPlus } from 'react-icons/fa';
 
-interface TaskPanelProps {
-  objectId: string;
-  objectName: string;
-  tasks: Task[];
-  onAddTask: (task: NewTask) => void;
-  onUpdateTask: (task: UpdateTask) => void;
-  onDeleteTask: (taskId: string) => void;
-}
-
-const TaskPanel: React.FC<TaskPanelProps> = ({
-  objectId,
-  objectName,
-  tasks,
-  onAddTask,
-  onUpdateTask,
-  onDeleteTask,
-}) => {
+export const TaskPanel: React.FC = () => {
+  const { object } = useObjectDetail();
+  const tasks = object?.tasks || [];
+  const objectName = object?.name;
+  const objectId = object?.id;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedTask, setSelectedTask] = React.useState<Task | undefined>(
     undefined
@@ -36,9 +20,9 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
   const handleSaveTask = async (task: NewTask | UpdateTask) => {
     try {
       if ('id' in task) {
-        await onUpdateTask(task as UpdateTask);
+        await updateTask(task.id, task as UpdateTask);
       } else {
-        await onAddTask(task as NewTask);
+        await createTask(task as NewTask);
       }
       onClose();
     } catch (error) {
@@ -48,7 +32,7 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
   };
 
   const handleDeleteTask = async (task: Task) => {
-    await onDeleteTask(task.id);
+    await deleteTask(task.id);
     onClose();
   };
 
@@ -81,7 +65,6 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
             All tasks completed!
           </Alert>
         )}
-        <Button onClick={onOpen}>Add New Task</Button>
       </VStack>
 
       <TaskForm
@@ -96,4 +79,29 @@ const TaskPanel: React.FC<TaskPanelProps> = ({
   );
 };
 
-export default TaskPanel;
+export const CreateTaskButton: React.FC = () => {
+  const { object, refresh } = useObjectDetail();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const objectId = object?.id;
+  const objectName = object?.name;
+  const handleSaveTask = async (task: NewTask | UpdateTask) => {
+    try {
+      await createTask(task as NewTask);
+      onClose();
+      refresh();
+    } catch (error) {
+    } finally {
+    }
+  };
+  return (
+    <>
+      <FaPlus onClick={onOpen} />
+      <TaskForm
+        onSave={handleSaveTask}
+        onClose={onClose}
+        isOpen={isOpen}
+        defaultContent={`@[${objectName}](object:${objectId})`}
+      />
+    </>
+  );
+};
