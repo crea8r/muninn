@@ -24,24 +24,32 @@ export const TagInput: React.FC = () => {
 
   const attachTagToObject = async (tagToAttach: Tag) => {
     if (!tags.some((tag) => tag.id === tagToAttach.id)) {
-      addTagToObject(object.id, tagToAttach.id);
+      try {
+        await addTagToObject(object.id, tagToAttach.id);
+      } catch (e) {
+      } finally {
+        refresh();
+      }
     }
   };
 
   const createAndAttachTag = async (text: string) => {
-    const newTag = await createTag({
-      name: text,
-      description: '',
-      color_schema: { background: '#e2e8f0', text: '#2d3748' },
-    });
-    await addTagToObject(object.id, newTag.id);
-    refresh();
+    try {
+      const newTag = await createTag({
+        name: text,
+        description: '',
+        color_schema: { background: '#e2e8f0', text: '#2d3748' },
+      });
+      await addTagToObject(object.id, newTag.id);
+    } catch (e) {
+    } finally {
+      refresh();
+    }
   };
 
   const removeTag = async (id: string) => {
     try {
       await removeTagFromObject(object.id, id);
-
       toast({
         title: 'Success',
         description: `Tag is successfully removed.`,

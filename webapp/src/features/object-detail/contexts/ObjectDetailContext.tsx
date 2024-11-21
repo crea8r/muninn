@@ -8,7 +8,7 @@ import React, {
 import { useToast } from '@chakra-ui/react';
 import { fetchObjectDetails } from 'src/api'; // Adjust import paths as needed
 import { ObjectDetail, ObjectTypeValue } from 'src/types/Object';
-import { Fact, Task, TaskStatus } from 'src/types';
+import { Fact, Task } from 'src/types';
 
 interface ObjectDetailContextProps {
   object: ObjectDetail | null;
@@ -66,13 +66,6 @@ export const ObjectDetailProvider: React.FC<{
         setFacts(details.facts);
         setTasks(details.tasks.filter((task: Task) => task.deletedAt === null));
         setImgUrls(loadImageUrlsFromObject(details));
-        if (
-          details.tasks.filter(
-            (task: any) => task.status !== TaskStatus.COMPLETED
-          ).length > 0
-        ) {
-          setTabIndex(0);
-        }
       } catch (error) {
         console.error(error);
         toast({

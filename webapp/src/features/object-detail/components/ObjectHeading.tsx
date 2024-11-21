@@ -34,18 +34,31 @@ export const ObjectHeading: React.FC = () => {
       duration: 3000,
       isClosable: true,
     });
-    await updateObject(updatedObject);
-    refresh();
+    try {
+      await updateObject(updatedObject);
+    } catch (er) {
+    } finally {
+      refresh();
+    }
   };
   const handleDeleteObject = async (id: string) => {
-    toast({
-      title: 'Deleting object...',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    });
-    await deleteObject(id);
-    history.push('/objects');
+    try {
+      toast({
+        title: 'Deleting object...',
+        status: 'info',
+        duration: 3000,
+        isClosable: true,
+      });
+      await deleteObject(id);
+      history.push('/objects');
+    } catch (error) {
+      toast({
+        title: 'Error deleting object',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
   return (
     <VStack width={'100%'} gap={2}>

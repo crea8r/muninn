@@ -52,7 +52,6 @@ export const FunnelPanel: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
-      refresh();
     } catch (error) {
       toast({
         title: errorTitle,
@@ -62,6 +61,8 @@ export const FunnelPanel: React.FC = () => {
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      refresh();
     }
   };
 
@@ -150,7 +151,6 @@ export const CreateFunnelStepButton: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
-      refresh();
     } catch (error) {
       toast({
         title: 'Error adding object to new funnel',
@@ -160,6 +160,8 @@ export const CreateFunnelStepButton: React.FC = () => {
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      refresh();
     }
   };
   return (

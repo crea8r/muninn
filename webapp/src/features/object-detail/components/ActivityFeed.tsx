@@ -197,8 +197,12 @@ export const CreateActivityButton = () => {
     });
     setDirty(false);
     onCloseNewActivityDialog();
-    await createFact(fact);
-    refresh();
+    try {
+      await createFact(fact);
+    } catch (error) {
+    } finally {
+      refresh();
+    }
   };
   return (
     <>

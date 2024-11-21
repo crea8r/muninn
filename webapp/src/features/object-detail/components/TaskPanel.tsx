@@ -8,7 +8,7 @@ import { createTask, deleteTask, updateTask } from 'src/api';
 import { FaPlus } from 'react-icons/fa';
 
 export const TaskPanel: React.FC = () => {
-  const { object } = useObjectDetail();
+  const { object, refresh } = useObjectDetail();
   const tasks = object?.tasks || [];
   const objectName = object?.name;
   const objectId = object?.id;
@@ -24,16 +24,22 @@ export const TaskPanel: React.FC = () => {
       } else {
         await createTask(task as NewTask);
       }
-      onClose();
     } catch (error) {
     } finally {
+      onClose();
       setSelectedTask(undefined);
+      refresh();
     }
   };
 
   const handleDeleteTask = async (task: Task) => {
-    await deleteTask(task.id);
-    onClose();
+    try {
+      await deleteTask(task.id);
+    } catch (error) {
+    } finally {
+      onClose();
+      refresh();
+    }
   };
 
   return (
@@ -88,9 +94,9 @@ export const CreateTaskButton: React.FC = () => {
     try {
       await createTask(task as NewTask);
       onClose();
-      refresh();
     } catch (error) {
     } finally {
+      refresh();
     }
   };
   return (

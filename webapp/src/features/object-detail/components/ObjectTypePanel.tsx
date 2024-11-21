@@ -15,7 +15,7 @@ import { FaPlus } from 'react-icons/fa';
 
 export const ObjectTypePanel: React.FC = () => {
   const { globalData } = useGlobalContext();
-  const { object } = useObjectDetail();
+  const { object, refresh } = useObjectDetail();
   const objectId = object?.id;
   const objectTypes = object?.typeValues || [];
   const availableTypes = globalData?.objectTypeData?.objectTypes || [];
@@ -46,6 +46,8 @@ export const ObjectTypePanel: React.FC = () => {
     onEditClose();
   }, [onEditClose]);
 
+  const toast = useToast();
+
   return (
     <Box>
       <SimpleGrid gap={2}>
@@ -67,11 +69,37 @@ export const ObjectTypePanel: React.FC = () => {
           onClose={handleCloseEditModal}
           objectType={currentObjectType}
           objectTypeValue={currentObjectTypeValue}
-          onUpdate={(payload) =>
-            updateObjectTypeValue(objectId, currentObjectTypeValue.id, payload)
-          }
-          onDelete={() => {
-            removeObjectTypeValue(objectId, currentObjectTypeValue.id);
+          onUpdate={async (payload) => {
+            toast({
+              title: 'Updating object type',
+              status: 'info',
+              duration: 3000,
+              isClosable: true,
+            });
+            try {
+              await updateObjectTypeValue(
+                objectId,
+                currentObjectTypeValue.id,
+                payload
+              );
+            } catch (e) {
+            } finally {
+              refresh();
+            }
+          }}
+          onDelete={async () => {
+            toast({
+              title: 'Deleting object type',
+              status: 'info',
+              duration: 3000,
+              isClosable: true,
+            });
+            try {
+              await removeObjectTypeValue(objectId, currentObjectTypeValue.id);
+            } catch (e) {
+            } finally {
+              refresh();
+            }
           }}
         />
       )}
@@ -83,7 +111,7 @@ export const CreateObjectTypeValueButton = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { globalData } = useGlobalContext();
   const availableTypes = globalData?.objectTypeData?.objectTypes || [];
-  const { object } = useObjectDetail();
+  const { object, refresh } = useObjectDetail();
   const objectId = object?.id;
   const objectTypes = object?.typeValues || [];
   const toast = useToast();
@@ -107,6 +135,7 @@ export const CreateObjectTypeValueButton = () => {
         isClosable: true,
       });
     } finally {
+      refresh();
     }
   };
   return (
