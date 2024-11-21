@@ -19,7 +19,10 @@ import { ActivityFeed, CreateActivityButton } from './components/ActivityFeed';
 import { CreateFunnelStepButton, FunnelPanel } from './components/FunnelPanel';
 import { ObjectHeading } from './components/ObjectHeading';
 import { TaskPanel, CreateTaskButton } from './components/TaskPanel';
-import { ObjectTypePanel } from './components/ObjectTypePanel';
+import {
+  CreateObjectTypeValueButton,
+  ObjectTypePanel,
+} from './components/ObjectTypePanel';
 import { TaskStatus } from 'src/types';
 import { TagInput } from './components/TagInput';
 
@@ -94,7 +97,7 @@ const ObjectDetailContent: React.FC = () => {
                     {countDetail}
                   </Badge>
                 )}
-                <CreateFunnelStepButton />
+                <CreateObjectTypeValueButton />
               </Tab>
               <Tab>
                 <Text mr={2}>Tags</Text>
