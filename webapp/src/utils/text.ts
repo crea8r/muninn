@@ -2,9 +2,9 @@ export const normalizeToTagStyle = (text: string) => {
   if (!text) return '';
   return text
     .toLowerCase() // Convert to lowercase
-    .trim() // Remove leading/trailing spaces
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/[^\w-]/g, ''); // Remove all non-alphanumeric characters except hyphens
+    .trim(); // Remove leading/trailing spaces
+  // .replace(/\s+/g, '-') // Replace spaces with hyphens
+  // .replace(/[^\w-]/g, ''); // Remove all non-alphanumeric characters except hyphens
 };
 
 export const normalizeToIdStyle = (text: string) => {
