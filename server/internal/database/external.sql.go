@@ -43,3 +43,31 @@ func (q *Queries) FindObjectByAliasOrIDString(ctx context.Context, arg FindObjec
 	)
 	return i, err
 }
+
+const findTagByNormalizedName = `-- name: FindTagByNormalizedName :one
+SELECT id, name, description, color_schema, org_id, created_at, deleted_at FROM tag 
+WHERE lower(name) = lower($1) 
+AND org_id = $2
+AND deleted_at IS NULL
+LIMIT 1
+`
+
+type FindTagByNormalizedNameParams struct {
+	Lower string    `json:"lower"`
+	OrgID uuid.UUID `json:"org_id"`
+}
+
+func (q *Queries) FindTagByNormalizedName(ctx context.Context, arg FindTagByNormalizedNameParams) (Tag, error) {
+	row := q.queryRow(ctx, q.findTagByNormalizedNameStmt, findTagByNormalizedName, arg.Lower, arg.OrgID)
+	var i Tag
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.ColorSchema,
+		&i.OrgID,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}

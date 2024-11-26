@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -142,5 +143,86 @@ func (h *ExternalHandler) CreateFact(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+type UpsertObjectTypeValueRequest struct {
+	ObjectID     string          `json:"object_id"`
+	ObjectTypeID string          `json:"object_type_id"`
+	TypeValues   json.RawMessage `json:"type_values"`
+}
+
+type UpsertObjectTypeValueResponse struct {
+	ID          uuid.UUID       `json:"id"`
+	ObjectID    uuid.UUID       `json:"object_id"`
+	TypeID      uuid.UUID       `json:"type_id"`
+	TypeValues  json.RawMessage `json:"type_values"`
+	CreatedAt   time.Time       `json:"created_at"`
+	LastUpdated time.Time       `json:"last_updated"`
+}
+
+func (h *ExternalHandler) UpsertObjectTypeValue(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	// TODO: security check in the future
+	// claims := ctx.Value(middleware.UserClaimsKey).(*middleware.Claims)
+
+	// Parse request body
+	var req UpsertObjectTypeValueRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request format: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Validate and parse UUIDs
+	objectID, err := uuid.Parse(req.ObjectID)
+	if err != nil {
+		http.Error(w, "Invalid object_id format", http.StatusBadRequest)
+		return
+	}
+
+	objectTypeID, err := uuid.Parse(req.ObjectTypeID)
+	if err != nil {
+		http.Error(w, "Invalid object_type_id format", http.StatusBadRequest)
+		return
+	}
+
+	// Validate JSON format of type_values
+	if !json.Valid(req.TypeValues) {
+		http.Error(w, "Invalid type_values JSON format", http.StatusBadRequest)
+		return
+	}
+
+	// Perform upsert
+	result, err := h.queries.UpsertObjectTypeValue(ctx, database.UpsertObjectTypeValueParams{
+		ObjID:      objectID,
+		TypeID:     objectTypeID,
+		TypeValues: req.TypeValues,
+	})
+	if err != nil {
+			// Log the error for debugging
+		log.Printf("Error upserting object type value: %v", err)
+		
+		if strings.Contains(err.Error(), "foreign key constraint") {
+			http.Error(w, "Invalid object_id or object_type_id", http.StatusBadRequest)
+			return
+		}
+		
+		http.Error(w, "Failed to upsert object type value", http.StatusInternalServerError)
+		return
+	}
+
+	// Prepare response
+	response := UpsertObjectTypeValueResponse{
+		ID:          result.ID,
+		ObjectID:    result.ObjID,
+		TypeID:      result.TypeID,
+		TypeValues:  result.TypeValues,
+		CreatedAt:   result.CreatedAt,
+		LastUpdated: result.LastUpdated,
+	}
+
+	// Send response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }

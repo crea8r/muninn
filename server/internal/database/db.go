@@ -159,6 +159,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.findObjectByAliasOrIDStringStmt, err = db.PrepareContext(ctx, findObjectByAliasOrIDString); err != nil {
 		return nil, fmt.Errorf("error preparing query FindObjectByAliasOrIDString: %w", err)
 	}
+	if q.findTagByNormalizedNameStmt, err = db.PrepareContext(ctx, findTagByNormalizedName); err != nil {
+		return nil, fmt.Errorf("error preparing query FindTagByNormalizedName: %w", err)
+	}
 	if q.getCreatorStmt, err = db.PrepareContext(ctx, getCreator); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCreator: %w", err)
 	}
@@ -590,6 +593,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing findObjectByAliasOrIDStringStmt: %w", cerr)
 		}
 	}
+	if q.findTagByNormalizedNameStmt != nil {
+		if cerr := q.findTagByNormalizedNameStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing findTagByNormalizedNameStmt: %w", cerr)
+		}
+	}
 	if q.getCreatorStmt != nil {
 		if cerr := q.getCreatorStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getCreatorStmt: %w", cerr)
@@ -1009,6 +1017,7 @@ type Queries struct {
 	deleteTagStmt                            *sql.Stmt
 	deleteTaskStmt                           *sql.Stmt
 	findObjectByAliasOrIDStringStmt          *sql.Stmt
+	findTagByNormalizedNameStmt              *sql.Stmt
 	getCreatorStmt                           *sql.Stmt
 	getCreatorByIDStmt                       *sql.Stmt
 	getCreatorByUsernameStmt                 *sql.Stmt
@@ -1127,6 +1136,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		deleteTagStmt:                            q.deleteTagStmt,
 		deleteTaskStmt:                           q.deleteTaskStmt,
 		findObjectByAliasOrIDStringStmt:          q.findObjectByAliasOrIDStringStmt,
+		findTagByNormalizedNameStmt:              q.findTagByNormalizedNameStmt,
 		getCreatorStmt:                           q.getCreatorStmt,
 		getCreatorByIDStmt:                       q.getCreatorByIDStmt,
 		getCreatorByUsernameStmt:                 q.getCreatorByUsernameStmt,

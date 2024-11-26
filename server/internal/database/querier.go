@@ -60,6 +60,7 @@ type Querier interface {
 	DeleteTag(ctx context.Context, id uuid.UUID) (int64, error)
 	DeleteTask(ctx context.Context, id uuid.UUID) error
 	FindObjectByAliasOrIDString(ctx context.Context, arg FindObjectByAliasOrIDStringParams) (Obj, error)
+	FindTagByNormalizedName(ctx context.Context, arg FindTagByNormalizedNameParams) (Tag, error)
 	GetCreator(ctx context.Context, id uuid.UUID) (Creator, error)
 	GetCreatorByID(ctx context.Context, id uuid.UUID) (Creator, error)
 	GetCreatorByUsername(ctx context.Context, arg GetCreatorByUsernameParams) (GetCreatorByUsernameRow, error)
