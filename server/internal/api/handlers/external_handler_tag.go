@@ -96,7 +96,7 @@ func (h *ExternalHandler) TagObject(w http.ResponseWriter, r *http.Request) {
 		if err == sql.ErrNoRows {
 			// Create new tag
 			newTag, err := qtx.CreateTag(ctx, database.CreateTagParams{
-				Name:        tagName, // Keep original case for display
+				Name:        normalizedName, // Keep original case for display
 				Description: "",      // Empty description for auto-created tags
 				ColorSchema: defaultColorSchema,
 				OrgID:      orgID,
@@ -132,7 +132,7 @@ func (h *ExternalHandler) TagObject(w http.ResponseWriter, r *http.Request) {
 		// Add to processed tags
 		processedTags = append(processedTags, TagDetail{
 			ID:          tagID.String(),
-			Name:        tagName, // Original case
+			Name:        normalizedName,
 			ColorSchema: defaultColorSchema,
 			IsNew:       isNewTag,
 		})

@@ -57,6 +57,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.countObjectsAdvancedStmt, err = db.PrepareContext(ctx, countObjectsAdvanced); err != nil {
 		return nil, fmt.Errorf("error preparing query CountObjectsAdvanced: %w", err)
 	}
+	if q.countObjectsAfterCreatedAtStmt, err = db.PrepareContext(ctx, countObjectsAfterCreatedAt); err != nil {
+		return nil, fmt.Errorf("error preparing query CountObjectsAfterCreatedAt: %w", err)
+	}
 	if q.countObjectsByOrgIDStmt, err = db.PrepareContext(ctx, countObjectsByOrgID); err != nil {
 		return nil, fmt.Errorf("error preparing query CountObjectsByOrgID: %w", err)
 	}
@@ -261,6 +264,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.listObjectsByTypeWithAdvancedFilterStmt, err = db.PrepareContext(ctx, listObjectsByTypeWithAdvancedFilter); err != nil {
 		return nil, fmt.Errorf("error preparing query ListObjectsByTypeWithAdvancedFilter: %w", err)
 	}
+	if q.listObjectsWithNormalizedDataStmt, err = db.PrepareContext(ctx, listObjectsWithNormalizedData); err != nil {
+		return nil, fmt.Errorf("error preparing query ListObjectsWithNormalizedData: %w", err)
+	}
 	if q.listOrgMembersStmt, err = db.PrepareContext(ctx, listOrgMembers); err != nil {
 		return nil, fmt.Errorf("error preparing query ListOrgMembers: %w", err)
 	}
@@ -421,6 +427,11 @@ func (q *Queries) Close() error {
 	if q.countObjectsAdvancedStmt != nil {
 		if cerr := q.countObjectsAdvancedStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing countObjectsAdvancedStmt: %w", cerr)
+		}
+	}
+	if q.countObjectsAfterCreatedAtStmt != nil {
+		if cerr := q.countObjectsAfterCreatedAtStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countObjectsAfterCreatedAtStmt: %w", cerr)
 		}
 	}
 	if q.countObjectsByOrgIDStmt != nil {
@@ -763,6 +774,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing listObjectsByTypeWithAdvancedFilterStmt: %w", cerr)
 		}
 	}
+	if q.listObjectsWithNormalizedDataStmt != nil {
+		if cerr := q.listObjectsWithNormalizedDataStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listObjectsWithNormalizedDataStmt: %w", cerr)
+		}
+	}
 	if q.listOrgMembersStmt != nil {
 		if cerr := q.listOrgMembersStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listOrgMembersStmt: %w", cerr)
@@ -983,6 +999,7 @@ type Queries struct {
 	countListsByOrgIDStmt                    *sql.Stmt
 	countObjectTypesStmt                     *sql.Stmt
 	countObjectsAdvancedStmt                 *sql.Stmt
+	countObjectsAfterCreatedAtStmt           *sql.Stmt
 	countObjectsByOrgIDStmt                  *sql.Stmt
 	countObjectsByTypeWithAdvancedFilterStmt *sql.Stmt
 	countObjectsForStepStmt                  *sql.Stmt
@@ -1051,6 +1068,7 @@ type Queries struct {
 	listObjectsByOrgIDStmt                   *sql.Stmt
 	listObjectsByTaskIDStmt                  *sql.Stmt
 	listObjectsByTypeWithAdvancedFilterStmt  *sql.Stmt
+	listObjectsWithNormalizedDataStmt        *sql.Stmt
 	listOrgMembersStmt                       *sql.Stmt
 	listStepsByFunnelStmt                    *sql.Stmt
 	listTagsStmt                             *sql.Stmt
@@ -1102,6 +1120,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		countListsByOrgIDStmt:                    q.countListsByOrgIDStmt,
 		countObjectTypesStmt:                     q.countObjectTypesStmt,
 		countObjectsAdvancedStmt:                 q.countObjectsAdvancedStmt,
+		countObjectsAfterCreatedAtStmt:           q.countObjectsAfterCreatedAtStmt,
 		countObjectsByOrgIDStmt:                  q.countObjectsByOrgIDStmt,
 		countObjectsByTypeWithAdvancedFilterStmt: q.countObjectsByTypeWithAdvancedFilterStmt,
 		countObjectsForStepStmt:                  q.countObjectsForStepStmt,
@@ -1170,6 +1189,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		listObjectsByOrgIDStmt:                   q.listObjectsByOrgIDStmt,
 		listObjectsByTaskIDStmt:                  q.listObjectsByTaskIDStmt,
 		listObjectsByTypeWithAdvancedFilterStmt:  q.listObjectsByTypeWithAdvancedFilterStmt,
+		listObjectsWithNormalizedDataStmt:        q.listObjectsWithNormalizedDataStmt,
 		listOrgMembersStmt:                       q.listOrgMembersStmt,
 		listStepsByFunnelStmt:                    q.listStepsByFunnelStmt,
 		listTagsStmt:                             q.listTagsStmt,

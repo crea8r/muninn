@@ -7,6 +7,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -23,6 +24,7 @@ type Querier interface {
 	CountListsByOrgID(ctx context.Context, orgID uuid.UUID) (int64, error)
 	CountObjectTypes(ctx context.Context, arg CountObjectTypesParams) (int64, error)
 	CountObjectsAdvanced(ctx context.Context, arg CountObjectsAdvancedParams) (json.RawMessage, error)
+	CountObjectsAfterCreatedAt(ctx context.Context, createdAt time.Time) (int64, error)
 	CountObjectsByOrgID(ctx context.Context, arg CountObjectsByOrgIDParams) (int64, error)
 	CountObjectsByTypeWithAdvancedFilter(ctx context.Context, arg CountObjectsByTypeWithAdvancedFilterParams) (int64, error)
 	CountObjectsForStep(ctx context.Context, arg CountObjectsForStepParams) (int64, error)
@@ -94,6 +96,11 @@ type Querier interface {
 	ListObjectsByOrgID(ctx context.Context, arg ListObjectsByOrgIDParams) ([]ListObjectsByOrgIDRow, error)
 	ListObjectsByTaskID(ctx context.Context, taskID uuid.UUID) ([]ListObjectsByTaskIDRow, error)
 	ListObjectsByTypeWithAdvancedFilter(ctx context.Context, arg ListObjectsByTypeWithAdvancedFilterParams) ([]ListObjectsByTypeWithAdvancedFilterRow, error)
+	// Main query to transform and aggregate object data
+	// First level: Get all keys for each object
+	// Second level: Aggregate values by key
+	// Third level: Create contact data object
+	ListObjectsWithNormalizedData(ctx context.Context, arg ListObjectsWithNormalizedDataParams) ([]ListObjectsWithNormalizedDataRow, error)
 	ListOrgMembers(ctx context.Context, arg ListOrgMembersParams) ([]ListOrgMembersRow, error)
 	ListStepsByFunnel(ctx context.Context, funnelID uuid.UUID) ([]ListStepsByFunnelRow, error)
 	ListTags(ctx context.Context, arg ListTagsParams) ([]ListTagsRow, error)

@@ -7,10 +7,28 @@ package database
 
 import (
 	"context"
+	"encoding/json"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
+
+const countObjectsAfterCreatedAt = `-- name: CountObjectsAfterCreatedAt :one
+SELECT COUNT(DISTINCT o.id)
+FROM obj o
+JOIN obj_type_value otv ON o.id = otv.obj_id
+WHERE o.created_at > $1
+  AND o.deleted_at IS NULL
+  AND otv.deleted_at IS NULL
+`
+
+func (q *Queries) CountObjectsAfterCreatedAt(ctx context.Context, createdAt time.Time) (int64, error) {
+	row := q.queryRow(ctx, q.countObjectsAfterCreatedAtStmt, countObjectsAfterCreatedAt, createdAt)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
 
 const findObjectByAliasOrIDString = `-- name: FindObjectByAliasOrIDString :one
 SELECT obj.id, obj.name, obj.photo, obj.description, obj.id_string, obj.creator_id, obj.created_at, obj.deleted_at, obj.aliases FROM obj
@@ -70,4 +88,135 @@ func (q *Queries) FindTagByNormalizedName(ctx context.Context, arg FindTagByNorm
 		&i.DeletedAt,
 	)
 	return i, err
+}
+
+const listObjectsWithNormalizedData = `-- name: ListObjectsWithNormalizedData :many
+WITH valid_keys AS (
+    SELECT unnest(ARRAY[
+        'name', 'email', 'phone', 'x or twitter', 'twitter',
+        'company', 'linkedin', 'telegram', 'discord', 'institution', 'web'
+    ]) AS key_name
+),
+raw_values AS (
+  SELECT 
+    o.id,
+    o.name AS object_name,
+    o.created_at,
+    k2.key_name as original_key,
+    CASE 
+      WHEN k.key_name IN ('twitter', 'x or twitter') THEN 
+        clean_url_value(otv.type_values->k2.key_name::text, 'twitter')
+      WHEN k.key_name = 'web' THEN 
+        clean_url_value(otv.type_values->k2.key_name::text, 'web')
+      WHEN k.key_name = 'linkedin' THEN 
+        clean_url_value(otv.type_values->k2.key_name::text, 'linkedin')
+      WHEN k.key_name IS NULL THEN
+        regexp_replace(lower(otv.type_values->>k2.key_name::text), '["''*:]', ' ', 'g')
+      ELSE 
+        lower(otv.type_values->>k2.key_name::text)
+    END AS cleaned_value,
+    CASE 
+      WHEN k.key_name IS NOT NULL THEN 
+        'contact.' || k.key_name
+      ELSE 
+        'other'
+    END AS transformed_key
+  FROM obj o
+  LEFT JOIN obj_type_value otv ON o.id = otv.obj_id
+  -- Get keys from type_values using jsonb_object_keys
+  LEFT JOIN LATERAL (
+    SELECT jsonb_object_keys(otv.type_values) as key_name
+  ) k2 ON true
+  LEFT JOIN valid_keys k ON k.key_name = k2.key_name
+  LEFT JOIN creator c ON o.creator_id = c.id
+  LEFT JOIN org org ON c.org_id = org.id
+  WHERE o.deleted_at IS NULL
+    AND otv.deleted_at IS NULL
+    AND org.id = $1
+    AND ($2::TIMESTAMP IS NULL OR o.created_at > $2::TIMESTAMP)
+    AND (
+      $3::uuid[] IS NULL OR o.id = ANY($3::uuid[])
+    )
+  LIMIT 100
+),
+aggregated_values AS (
+  SELECT 
+    id,
+    object_name,
+    created_at,
+    transformed_key,
+    CASE 
+      WHEN transformed_key = 'other' THEN 
+        string_agg(cleaned_value, ' ')
+      ELSE 
+        string_agg(DISTINCT cleaned_value, ', ')
+    END AS combined_value
+  FROM raw_values
+  WHERE cleaned_value IS NOT NULL AND cleaned_value != ''
+  GROUP BY id, object_name, created_at, transformed_key
+),
+contact_data AS (
+  SELECT 
+    id,
+    object_name,
+    created_at,
+    jsonb_object_agg(
+      transformed_key,
+      combined_value
+    ) AS contact_data
+  FROM aggregated_values
+  GROUP BY id, object_name, created_at
+)
+SELECT 
+  cd.id,
+  cd.object_name,
+  cd.created_at,
+  cd.contact_data as contact_data
+FROM contact_data cd
+ORDER BY cd.created_at DESC
+`
+
+type ListObjectsWithNormalizedDataParams struct {
+	ID      uuid.UUID   `json:"id"`
+	Column2 time.Time   `json:"column_2"`
+	Column3 []uuid.UUID `json:"column_3"`
+}
+
+type ListObjectsWithNormalizedDataRow struct {
+	ID          uuid.UUID       `json:"id"`
+	ObjectName  string          `json:"object_name"`
+	CreatedAt   time.Time       `json:"created_at"`
+	ContactData json.RawMessage `json:"contact_data"`
+}
+
+// Main query to transform and aggregate object data
+// First level: Get all keys for each object
+// Second level: Aggregate values by key
+// Third level: Create contact data object
+func (q *Queries) ListObjectsWithNormalizedData(ctx context.Context, arg ListObjectsWithNormalizedDataParams) ([]ListObjectsWithNormalizedDataRow, error) {
+	rows, err := q.query(ctx, q.listObjectsWithNormalizedDataStmt, listObjectsWithNormalizedData, arg.ID, arg.Column2, pq.Array(arg.Column3))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListObjectsWithNormalizedDataRow
+	for rows.Next() {
+		var i ListObjectsWithNormalizedDataRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ObjectName,
+			&i.CreatedAt,
+			&i.ContactData,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

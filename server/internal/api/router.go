@@ -210,6 +210,7 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 			r.Post("/facts", externalHandler.CreateFact)
 			r.Post("/type-values", externalHandler.UpsertObjectTypeValue)
 			r.Post("/tag-object", externalHandler.TagObject)
+			r.Post("/objects", externalHandler.ListObjectsWithNormalizedData)
 		});
 	})
 	
