@@ -1,6 +1,6 @@
 // hooks/useStoredConfigWithVersion.ts
 import { useState, useEffect, useCallback } from 'react';
-import { FilterConfig } from '../types/filters';
+import { FilterConfig } from 'src/types/FilterConfig';
 import { ViewConfigBase } from '../types/view-config';
 import {
   DEFAULT_FILTER_CONFIG,

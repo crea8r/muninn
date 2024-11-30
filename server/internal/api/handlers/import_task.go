@@ -140,7 +140,7 @@ func (h *ImportTaskHandler) processImportTask(taskID uuid.UUID, req ImportReques
 	}
 }
 
-func (h *ImportTaskHandler) processBatch(ctx context.Context, taskID uuid.UUID, objTypeID string, batch []ImportDataRow, 
+func (h *ImportTaskHandler) processBatch(ctx context.Context, _ uuid.UUID, objTypeID string, batch []ImportDataRow, 
 	fileName string, creatorId uuid.UUID, OrgId uuid.UUID, tagIds []string) error {
     // Start a transaction
 	tx, err := h.db.BeginTx(ctx, nil)

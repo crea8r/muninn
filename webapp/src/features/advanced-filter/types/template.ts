@@ -1,4 +1,4 @@
-import { FilterConfig } from './filters';
+import { FilterConfig } from 'src/types/FilterConfig';
 import { ViewConfigBase } from './view-config';
 export interface ActionConfig {
   tagIds?: string[];

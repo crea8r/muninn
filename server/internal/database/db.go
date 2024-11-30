@@ -42,6 +42,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.completeImportTaskStmt, err = db.PrepareContext(ctx, completeImportTask); err != nil {
 		return nil, fmt.Errorf("error preparing query CompleteImportTask: %w", err)
 	}
+	if q.countActionExecutionsStmt, err = db.PrepareContext(ctx, countActionExecutions); err != nil {
+		return nil, fmt.Errorf("error preparing query CountActionExecutions: %w", err)
+	}
+	if q.countAutomatedActionsStmt, err = db.PrepareContext(ctx, countAutomatedActions); err != nil {
+		return nil, fmt.Errorf("error preparing query CountAutomatedActions: %w", err)
+	}
 	if q.countFactsByOrgIDStmt, err = db.PrepareContext(ctx, countFactsByOrgID); err != nil {
 		return nil, fmt.Errorf("error preparing query CountFactsByOrgID: %w", err)
 	}
@@ -177,6 +183,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.findTagByNormalizedNameStmt, err = db.PrepareContext(ctx, findTagByNormalizedName); err != nil {
 		return nil, fmt.Errorf("error preparing query FindTagByNormalizedName: %w", err)
 	}
+	if q.getAutomatedActionStmt, err = db.PrepareContext(ctx, getAutomatedAction); err != nil {
+		return nil, fmt.Errorf("error preparing query GetAutomatedAction: %w", err)
+	}
 	if q.getCreatorStmt, err = db.PrepareContext(ctx, getCreator); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCreator: %w", err)
 	}
@@ -206,6 +215,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.getImportTaskHistoryStmt, err = db.PrepareContext(ctx, getImportTaskHistory); err != nil {
 		return nil, fmt.Errorf("error preparing query GetImportTaskHistory: %w", err)
+	}
+	if q.getLatestExecutionStmt, err = db.PrepareContext(ctx, getLatestExecution); err != nil {
+		return nil, fmt.Errorf("error preparing query GetLatestExecution: %w", err)
 	}
 	if q.getListByIDStmt, err = db.PrepareContext(ctx, getListByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetListByID: %w", err)
@@ -251,6 +263,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.healthCheckStmt, err = db.PrepareContext(ctx, healthCheck); err != nil {
 		return nil, fmt.Errorf("error preparing query HealthCheck: %w", err)
+	}
+	if q.listActionExecutionsStmt, err = db.PrepareContext(ctx, listActionExecutions); err != nil {
+		return nil, fmt.Errorf("error preparing query ListActionExecutions: %w", err)
+	}
+	if q.listAutomatedActionsStmt, err = db.PrepareContext(ctx, listAutomatedActions); err != nil {
+		return nil, fmt.Errorf("error preparing query ListAutomatedActions: %w", err)
 	}
 	if q.listCreatorListsByCreatorIDStmt, err = db.PrepareContext(ctx, listCreatorListsByCreatorID); err != nil {
 		return nil, fmt.Errorf("error preparing query ListCreatorListsByCreatorID: %w", err)
@@ -429,6 +447,16 @@ func (q *Queries) Close() error {
 	if q.completeImportTaskStmt != nil {
 		if cerr := q.completeImportTaskStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing completeImportTaskStmt: %w", cerr)
+		}
+	}
+	if q.countActionExecutionsStmt != nil {
+		if cerr := q.countActionExecutionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countActionExecutionsStmt: %w", cerr)
+		}
+	}
+	if q.countAutomatedActionsStmt != nil {
+		if cerr := q.countAutomatedActionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countAutomatedActionsStmt: %w", cerr)
 		}
 	}
 	if q.countFactsByOrgIDStmt != nil {
@@ -656,6 +684,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing findTagByNormalizedNameStmt: %w", cerr)
 		}
 	}
+	if q.getAutomatedActionStmt != nil {
+		if cerr := q.getAutomatedActionStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getAutomatedActionStmt: %w", cerr)
+		}
+	}
 	if q.getCreatorStmt != nil {
 		if cerr := q.getCreatorStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getCreatorStmt: %w", cerr)
@@ -704,6 +737,11 @@ func (q *Queries) Close() error {
 	if q.getImportTaskHistoryStmt != nil {
 		if cerr := q.getImportTaskHistoryStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getImportTaskHistoryStmt: %w", cerr)
+		}
+	}
+	if q.getLatestExecutionStmt != nil {
+		if cerr := q.getLatestExecutionStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getLatestExecutionStmt: %w", cerr)
 		}
 	}
 	if q.getListByIDStmt != nil {
@@ -779,6 +817,16 @@ func (q *Queries) Close() error {
 	if q.healthCheckStmt != nil {
 		if cerr := q.healthCheckStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing healthCheckStmt: %w", cerr)
+		}
+	}
+	if q.listActionExecutionsStmt != nil {
+		if cerr := q.listActionExecutionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listActionExecutionsStmt: %w", cerr)
+		}
+	}
+	if q.listAutomatedActionsStmt != nil {
+		if cerr := q.listAutomatedActionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listAutomatedActionsStmt: %w", cerr)
 		}
 	}
 	if q.listCreatorListsByCreatorIDStmt != nil {
@@ -1066,6 +1114,8 @@ type Queries struct {
 	addObjectsToTaskStmt                     *sql.Stmt
 	addTagToObjectStmt                       *sql.Stmt
 	completeImportTaskStmt                   *sql.Stmt
+	countActionExecutionsStmt                *sql.Stmt
+	countAutomatedActionsStmt                *sql.Stmt
 	countFactsByOrgIDStmt                    *sql.Stmt
 	countFunnelsStmt                         *sql.Stmt
 	countImportTasksStmt                     *sql.Stmt
@@ -1111,6 +1161,7 @@ type Queries struct {
 	deleteTaskStmt                           *sql.Stmt
 	findObjectByAliasOrIDStringStmt          *sql.Stmt
 	findTagByNormalizedNameStmt              *sql.Stmt
+	getAutomatedActionStmt                   *sql.Stmt
 	getCreatorStmt                           *sql.Stmt
 	getCreatorByIDStmt                       *sql.Stmt
 	getCreatorByUsernameStmt                 *sql.Stmt
@@ -1121,6 +1172,7 @@ type Queries struct {
 	getFunnelStmt                            *sql.Stmt
 	getImportTaskStmt                        *sql.Stmt
 	getImportTaskHistoryStmt                 *sql.Stmt
+	getLatestExecutionStmt                   *sql.Stmt
 	getListByIDStmt                          *sql.Stmt
 	getObjStepStmt                           *sql.Stmt
 	getObjectByIDStringStmt                  *sql.Stmt
@@ -1136,6 +1188,8 @@ type Queries struct {
 	getTaskByIDStmt                          *sql.Stmt
 	hardDeleteObjStepStmt                    *sql.Stmt
 	healthCheckStmt                          *sql.Stmt
+	listActionExecutionsStmt                 *sql.Stmt
+	listAutomatedActionsStmt                 *sql.Stmt
 	listCreatorListsByCreatorIDStmt          *sql.Stmt
 	listFactsByOrgIDStmt                     *sql.Stmt
 	listFunnelsStmt                          *sql.Stmt
@@ -1196,6 +1250,8 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		addObjectsToTaskStmt:                     q.addObjectsToTaskStmt,
 		addTagToObjectStmt:                       q.addTagToObjectStmt,
 		completeImportTaskStmt:                   q.completeImportTaskStmt,
+		countActionExecutionsStmt:                q.countActionExecutionsStmt,
+		countAutomatedActionsStmt:                q.countAutomatedActionsStmt,
 		countFactsByOrgIDStmt:                    q.countFactsByOrgIDStmt,
 		countFunnelsStmt:                         q.countFunnelsStmt,
 		countImportTasksStmt:                     q.countImportTasksStmt,
@@ -1241,6 +1297,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		deleteTaskStmt:                           q.deleteTaskStmt,
 		findObjectByAliasOrIDStringStmt:          q.findObjectByAliasOrIDStringStmt,
 		findTagByNormalizedNameStmt:              q.findTagByNormalizedNameStmt,
+		getAutomatedActionStmt:                   q.getAutomatedActionStmt,
 		getCreatorStmt:                           q.getCreatorStmt,
 		getCreatorByIDStmt:                       q.getCreatorByIDStmt,
 		getCreatorByUsernameStmt:                 q.getCreatorByUsernameStmt,
@@ -1251,6 +1308,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getFunnelStmt:                            q.getFunnelStmt,
 		getImportTaskStmt:                        q.getImportTaskStmt,
 		getImportTaskHistoryStmt:                 q.getImportTaskHistoryStmt,
+		getLatestExecutionStmt:                   q.getLatestExecutionStmt,
 		getListByIDStmt:                          q.getListByIDStmt,
 		getObjStepStmt:                           q.getObjStepStmt,
 		getObjectByIDStringStmt:                  q.getObjectByIDStringStmt,
@@ -1266,6 +1324,8 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getTaskByIDStmt:                          q.getTaskByIDStmt,
 		hardDeleteObjStepStmt:                    q.hardDeleteObjStepStmt,
 		healthCheckStmt:                          q.healthCheckStmt,
+		listActionExecutionsStmt:                 q.listActionExecutionsStmt,
+		listAutomatedActionsStmt:                 q.listAutomatedActionsStmt,
 		listCreatorListsByCreatorIDStmt:          q.listCreatorListsByCreatorIDStmt,
 		listFactsByOrgIDStmt:                     q.listFactsByOrgIDStmt,
 		listFunnelsStmt:                          q.listFunnelsStmt,

@@ -1,5 +1,5 @@
 import { useGlobalContext } from 'src/contexts/GlobalContext';
-import { FunnelStepFilter } from '../types/filters';
+import { FunnelStepFilter } from 'src/types/FilterConfig';
 import { HStack, VStack, Text, Flex, Box } from '@chakra-ui/react';
 import React from 'react';
 import { useAdvancedFilter } from '../contexts/AdvancedFilterContext';

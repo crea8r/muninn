@@ -4,7 +4,7 @@ import {
   AdvancedFilterContainerProps,
 } from './AdvancedFilterContainer';
 import { AdvancedFilterProvider } from './contexts/AdvancedFilterContext';
-import { FilterConfig } from './types/filters';
+import { FilterConfig } from 'src/types/FilterConfig';
 
 // features/advanced-filter/index.tsx
 export interface AdvancedFilterProps extends AdvancedFilterContainerProps {

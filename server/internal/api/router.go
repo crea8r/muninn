@@ -51,6 +51,8 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 	metricsService := service.NewMetricsService(queries)
 	metricsHandler := handlers.NewMetricsHandler(metricsService)
 	externalHandler := handlers.NewExternalHandler(db, queries)
+	automationHandler := handlers.NewAutomationHandler(queries)
+
 
 	// Public routes
 	r.Post("/auth/signup", handlers.SignUp(queries))
@@ -213,6 +215,16 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 			r.Post("/tag-object", externalHandler.TagObject)
 			r.Post("/objects", externalHandler.ListObjectsWithNormalizedData)
 		});
+
+		r.Route("/automations", func(r chi.Router) {
+			r.Use(middleware.Permission)
+			r.Get("/", automationHandler.ListActions)
+			r.Route("/{actionId}", func(r chi.Router) {
+				r.Get("/executions", automationHandler.GetExecutionLogs)
+				r.Put("/", automationHandler.UpdateAction)
+				r.Delete("/", automationHandler.DeleteAction)
+			})
+		})
 	})
 	
 	return r

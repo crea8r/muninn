@@ -1,6 +1,6 @@
 // hooks/useDebounceFilter.ts
 import { useEffect, useState } from 'react';
-import { FilterConfig } from '../types/filters';
+import { FilterConfig } from 'src/types/FilterConfig';
 
 export function useDebounceFilter(value: FilterConfig, delay: number = 500) {
   const [debouncedValue, setDebouncedValue] = useState(value);

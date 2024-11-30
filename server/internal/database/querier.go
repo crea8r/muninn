@@ -19,6 +19,8 @@ type Querier interface {
 	AddObjectsToTask(ctx context.Context, arg AddObjectsToTaskParams) error
 	AddTagToObject(ctx context.Context, arg AddTagToObjectParams) error
 	CompleteImportTask(ctx context.Context, arg CompleteImportTaskParams) (ImportTask, error)
+	CountActionExecutions(ctx context.Context, actionID uuid.UUID) (int64, error)
+	CountAutomatedActions(ctx context.Context, arg CountAutomatedActionsParams) (int64, error)
 	CountFactsByOrgID(ctx context.Context, arg CountFactsByOrgIDParams) (int64, error)
 	CountFunnels(ctx context.Context, arg CountFunnelsParams) (int64, error)
 	CountImportTasks(ctx context.Context, orgID uuid.UUID) (int64, error)
@@ -67,6 +69,7 @@ type Querier interface {
 	DeleteTask(ctx context.Context, id uuid.UUID) error
 	FindObjectByAliasOrIDString(ctx context.Context, arg FindObjectByAliasOrIDStringParams) (Obj, error)
 	FindTagByNormalizedName(ctx context.Context, arg FindTagByNormalizedNameParams) (Tag, error)
+	GetAutomatedAction(ctx context.Context, id uuid.UUID) (AutomatedAction, error)
 	GetCreator(ctx context.Context, id uuid.UUID) (Creator, error)
 	GetCreatorByID(ctx context.Context, id uuid.UUID) (Creator, error)
 	GetCreatorByUsername(ctx context.Context, arg GetCreatorByUsernameParams) (GetCreatorByUsernameRow, error)
@@ -77,6 +80,7 @@ type Querier interface {
 	GetFunnel(ctx context.Context, id uuid.UUID) (GetFunnelRow, error)
 	GetImportTask(ctx context.Context, id uuid.UUID) (ImportTask, error)
 	GetImportTaskHistory(ctx context.Context, arg GetImportTaskHistoryParams) ([]ImportTask, error)
+	GetLatestExecution(ctx context.Context, actionID uuid.UUID) (AutomatedActionExecution, error)
 	GetListByID(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
 	GetObjStep(ctx context.Context, id uuid.UUID) (ObjStep, error)
 	GetObjectByIDString(ctx context.Context, idString string) (Obj, error)
@@ -92,6 +96,8 @@ type Querier interface {
 	GetTaskByID(ctx context.Context, id uuid.UUID) (GetTaskByIDRow, error)
 	HardDeleteObjStep(ctx context.Context, id uuid.UUID) error
 	HealthCheck(ctx context.Context) (int32, error)
+	ListActionExecutions(ctx context.Context, arg ListActionExecutionsParams) ([]AutomatedActionExecution, error)
+	ListAutomatedActions(ctx context.Context, arg ListAutomatedActionsParams) ([]AutomatedAction, error)
 	ListCreatorListsByCreatorID(ctx context.Context, creatorID uuid.UUID) ([]ListCreatorListsByCreatorIDRow, error)
 	ListFactsByOrgID(ctx context.Context, arg ListFactsByOrgIDParams) ([]ListFactsByOrgIDRow, error)
 	ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]ListFunnelsRow, error)

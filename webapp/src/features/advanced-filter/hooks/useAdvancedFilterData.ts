@@ -1,6 +1,6 @@
 // hooks/useAdvancedFilterData.ts
 import { useState, useEffect } from 'react';
-import { FilterConfig } from '../types/filters';
+import { FilterConfig } from 'src/types/FilterConfig';
 import { fetchAdvancedFilterResults } from '../services/advancedFilterApi';
 import { useDebounceFilter } from './useDebounceFilter';
 

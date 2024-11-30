@@ -13,7 +13,7 @@ import LoadingPanel from 'src/components/LoadingPanel';
 import { AdvancedFilter } from 'src/features/advanced-filter';
 import { InfoDialogButton } from 'src/components/InfoDialog';
 import { InfoIcon } from '@chakra-ui/icons';
-import { FilterConfig } from 'src/features/advanced-filter/types/filters';
+import { FilterConfig } from 'src/types/FilterConfig';
 
 const ViewDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

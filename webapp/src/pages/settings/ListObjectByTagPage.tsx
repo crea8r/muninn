@@ -6,7 +6,7 @@ import {
   ViewConfigBase,
   ViewConfigSource,
 } from 'src/features/advanced-filter/types/view-config';
-import { FilterConfig } from 'src/features/advanced-filter/types/filters';
+import { FilterConfig } from 'src/types/FilterConfig';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { AdvancedFilter } from 'src/features/advanced-filter';
 import LoadingPanel from 'src/components/LoadingPanel';

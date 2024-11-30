@@ -1,6 +1,3 @@
-import { TypeValueFilter } from './criteria';
-
-// types/filters.ts
 export interface FilterConfig {
   search?: string;
   tagIds?: string[];
@@ -14,6 +11,17 @@ export interface FilterConfig {
   pageSize: number;
 }
 
+export interface TypeValueCriteria {
+  objectTypeId: string;
+  field: string;
+  value: string;
+}
+
+export interface TypeValueFilter {
+  criteria1?: Record<string, string>;
+  criteria2?: Record<string, string>;
+  criteria3?: Record<string, string>;
+}
 export interface FilterOptions {
   allowedTypes?: string[];
   allowedTags?: string[];

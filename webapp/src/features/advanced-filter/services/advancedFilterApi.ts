@@ -1,6 +1,6 @@
 // services/advancedFilterApi.ts
 import { axiosWithAuth } from 'src/api/utils';
-import { FilterConfig } from '../types/filters';
+import { FilterConfig } from 'src/types/FilterConfig';
 import { AdvancedFilterResponse } from '../types/response';
 
 // Helper to transform type value criteria to API format

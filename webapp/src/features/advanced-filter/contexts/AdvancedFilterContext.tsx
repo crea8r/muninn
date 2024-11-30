@@ -6,7 +6,7 @@ import React, {
   useCallback,
   useEffect,
 } from 'react';
-import { FilterConfig } from '../types/filters';
+import { FilterConfig } from 'src/types/FilterConfig';
 import { STORAGE_KEYS, useGlobalContext } from 'src/contexts/GlobalContext';
 
 export interface AdvancedFilterContextType {

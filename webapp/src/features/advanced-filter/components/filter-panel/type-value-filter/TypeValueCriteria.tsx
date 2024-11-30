@@ -3,7 +3,7 @@ import React from 'react';
 import { VStack, HStack, Button, Text, Box } from '@chakra-ui/react';
 import { AddIcon } from '@chakra-ui/icons';
 import { CriteriaBuilder } from './CriteriaBuilder';
-import { TypeValueFilter as TypeValueFilterInterface } from '../../../types/criteria';
+import { TypeValueFilter as TypeValueFilterInterface } from 'src/types/FilterConfig';
 import { useAdvancedFilter } from '../../../contexts/AdvancedFilterContext';
 import { MAX_CRITERIA } from '../../../constants';
 

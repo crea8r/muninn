@@ -5,7 +5,7 @@ import { SearchFilter } from './SearchFilter';
 import { TagFilter } from './tag-filter/TagFilter';
 import { TypeFilter } from './type-filter/TypeFilter';
 import { SortingControl } from './SortingControl';
-import { FilterOptions } from '../../types/filters';
+import { FilterOptions } from 'src/types/FilterConfig';
 import { TypeValueFilter } from './type-value-filter/TypeValueCriteria';
 import { ActiveFilters as DataExplorer } from './ActiveFilters';
 import { FunnelStepFilter } from './funnel-step-filter/FunnelStepFilter';

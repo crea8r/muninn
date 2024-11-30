@@ -6,7 +6,7 @@ import { ViewController } from './components/view-controller/ViewController';
 import { useAdvancedFilter } from './contexts/AdvancedFilterContext';
 import { useAdvancedFilterData } from './hooks/useAdvancedFilterData';
 import { ViewConfigBase, ViewConfigSource } from './types/view-config';
-import { FilterOptions } from './types/filters';
+import { FilterOptions } from 'src/types/FilterConfig';
 import { StepCountsDisplay } from './components/StepCountsDisplay';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { UpsertTemplateDialog } from './components/templates/UpsertTemplateDialog';

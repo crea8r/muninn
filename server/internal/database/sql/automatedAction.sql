@@ -56,6 +56,40 @@ SET status = $2,
 WHERE id = $1
 RETURNING *;
 
+-- name: ListAutomatedActions :many
+SELECT * FROM automated_action 
+WHERE org_id = $1 
+  AND deleted_at IS NULL 
+  AND ($2 = '' OR name ILIKE '%' || $2 || '%' OR description ILIKE '%' || $2 || '%')
+ORDER BY created_at DESC
+LIMIT $3 OFFSET $4;
+
+-- name: CountAutomatedActions :one
+SELECT COUNT(*) FROM automated_action 
+WHERE org_id = $1 
+  AND deleted_at IS NULL
+  AND ($2 = '' OR name ILIKE '%' || $2 || '%' OR description ILIKE '%' || $2 || '%');
+
+-- name: GetAutomatedAction :one
+SELECT * FROM automated_action 
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: GetLatestExecution :one
+SELECT * FROM automated_action_execution
+WHERE action_id = $1
+ORDER BY started_at DESC
+LIMIT 1;
+
+-- name: ListActionExecutions :many
+SELECT * FROM automated_action_execution
+WHERE action_id = $1
+ORDER BY started_at DESC
+LIMIT $2 OFFSET $3;
+
+-- name: CountActionExecutions :one
+SELECT COUNT(*) FROM automated_action_execution
+WHERE action_id = $1;
+
 -- name: AddObjectToFirstStep :one
 WITH first_step AS (
     -- Get the first step (lowest step_order) of the specified funnel

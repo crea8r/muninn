@@ -1,5 +1,5 @@
 // constants/default-config.ts
-import { FilterConfig } from '../types/filters';
+import { FilterConfig } from 'src/types/FilterConfig';
 import { ViewConfigBase } from '../types/view-config';
 import { STANDARD_COLUMNS } from './default-columns';
 

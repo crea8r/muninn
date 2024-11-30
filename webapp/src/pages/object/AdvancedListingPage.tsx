@@ -2,7 +2,7 @@ import { Box } from '@chakra-ui/react';
 import { AdvancedFilter } from 'src/features/advanced-filter';
 import { ViewConfigSource } from 'src/features/advanced-filter/types/view-config';
 import { useStoredConfigWithVersion } from 'src/features/advanced-filter/hooks/useStoredConfigWithVersion';
-import { FilterConfig } from 'src/features/advanced-filter/types/filters';
+import { FilterConfig } from 'src/types/FilterConfig';
 import { ViewConfigBase } from 'src/features/advanced-filter/types/view-config';
 import { useCallback } from 'react';
 

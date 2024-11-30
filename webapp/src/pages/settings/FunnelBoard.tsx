@@ -5,7 +5,7 @@ import BreadcrumbComponent from 'src/components/Breadcrumb';
 import LoadingPanel from 'src/components/LoadingPanel';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { AdvancedFilter } from 'src/features/advanced-filter';
-import { FilterConfig } from 'src/features/advanced-filter/types/filters';
+import { FilterConfig } from 'src/types/FilterConfig';
 import {
   ViewConfigBase,
   ViewConfigSource,
