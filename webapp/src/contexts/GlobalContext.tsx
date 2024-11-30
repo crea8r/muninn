@@ -10,7 +10,7 @@ import { ObjectType, Tag, Funnel } from 'src/types';
 import authService from 'src/services/authService';
 import { personalSummarize, listOrgMembers } from 'src/api';
 import { listObjectTypes } from 'src/api/objType';
-import { listTags } from 'src/api/tag';
+import { getTag, listTags } from 'src/api/tag';
 import { fetchAllFunnels } from 'src/api/funnel';
 import { PersonalSummarize } from 'src/types/Summarize';
 
@@ -124,6 +124,7 @@ interface GlobalContextType {
   refreshMembers: () => Promise<void>;
   refreshObjectTypes: () => Promise<void>;
   refreshTags: () => Promise<void>;
+  fetchTag: (tagId: string) => Promise<void>;
   refreshFunnels: () => Promise<void>;
   refreshSummary: () => Promise<void>;
   refreshAll: () => Promise<void>;
@@ -196,6 +197,33 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error('Failed to fetch object types:', error);
     }
   }, []);
+
+  const fetchTag = useCallback(
+    async (tagId: string) => {
+      try {
+        const response = await getTag(tagId);
+        const newTag = {
+          id: response.id,
+          name: response.name,
+          description: response.description,
+          color_schema: response.color_schema,
+        };
+        const newData = {
+          tags: [...(globalData?.tagData?.tags || []), newTag],
+          lastUpdated: Date.now(),
+        };
+
+        storage.setData(STORAGE_KEYS.TAGS, newData);
+        setGlobalData((prev) => ({
+          ...prev!,
+          tagData: newData,
+        }));
+      } catch (error) {
+        console.error('Failed to add tag:', error);
+      }
+    },
+    [globalData?.tagData?.tags]
+  );
 
   const refreshTags = useCallback(async (force: boolean = false) => {
     try {
@@ -361,6 +389,7 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
         refreshMembers,
         refreshObjectTypes,
         refreshTags,
+        fetchTag,
         refreshFunnels,
         refreshSummary,
         refreshAll,

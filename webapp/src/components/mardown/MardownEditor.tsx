@@ -23,6 +23,7 @@ interface MarkdownEditorProps {
   filters?: SpotLightFilter[];
   isDisabled?: boolean;
   mode?: 'edit' | 'preview';
+  height?: string;
 }
 
 const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
@@ -36,6 +37,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   ],
   isDisabled = false,
   mode = 'edit',
+  height,
 }) => {
   const [value, setValue] = useState(initialValue);
   const [relatedItems, setRelatedItems] = useState<any[]>([]);
@@ -126,6 +128,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                   : [...commands.getCommands()]
               }
               extraCommands={[]}
+              height={height || '200px'}
             />
             <Wrap spacing={2} mt={2}>
               {relatedItems.map((item) => (

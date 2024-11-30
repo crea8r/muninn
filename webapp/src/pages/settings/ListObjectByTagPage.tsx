@@ -14,9 +14,11 @@ import { STANDARD_COLUMNS } from 'src/features/advanced-filter/constants/default
 
 const ListObjectByTagPage = () => {
   const { id: tagId } = useParams<{ id: string }>();
-  console.log('tagId: ', tagId);
-  const { globalData } = useGlobalContext();
+  const { globalData, fetchTag } = useGlobalContext();
   const tag = globalData?.tagData?.tags.find((tag) => tag.id === tagId);
+  if (!tag) {
+    fetchTag(tagId);
+  }
   const viewSource: ViewConfigSource = {
     type: 'temporary',
   };

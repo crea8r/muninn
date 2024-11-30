@@ -167,3 +167,23 @@ func (h *TagHandler) ListTags(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(response)
 }
+
+func (h *TagHandler) GetTag(w http.ResponseWriter, r *http.Request) {
+	tagID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid tag ID", http.StatusBadRequest)
+		return
+	}
+
+	tag, err := h.DB.GetTagByID(r.Context(), tagID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Tag not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Failed to get tag", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	json.NewEncoder(w).Encode(tag)
+}

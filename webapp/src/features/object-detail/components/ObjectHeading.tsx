@@ -110,6 +110,11 @@ export const ObjectHeading: React.FC = () => {
             background={tag.color_schema.background}
             color={tag.color_schema.text}
             m={1}
+            _hover={{
+              textDecoration: 'underline',
+              cursor: 'pointer',
+            }}
+            onClick={() => history.push('/settings/tags/' + tag.id)}
           >
             {tag.name}
           </Tag>

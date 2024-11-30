@@ -17,6 +17,8 @@ import {
   WrapItem,
   useToast,
   Box,
+  TagCloseButton,
+  Input,
 } from '@chakra-ui/react';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { addTagToObject } from 'src/api/object';
@@ -48,6 +50,7 @@ export const AddTagDialog: React.FC<AddTagDialogProps> = ({
   const toast = useToast();
 
   const tags = globalData?.tagData?.tags || [];
+  const [searchTagLabel, setSearchTagLabel] = useState('');
 
   const handleAddTag = async () => {
     if (!selectedTag) return;
@@ -101,6 +104,7 @@ export const AddTagDialog: React.FC<AddTagDialogProps> = ({
 
     setIsProcessing(false);
     onClose();
+    setSearchTagLabel('');
     setSelectedTag(null);
     setProgress(null);
   };
@@ -108,7 +112,12 @@ export const AddTagDialog: React.FC<AddTagDialogProps> = ({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => {
+        setSearchTagLabel('');
+        setSelectedTag(null);
+        setProgress(null);
+        onClose();
+      }}
       closeOnOverlayClick={!isProcessing}
       closeOnEsc={!isProcessing}
     >
@@ -123,29 +132,84 @@ export const AddTagDialog: React.FC<AddTagDialogProps> = ({
                 <Text>
                   Select a tag to add to {selectedObjects.length} objects:
                 </Text>
-                <Wrap spacing={2}>
-                  {tags.map((tag) => (
-                    <WrapItem key={tag.id}>
-                      <Tag
-                        size='lg'
-                        variant={selectedTag === tag.id ? 'solid' : 'subtle'}
-                        backgroundColor={
-                          selectedTag === tag.id
-                            ? tag.color_schema.background
-                            : `${tag.color_schema.background}40`
-                        }
-                        color={tag.color_schema.text}
-                        cursor='pointer'
-                        onClick={() => setSelectedTag(tag.id)}
-                        _hover={{
-                          opacity: 0.8,
-                        }}
-                      >
-                        {tag.name}
-                      </Tag>
-                    </WrapItem>
-                  ))}
-                </Wrap>
+                <Box>
+                  {selectedTag && (
+                    <Tag
+                      color={
+                        tags.find((tag) => tag.id === selectedTag)?.color_schema
+                          .text
+                      }
+                      backgroundColor={
+                        tags.find((tag) => tag.id === selectedTag)?.color_schema
+                          .background
+                      }
+                    >
+                      {tags.find((tag) => tag.id === selectedTag)?.name}
+                      <TagCloseButton onClick={() => setSelectedTag(null)} />
+                    </Tag>
+                  )}
+                </Box>
+
+                <Input
+                  type='text'
+                  placeholder='Search tags...'
+                  value={searchTagLabel}
+                  onChange={(e) => {
+                    setSearchTagLabel(e.target.value);
+                  }}
+                />
+                <Box position={'relative'} width={'100%'}>
+                  <Box
+                    position={'absolute'}
+                    zIndex={1000}
+                    background={'white'}
+                    boxShadow={'md'}
+                    p={2}
+                    width={'100%'}
+                    display={
+                      searchTagLabel === '' ||
+                      tags.filter((t) =>
+                        t.name.includes(searchTagLabel.trim().toLowerCase())
+                      ).length === 0
+                        ? 'none'
+                        : 'block'
+                    }
+                  >
+                    <Wrap spacing={2}>
+                      {searchTagLabel !== '' &&
+                        tags
+                          .filter((t) =>
+                            t.name.includes(searchTagLabel.trim().toLowerCase())
+                          )
+                          .map((tag) => (
+                            <WrapItem key={tag.id}>
+                              <Tag
+                                size='lg'
+                                variant={
+                                  selectedTag === tag.id ? 'solid' : 'subtle'
+                                }
+                                backgroundColor={
+                                  selectedTag === tag.id
+                                    ? tag.color_schema.background
+                                    : `${tag.color_schema.background}`
+                                }
+                                color={tag.color_schema.text}
+                                cursor='pointer'
+                                onClick={() => {
+                                  setSelectedTag(tag.id);
+                                  setSearchTagLabel('');
+                                }}
+                                _hover={{
+                                  opacity: 0.8,
+                                }}
+                              >
+                                {tag.name}
+                              </Tag>
+                            </WrapItem>
+                          ))}
+                    </Wrap>
+                  </Box>
+                </Box>
               </>
             ) : (
               <VStack spacing={4} align='stretch'>

@@ -13,6 +13,33 @@ import (
 	"github.com/sqlc-dev/pqtype"
 )
 
+type AutomatedAction struct {
+	ID           uuid.UUID       `json:"id"`
+	OrgID        uuid.UUID       `json:"org_id"`
+	Name         string          `json:"name"`
+	Description  string          `json:"description"`
+	FilterConfig json.RawMessage `json:"filter_config"`
+	ActionConfig json.RawMessage `json:"action_config"`
+	IsActive     bool            `json:"is_active"`
+	LastRunAt    sql.NullTime    `json:"last_run_at"`
+	CreatedAt    time.Time       `json:"created_at"`
+	UpdatedAt    time.Time       `json:"updated_at"`
+	CreatedBy    uuid.UUID       `json:"created_by"`
+	DeletedAt    sql.NullTime    `json:"deleted_at"`
+}
+
+type AutomatedActionExecution struct {
+	ID               uuid.UUID             `json:"id"`
+	ActionID         uuid.UUID             `json:"action_id"`
+	StartedAt        time.Time             `json:"started_at"`
+	CompletedAt      sql.NullTime          `json:"completed_at"`
+	Status           string                `json:"status"`
+	ObjectsProcessed int32                 `json:"objects_processed"`
+	ObjectsAffected  int32                 `json:"objects_affected"`
+	ErrorMessage     sql.NullString        `json:"error_message"`
+	ExecutionLog     pqtype.NullRawMessage `json:"execution_log"`
+}
+
 type Creator struct {
 	ID        uuid.UUID       `json:"id"`
 	Username  string          `json:"username"`

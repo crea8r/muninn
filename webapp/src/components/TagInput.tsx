@@ -90,7 +90,7 @@ export const TagInput: React.FC<TagInputProps> = ({
     <Box position='relative' ref={ref}>
       <VStack spacing={2} align='stretch'>
         {/* Selected Tags */}
-        <Wrap spacing={2} mb={2}>
+        <Wrap spacing={2} mb={tags.length > 0 ? 2 : 0}>
           {availableTags
             .filter((tag) => tags.indexOf(tag.id) > -1)
             .map((tag) => (

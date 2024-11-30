@@ -9,19 +9,23 @@ import {
   Box,
   Text,
   Flex,
+  Button,
 } from '@chakra-ui/react';
 import { useAdvancedFilter } from '../../contexts/AdvancedFilterContext';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { substatus } from 'src/utils';
 import { STANDARD_SORT_OPTIONS } from '../../constants';
 import { useUnsavedChangesContext } from 'src/contexts/unsaved-changes/UnsavedChange';
+import { FaPlus, FaSave } from 'react-icons/fa';
 
 interface ActiveFiltersProps {
   showCreateTemplate?: () => void;
+  showCreateTemplateAction?: () => void;
 }
 
 export const ActiveFilters: React.FC<ActiveFiltersProps> = ({
   showCreateTemplate,
+  showCreateTemplateAction,
 }: ActiveFiltersProps) => {
   const { filterConfig, updateFilter } = useAdvancedFilter();
   const { globalData } = useGlobalContext();
@@ -208,16 +212,6 @@ export const ActiveFilters: React.FC<ActiveFiltersProps> = ({
           <Text
             fontSize='sm'
             fontWeight={'light'}
-            color='blue.500'
-            textDecoration={'underline'}
-            cursor='pointer'
-            onClick={showCreateTemplate}
-          >
-            Save
-          </Text>
-          <Text
-            fontSize='sm'
-            fontWeight={'light'}
             color='gray.500'
             textDecoration={'underline'}
             cursor='pointer'
@@ -228,13 +222,38 @@ export const ActiveFilters: React.FC<ActiveFiltersProps> = ({
         </Flex>
       </HStack>
 
-      <HStack spacing={2} flexWrap='wrap'>
+      <HStack
+        spacing={2}
+        flexWrap='wrap'
+        border={'1px solid'}
+        borderColor={'gray.200'}
+        borderRadius={4}
+        p={2}
+      >
         {renderSearch()}
         {renderTypeFilters()}
         {renderTagFilters()}
         {renderFunnelStepFilter()}
         {renderTypeValueCriteria()}
         {renderSortingFilter()}
+      </HStack>
+      <HStack spacing={2} flexWrap='wrap' mt={2}>
+        <Button
+          size={'sm'}
+          color='blue.500'
+          onClick={showCreateTemplate}
+          leftIcon={<FaSave />}
+        >
+          Template
+        </Button>
+        <Button
+          size={'sm'}
+          color='blue.500'
+          onClick={showCreateTemplateAction}
+          leftIcon={<FaPlus />}
+        >
+          Action
+        </Button>
       </HStack>
     </Box>
   );

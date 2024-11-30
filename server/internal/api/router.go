@@ -85,6 +85,7 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 			r.Post("/", tagHandler.CreateTag)
 			r.Get("/", tagHandler.ListTags)
 			r.Put("/{id}", tagHandler.UpdateTag)
+			r.Get("/{id}", tagHandler.GetTag)
 			r.Delete("/{id}", tagHandler.DeleteTag)
 		})
 

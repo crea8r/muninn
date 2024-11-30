@@ -166,7 +166,7 @@ export const TagFilter: React.FC = () => {
                   <ChakraTag
                     size='md'
                     variant='subtle'
-                    backgroundColor={`${tag.color_schema.background}40`}
+                    backgroundColor={`${tag.color_schema.background}`}
                     color={tag.color_schema.text}
                   >
                     <TagLabel>{tag.name}</TagLabel>

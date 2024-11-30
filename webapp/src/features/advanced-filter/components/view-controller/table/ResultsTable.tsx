@@ -93,6 +93,8 @@ const getCellValue = (
               key={tag.id}
               color={tag.color_schema.text}
               bgColor={tag.color_schema.background}
+              onClick={() => window.open('/settings/tags/' + tag.id, '_blank')}
+              _hover={{ cursor: 'pointer', textDecoration: 'underline' }}
             >
               {tag.name}
             </ChkTag>
@@ -168,7 +170,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
   });
   const { filterConfig, updateFilter } = useAdvancedFilter();
   const { page = 1, pageSize = 10 } = filterConfig;
-  const { globalData } = useGlobalContext();
+  const { globalData, fetchTag } = useGlobalContext();
 
   const [selectAll, setSelectAll] = useState(false);
   const [focusedObjectId, setFocusedObjectId] = useState<string | null>(null);
@@ -182,6 +184,19 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
   const sortDirection = filterConfig.ascending ? 'asc' : 'desc';
   let sortBy = filterConfig?.sortBy || 'created_at';
   const sortTypeValueField = filterConfig?.type_value_field || '';
+
+  // extract all tagIds from data
+  const allTagIds = data.map((item) => item.tags.map((t) => t.id)).flat();
+  // get unique tagIds
+  const uniqueTagIds = Array.from(new Set(allTagIds));
+  // get tagIds that not in tags
+  const missingTagIds = uniqueTagIds.filter(
+    (id) => !tags.find((t) => t.id === id)
+  );
+  // HACK: data will reload auto fetch all missing tags
+  if (missingTagIds.length > 0) {
+    fetchTag(missingTagIds[0]);
+  }
 
   const getColumnLabel = useCallback(
     (column: ColumnConfig) => {

@@ -11,6 +11,7 @@ import { StepCountsDisplay } from './components/StepCountsDisplay';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { UpsertTemplateDialog } from './components/templates/UpsertTemplateDialog';
 import { useViewConfig } from './hooks/useViewConfig';
+import { UpsertActionTemplateDialog } from './components/templates/UpsertActionTemplateDialog';
 
 export interface AdvancedFilterContainerProps {
   viewSource: ViewConfigSource;
@@ -35,6 +36,8 @@ export const AdvancedFilterContainer: React.FC<
     setSelectedItems,
   } = useAdvancedFilterData(filterConfig);
   const [isOpenSaveTemplate, setIsOpenSaveTemplate] = React.useState(false);
+  const [isOpenSaveTemplateAction, setIsOpenSaveTemplateAction] =
+    React.useState(false);
 
   const { config: viewConfig } = useViewConfig({
     source: viewSource,
@@ -86,6 +89,7 @@ export const AdvancedFilterContainer: React.FC<
           <FilterPanel
             options={filterOptions}
             showCreateTemplate={() => setIsOpenSaveTemplate(true)}
+            showCreateTemplateAction={() => setIsOpenSaveTemplateAction(true)}
           />
         )}
       </Box>
@@ -137,6 +141,19 @@ export const AdvancedFilterContainer: React.FC<
         }}
         onClose={() => {
           setIsOpenSaveTemplate(false);
+        }}
+      />
+      <UpsertActionTemplateDialog
+        isOpen={isOpenSaveTemplateAction}
+        templateAction={{
+          config: {
+            version: 'v1',
+            filter: filterConfig,
+          },
+          action: {},
+        }}
+        onClose={() => {
+          setIsOpenSaveTemplateAction(false);
         }}
       />
     </Flex>

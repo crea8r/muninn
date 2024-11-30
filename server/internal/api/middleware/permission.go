@@ -14,6 +14,7 @@ import (
 var UserClaimsKey = "user_claims"
 
 // Claims holds the JWT claims
+// TODO: should remove Name, OrgName, Profile from Claims so user can access to latest value once changed
 type Claims struct {
 	CreatorID string `json:"creator_id"`
 	Name      string `json:"name"`

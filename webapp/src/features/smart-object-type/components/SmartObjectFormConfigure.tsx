@@ -164,38 +164,48 @@ export const SmartObjectFormConfigure: React.FC<
         <Heading size='sm' mb={4}>
           Add New Field
         </Heading>
-        <HStack spacing={4}>
-          <FormControl isInvalid={!!fieldErrors[newFieldData.name]}>
-            <Input
-              placeholder='Field Name'
-              value={newFieldData.name}
+        <HStack spacing={4} alignItems={'self-end'}>
+          <VStack align='stretch' spacing={2}>
+            <Text fontWeight={'light'} fontSize={'sm'}>
+              Field Name
+            </Text>
+            <FormControl isInvalid={!!fieldErrors[newFieldData.name]}>
+              <Input
+                placeholder='Should be unique'
+                value={newFieldData.name}
+                onChange={(e) =>
+                  setNewFieldData((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
+                }
+              />
+              <FormErrorMessage>
+                {fieldErrors[newFieldData.name]?.message}
+              </FormErrorMessage>
+            </FormControl>
+          </VStack>
+          <VStack align='stretch' spacing={2}>
+            <Text fontWeight={'light'} fontSize={'sm'}>
+              Field Type
+            </Text>
+            <Select
+              value={newFieldData.type}
               onChange={(e) =>
                 setNewFieldData((prev) => ({
                   ...prev,
-                  name: e.target.value,
+                  type: e.target.value,
                 }))
               }
-            />
-            <FormErrorMessage>
-              {fieldErrors[newFieldData.name]?.message}
-            </FormErrorMessage>
-          </FormControl>
-          <Select
-            value={newFieldData.type}
-            onChange={(e) =>
-              setNewFieldData((prev) => ({
-                ...prev,
-                type: e.target.value,
-              }))
-            }
-            width='200px'
-          >
-            {Array.from(ObjectTypeRegistryInstance.getAll()).map(([type]) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </Select>
+              width='200px'
+            >
+              {Array.from(ObjectTypeRegistryInstance.getAll()).map(([type]) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </Select>
+          </VStack>
           <Button
             colorScheme='blue'
             onClick={() => {

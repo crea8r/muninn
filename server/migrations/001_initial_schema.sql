@@ -546,3 +546,54 @@ BEGIN
 END;
 $function$ 
 LANGUAGE plpgsql IMMUTABLE;
+
+-- Table to store automated actions
+CREATE TABLE automated_action (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    org_id UUID NOT NULL REFERENCES org(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    filter_config JSONB NOT NULL,
+    -- Combined action configuration
+    action_config JSONB NOT NULL,  -- Will contain both tag and funnel actions
+    -- Execution tracking
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    last_run_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID NOT NULL REFERENCES creator(id),
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE (org_id, name)
+);
+
+-- Table to store execution history
+CREATE TABLE automated_action_execution (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    action_id UUID NOT NULL REFERENCES automated_action(id) ON DELETE CASCADE,
+    started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    status VARCHAR(50) CHECK (status IN ('running', 'completed', 'failed')) NOT NULL,
+    objects_processed INT NOT NULL DEFAULT 0,
+    objects_affected INT NOT NULL DEFAULT 0,
+    error_message TEXT,
+    execution_log JSONB
+);
+
+-- Indexes
+CREATE INDEX idx_automated_action_org ON automated_action(org_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_automated_action_last_run ON automated_action(last_run_at) WHERE is_active = true AND deleted_at IS NULL;
+CREATE INDEX idx_action_execution_action_id ON automated_action_execution(action_id);
+
+-- Trigger to update updated_at
+CREATE OR REPLACE FUNCTION update_automated_action_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_automated_action_timestamp
+    BEFORE UPDATE ON automated_action
+    FOR EACH ROW
+    EXECUTE FUNCTION update_automated_action_timestamp();
