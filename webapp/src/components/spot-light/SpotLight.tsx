@@ -182,8 +182,6 @@ const SpotLight: React.FC = () => {
     }
   }, [isOpen, openModal, closeModal]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-
   useEffect(() => {
     // Set search results based on active filter
     let results: any[] = [];

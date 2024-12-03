@@ -29,7 +29,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   placeholder,
   isLoading,
 }: SearchInputProps) => {
-  const [query, setQuery] = useState(initialSearchQuery);
+  const [query, setQuery] = useState(initialSearchQuery || '');
   const [isDirty, setIsDirty] = useState(false);
   const [lastCommit, setLastCommit] = useState(new Date().getTime());
   const onQueryChange = (q: string) => {
@@ -57,7 +57,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
     }
   };
   useEffect(() => {
-    setQuery(initialSearchQuery);
+    setQuery(initialSearchQuery || '');
   }, [initialSearchQuery]);
   return (
     <InputGroup size='md' style={style ? style : {}}>

@@ -292,11 +292,11 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
     async (tagIds: string[]) => {
       const existingTags =
         (globalData?.tagData?.tags || []).filter((tag) =>
-          tagIds.includes(tag.id)
+          tagIds?.includes(tag.id)
         ) || [];
 
       const missingTagIds =
-        tagIds.filter(
+        tagIds?.filter(
           (tagId) => !globalData?.tagData?.tags?.find((tag) => tag.id === tagId)
         ) || [];
       if (missingTagIds.length === 0) {

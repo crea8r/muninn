@@ -135,8 +135,8 @@ export const AutomationForm: React.FC<AutomationFormProps> = ({
     const funnelName = globalData?.funnelData?.funnels.find(
       (funnel) => funnel.id === funnelStepFilter?.funnelId
     )?.name;
-    const tagText = tagIds?.length ? `Tag(s): ${tagsName.join(', ')}` : '';
-    const typeText = typeIds?.length ? `Type: ${typesName.join(', ')}` : '';
+    const tagText = tagIds?.length ? `Tag(s): ${tagsName?.join(', ')}` : '';
+    const typeText = typeIds?.length ? `Type: ${typesName?.join(', ')}` : '';
     const searchQuery = search ? `Search: ${search}` : '';
     const typeValueText = typeValueCriteria
       ? `Type Value: ${JSON.stringify(typeValueCriteria)}`

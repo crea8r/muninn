@@ -70,7 +70,7 @@ export const SpotLightProvider: React.FC<{ children: React.ReactNode }> = ({
       } else {
         // Add logic to open the detail page of the chosen item
         if (item.type === SpotLightFilter.OBJECT) {
-          window.open(`/objects/${item.payload.id}`, '_current');
+          window.location.href = `/objects/${item.payload.id}`;
         }
       }
     },

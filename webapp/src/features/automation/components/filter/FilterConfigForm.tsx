@@ -38,27 +38,29 @@ export const FilterConfigForm: React.FC<FilterConfigFormProps> = ({
   };
 
   const renderTagFilters = () => {
-    return tags.map((tag: any) => {
-      return (
-        <Tag
-          size='md'
-          variant='subtle'
-          key={tag.id}
-          color={tag.color_schema.text}
-          backgroundColor={tag.color_schema.background}
-        >
-          <TagLabel>{tag.name}</TagLabel>
-          <TagCloseButton
-            onClick={() => {
-              onChange({
-                ...value,
-                tagIds: value.tagIds.filter((t) => t !== tag.id),
-              });
-            }}
-          />
-        </Tag>
-      );
-    });
+    return tags
+      .filter((tag) => value?.tagIds?.includes(tag.id))
+      .map((tag: any) => {
+        return (
+          <Tag
+            size='md'
+            variant='subtle'
+            key={tag.id}
+            color={tag.color_schema.text}
+            backgroundColor={tag.color_schema.background}
+          >
+            <TagLabel>{tag.name}</TagLabel>
+            <TagCloseButton
+              onClick={() => {
+                onChange({
+                  ...value,
+                  tagIds: value.tagIds.filter((t) => t !== tag.id),
+                });
+              }}
+            />
+          </Tag>
+        );
+      });
   };
 
   const renderTypeFilters = () => {
@@ -66,7 +68,7 @@ export const FilterConfigForm: React.FC<FilterConfigFormProps> = ({
     const typeIds = value.typeIds;
     if (!typeIds?.length) return null;
     const selectedTypes = objectTypes.filter((objType) =>
-      typeIds.includes(objType.id)
+      typeIds?.includes(objType.id)
     );
     if (!objectTypes.length) return null;
 

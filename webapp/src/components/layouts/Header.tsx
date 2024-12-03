@@ -43,6 +43,12 @@ const Header: React.FC = () => {
     history.push('/');
   };
 
+  const handleObjectClick = (params: any) => {
+    if (params.type === SpotLightFilter.OBJECT) {
+      history.push('/objects/' + params.payload.id);
+    }
+  };
+
   const handleOpenSearch = () => {
     openSpotLight(
       [
@@ -51,9 +57,7 @@ const Header: React.FC = () => {
         SpotLightFilter.CREATOR,
         SpotLightFilter.TASK,
       ],
-      (payload: any) => {
-        console.log('Selected', payload);
-      }
+      () => handleObjectClick
     );
   };
 
