@@ -313,13 +313,15 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const getTagsMeta = useCallback(
     async (tagIds: string[]) => {
-      const existingTags = (globalData?.tagData?.tags || []).filter((tag) =>
-        tagIds.includes(tag.id)
-      );
+      const existingTags =
+        (globalData?.tagData?.tags || []).filter((tag) =>
+          tagIds.includes(tag.id)
+        ) || [];
 
-      const missingTagIds = tagIds.filter(
-        (tagId) => !globalData?.tagData?.tags?.find((tag) => tag.id === tagId)
-      );
+      const missingTagIds =
+        tagIds.filter(
+          (tagId) => !globalData?.tagData?.tags?.find((tag) => tag.id === tagId)
+        ) || [];
       // loop through missing tags and fetch them
       const newTags = [];
       for (var i = 0; i < missingTagIds.length; i++) {
@@ -391,10 +393,13 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
         ) {
           await refreshFunnels(true);
         }
-
-        // Always fetch fresh summary
-        await refreshSummary();
-
+        // Fetch summary data
+        if (
+          !globalData?.summaryData ||
+          isCacheStale(globalData?.summaryData?.lastUpdated)
+        ) {
+          await refreshSummary();
+        }
         setInitialized(true);
       }
     };

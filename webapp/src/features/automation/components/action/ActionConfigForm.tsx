@@ -33,7 +33,7 @@ export const ActionConfigForm = ({
           }}
           availableTags={
             globalData?.tagData?.tags.filter(
-              (t) => !excludeTagIds.includes(t.id)
+              (t) => !excludeTagIds?.includes(t.id)
             ) || []
           }
           isLoading={isLoading}
