@@ -73,3 +73,12 @@ export const getTag = async (id: string): Promise<Tag> => {
   const response = await axios.get(`${API_URL}/setting/tags/${id}`);
   return response.data;
 };
+
+export const getTags = async (ids: string[]): Promise<Tag[]> => {
+  const response = await axios.get(`${API_URL}/setting/tags/ids`, {
+    params: {
+      tag_ids: ids.join(','),
+    },
+  });
+  return response.data;
+};

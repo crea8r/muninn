@@ -1,7 +1,7 @@
 import { Box } from '@chakra-ui/react';
 import { useParams } from 'react-router-dom';
 import BreadcrumbComponent from 'src/components/Breadcrumb';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ViewConfigBase,
   ViewConfigSource,
@@ -11,14 +11,20 @@ import { useGlobalContext } from 'src/contexts/GlobalContext';
 import { AdvancedFilter } from 'src/features/advanced-filter';
 import LoadingPanel from 'src/components/LoadingPanel';
 import { STANDARD_COLUMNS } from 'src/features/advanced-filter/constants/default-columns';
+import { Tag } from 'src/types';
 
 const ListObjectByTagPage = () => {
   const { id: tagId } = useParams<{ id: string }>();
-  const { globalData, fetchTag } = useGlobalContext();
-  const tag = globalData?.tagData?.tags.find((tag) => tag.id === tagId);
-  if (!tag) {
-    fetchTag(tagId);
-  }
+  const { getTagsMeta } = useGlobalContext();
+  const [tag, setTag] = useState<Tag>();
+  const loadTag = useCallback(async () => {
+    const allTagIds = [tagId];
+    const allTags = await getTagsMeta(allTagIds);
+    setTag(allTags.filter((t) => t.id === tagId)[0]);
+  }, [tagId, getTagsMeta]);
+  useEffect(() => {
+    loadTag();
+  }, [loadTag]);
   const viewSource: ViewConfigSource = {
     type: 'temporary',
   };

@@ -119,9 +119,10 @@ const Sidebar: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile] = useMediaQuery('(max-width: 768px)');
   const [isOpen, setIsOpen] = useState(!isMobile);
-  const [unseenFeedCount, setUnseenFeedCount] = useState(0);
-  const [todoTaskCount, setTodoTaskCount] = useState(0);
   const { globalData } = useGlobalContext();
+  const unseenFeedCount = globalData?.summaryData?.unseenFeedsCount || 0;
+  const todoTaskCount = globalData?.summaryData?.tasksCount || 0;
+
   const member = globalData?.memberData?.members.find(
     (m) => m.id === authService.getCreatorId()
   );
@@ -129,16 +130,6 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     setIsOpen(!isMobile);
   }, [isMobile]);
-
-  useEffect(() => {
-    const fetchCounts = async () => {
-      const feedCount = globalData?.summaryData?.unseenFeedsCount || 0;
-      const taskCount = globalData?.summaryData?.tasksCount || 0;
-      setUnseenFeedCount(feedCount);
-      setTodoTaskCount(taskCount);
-    };
-    fetchCounts();
-  }, [globalData]);
 
   const isActive = (path: string) => {
     if (path === '/') {

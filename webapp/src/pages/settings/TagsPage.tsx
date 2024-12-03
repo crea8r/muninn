@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Heading,
@@ -44,21 +44,19 @@ const ITEMS_PER_PAGE =
 
 const TagsPage: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
-  const { globalData, fetchTag } = useGlobalContext();
-  // find any tags is not in globalData.tagData
-  const notFoundTagIds = tags
-    .filter((tag) => !globalData?.tagData?.tags.find((t) => t.id === tag.id))
-    .map((t) => t.id);
-  // HACK: data will reload auto fetch all missing tags
-  if (notFoundTagIds.length > 0) {
-    fetchTag(notFoundTagIds[0]);
-  }
+  const { refreshTags } = useGlobalContext();
+  // append to the tags caching
+  const appendToTagCache = useCallback(async () => {
+    refreshTags(tags);
+  }, [tags, refreshTags]);
+  useEffect(() => {
+    appendToTagCache();
+  }, [appendToTagCache]);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
-  const { refreshTags } = useGlobalContext();
   const history = useHistory();
   const {
     isOpen: isNewTagOpen,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/crea8r/muninn/server/internal/database"
 	"github.com/google/uuid"
@@ -89,6 +90,14 @@ func (s *AutomationService) ExecuteAction(
             data, _ := json.Marshal(filterConfig.TypeValueCriteria.Criteria3)
             criteria3 = (*json.RawMessage)(&data)
         }
+    }
+    // to keep table small, delete old action executions
+    // if now is between 7am and 8am then
+    hour := time.Now().Hour()
+    if hour == 7 {
+        // run DeleteActionOldExecutions before 14 days ago
+        before7days := time.Now().AddDate(0, 0, -14)
+        s.db.DeleteActionOldExecutions(ctx, before7days)
     }
     ac, err := s.db.CreateActionExecution(ctx, action.ID);
     if(err != nil) {

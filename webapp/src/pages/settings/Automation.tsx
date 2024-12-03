@@ -10,7 +10,7 @@ import {
   Input,
   useDisclosure,
   Text,
-  Skeleton,
+  SkeletonText,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { AutomationList } from 'src/features/automation/components/AutomationList';
@@ -89,7 +89,7 @@ export const AutomationsPage: React.FC = () => {
           />
         </InputGroup>
         {isLoading ? (
-          <Skeleton />
+          <SkeletonText noOfLines={3} />
         ) : (
           <>
             <AutomationList

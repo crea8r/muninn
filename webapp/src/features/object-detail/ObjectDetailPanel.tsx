@@ -126,7 +126,7 @@ const ObjectDetailContent: React.FC = () => {
   return (
     <Box height='100%' overflowX='hidden' overflowY={'scroll'}>
       {isLoading ? (
-        <SkeletonText noOfLines={10} width='100%' height={'auto'} />
+        <SkeletonText noOfLines={4} width='100%' height={30} />
       ) : (
         <VStack gap={2} width={'100%'}>
           <ObjectHeading />

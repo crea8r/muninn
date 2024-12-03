@@ -24,9 +24,6 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
-	if q.addObjectToFirstStepStmt, err = db.PrepareContext(ctx, addObjectToFirstStep); err != nil {
-		return nil, fmt.Errorf("error preparing query AddObjectToFirstStep: %w", err)
-	}
 	if q.addObjectTypeValueStmt, err = db.PrepareContext(ctx, addObjectTypeValue); err != nil {
 		return nil, fmt.Errorf("error preparing query AddObjectTypeValue: %w", err)
 	}
@@ -147,6 +144,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createTaskStmt, err = db.PrepareContext(ctx, createTask); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateTask: %w", err)
 	}
+	if q.deleteActionOldExecutionsStmt, err = db.PrepareContext(ctx, deleteActionOldExecutions); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteActionOldExecutions: %w", err)
+	}
 	if q.deleteAutomatedActionStmt, err = db.PrepareContext(ctx, deleteAutomatedAction); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteAutomatedAction: %w", err)
 	}
@@ -257,6 +257,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.getTagByIDStmt, err = db.PrepareContext(ctx, getTagByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetTagByID: %w", err)
+	}
+	if q.getTagsByIDsStmt, err = db.PrepareContext(ctx, getTagsByIDs); err != nil {
+		return nil, fmt.Errorf("error preparing query GetTagsByIDs: %w", err)
 	}
 	if q.getTaskByIDStmt, err = db.PrepareContext(ctx, getTaskByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetTaskByID: %w", err)
@@ -419,11 +422,6 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
-	if q.addObjectToFirstStepStmt != nil {
-		if cerr := q.addObjectToFirstStepStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing addObjectToFirstStepStmt: %w", cerr)
-		}
-	}
 	if q.addObjectTypeValueStmt != nil {
 		if cerr := q.addObjectTypeValueStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing addObjectTypeValueStmt: %w", cerr)
@@ -624,6 +622,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing createTaskStmt: %w", cerr)
 		}
 	}
+	if q.deleteActionOldExecutionsStmt != nil {
+		if cerr := q.deleteActionOldExecutionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteActionOldExecutionsStmt: %w", cerr)
+		}
+	}
 	if q.deleteAutomatedActionStmt != nil {
 		if cerr := q.deleteAutomatedActionStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deleteAutomatedActionStmt: %w", cerr)
@@ -807,6 +810,11 @@ func (q *Queries) Close() error {
 	if q.getTagByIDStmt != nil {
 		if cerr := q.getTagByIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getTagByIDStmt: %w", cerr)
+		}
+	}
+	if q.getTagsByIDsStmt != nil {
+		if cerr := q.getTagsByIDsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getTagsByIDsStmt: %w", cerr)
 		}
 	}
 	if q.getTaskByIDStmt != nil {
@@ -1108,7 +1116,6 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 type Queries struct {
 	db                                       DBTX
 	tx                                       *sql.Tx
-	addObjectToFirstStepStmt                 *sql.Stmt
 	addObjectTypeValueStmt                   *sql.Stmt
 	addObjectsToFactStmt                     *sql.Stmt
 	addObjectsToTaskStmt                     *sql.Stmt
@@ -1149,6 +1156,7 @@ type Queries struct {
 	createStepStmt                           *sql.Stmt
 	createTagStmt                            *sql.Stmt
 	createTaskStmt                           *sql.Stmt
+	deleteActionOldExecutionsStmt            *sql.Stmt
 	deleteAutomatedActionStmt                *sql.Stmt
 	deleteCreatorStmt                        *sql.Stmt
 	deleteCreatorListStmt                    *sql.Stmt
@@ -1186,6 +1194,7 @@ type Queries struct {
 	getPendingActionsStmt                    *sql.Stmt
 	getStepStmt                              *sql.Stmt
 	getTagByIDStmt                           *sql.Stmt
+	getTagsByIDsStmt                         *sql.Stmt
 	getTaskByIDStmt                          *sql.Stmt
 	hardDeleteObjStepStmt                    *sql.Stmt
 	healthCheckStmt                          *sql.Stmt
@@ -1244,7 +1253,6 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
 		db:                                       tx,
 		tx:                                       tx,
-		addObjectToFirstStepStmt:                 q.addObjectToFirstStepStmt,
 		addObjectTypeValueStmt:                   q.addObjectTypeValueStmt,
 		addObjectsToFactStmt:                     q.addObjectsToFactStmt,
 		addObjectsToTaskStmt:                     q.addObjectsToTaskStmt,
@@ -1285,6 +1293,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		createStepStmt:                           q.createStepStmt,
 		createTagStmt:                            q.createTagStmt,
 		createTaskStmt:                           q.createTaskStmt,
+		deleteActionOldExecutionsStmt:            q.deleteActionOldExecutionsStmt,
 		deleteAutomatedActionStmt:                q.deleteAutomatedActionStmt,
 		deleteCreatorStmt:                        q.deleteCreatorStmt,
 		deleteCreatorListStmt:                    q.deleteCreatorListStmt,
@@ -1322,6 +1331,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getPendingActionsStmt:                    q.getPendingActionsStmt,
 		getStepStmt:                              q.getStepStmt,
 		getTagByIDStmt:                           q.getTagByIDStmt,
+		getTagsByIDsStmt:                         q.getTagsByIDsStmt,
 		getTaskByIDStmt:                          q.getTaskByIDStmt,
 		hardDeleteObjStepStmt:                    q.hardDeleteObjStepStmt,
 		healthCheckStmt:                          q.healthCheckStmt,

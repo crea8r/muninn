@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/crea8r/muninn/server/internal/api/middleware"
 	"github.com/crea8r/muninn/server/internal/database"
@@ -186,4 +187,29 @@ func (h *TagHandler) GetTag(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(tag)
+}
+
+func (h *TagHandler) GetTags(w http.ResponseWriter, r *http.Request) {
+	// get tagIds from query
+	// tag_ids is a slice of strings, seperated by commas
+	tagIds := r.URL.Query().Get("tag_ids")
+
+	var uuids []uuid.UUID
+	for _, id := range strings.Split(tagIds, ",") {
+		uuid, err := uuid.Parse(id)
+		if err != nil {
+			http.Error(w, "Invalid tag ID", http.StatusBadRequest)
+			return
+		}
+		uuids = append(uuids, uuid)
+	}
+
+	tags, err := h.DB.GetTagsByIDs(r.Context(), uuids)
+
+	if err != nil {
+		http.Error(w, "Failed to get tags", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(tags)
 }

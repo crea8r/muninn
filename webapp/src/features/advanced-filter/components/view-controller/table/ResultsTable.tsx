@@ -1,5 +1,5 @@
 // components/view-controller/ResultsTable.tsx
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Table,
   Thead,
@@ -17,6 +17,7 @@ import {
   DrawerBody,
   DrawerContent,
   DrawerCloseButton,
+  Spinner,
 } from '@chakra-ui/react';
 import { ColumnConfig } from '../../../types/view-config';
 import { useResizeColumns } from '../../../hooks/useResizeColumns';
@@ -170,13 +171,13 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
   });
   const { filterConfig, updateFilter } = useAdvancedFilter();
   const { page = 1, pageSize = 10 } = filterConfig;
-  const { globalData, fetchTag } = useGlobalContext();
+  const { globalData, getTagsMeta } = useGlobalContext();
+  const [isSilentLoading, setIsSilentLoading] = useState(false);
 
   const [selectAll, setSelectAll] = useState(false);
   const [focusedObjectId, setFocusedObjectId] = useState<string | null>(null);
   const [isDrawerShowing, setIsDrawerShowing] = useState(false);
-
-  const tags = globalData?.tagData?.tags || [];
+  const [tags, setTags] = useState<any[]>([]);
   const typeValues = useMemo(
     () => globalData?.objectTypeData?.objectTypes || [],
     [globalData]
@@ -186,17 +187,16 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
   const sortTypeValueField = filterConfig?.type_value_field || '';
 
   // extract all tagIds from data
-  const allTagIds = data.map((item) => item.tags.map((t) => t.id)).flat();
-  // get unique tagIds
-  const uniqueTagIds = Array.from(new Set(allTagIds));
-  // get tagIds that not in tags
-  const missingTagIds = uniqueTagIds.filter(
-    (id) => !tags.find((t) => t.id === id)
-  );
-  // HACK: data will reload auto fetch all missing tags
-  if (missingTagIds.length > 0) {
-    fetchTag(missingTagIds[0]);
-  }
+  const getAllTags = useCallback(async () => {
+    const allTagIds = data.map((item) => item.tags.map((t) => t.id)).flat();
+    setIsSilentLoading(true);
+    const tmp = await getTagsMeta(allTagIds);
+    setTags(tmp);
+    setIsSilentLoading(false);
+  }, [data, getTagsMeta]);
+  useEffect(() => {
+    getAllTags();
+  }, [getAllTags]);
 
   const getColumnLabel = useCallback(
     (column: ColumnConfig) => {
@@ -304,11 +304,15 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
           <Thead>
             <Tr>
               <Th px={2} width='24px' zIndex={100}>
-                <Checkbox
-                  isChecked={isAllSelected}
-                  isIndeterminate={isIndeterminate}
-                  onChange={handleSelectAll}
-                />
+                {!isSilentLoading ? (
+                  <Checkbox
+                    isChecked={isAllSelected}
+                    isIndeterminate={isIndeterminate}
+                    onChange={handleSelectAll}
+                  />
+                ) : (
+                  <Spinner />
+                )}
               </Th>
               {columns.map((column, index) => (
                 <Th

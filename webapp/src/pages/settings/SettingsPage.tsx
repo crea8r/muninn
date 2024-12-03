@@ -73,6 +73,7 @@ const SettingsPage: React.FC = () => {
       ),
     },
     { name: 'Templates', path: '/settings/templates' },
+    { name: 'Automations', path: '/settings/automations' },
   ];
 
   return (

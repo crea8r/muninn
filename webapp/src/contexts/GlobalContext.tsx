@@ -10,7 +10,7 @@ import { ObjectType, Tag, Funnel } from 'src/types';
 import authService from 'src/services/authService';
 import { personalSummarize, listOrgMembers } from 'src/api';
 import { listObjectTypes } from 'src/api/objType';
-import { getTag, listTags } from 'src/api/tag';
+import { getTags, listTags } from 'src/api/tag';
 import { fetchAllFunnels } from 'src/api/funnel';
 import { PersonalSummarize } from 'src/types/Summarize';
 
@@ -27,7 +27,7 @@ const CACHE_VERSION = '1.0'; // Increment this when data structure changes
 // Cache duration increased to 10 minutes
 const CACHE_DURATION = 10 * 60 * 1000;
 // Summary refresh interval remains at 1 minute
-// const SUMMARY_REFRESH_INTERVAL = 60 * 1000;
+const SUMMARY_REFRESH_INTERVAL = 60 * 1000;
 
 const storage = {
   isValid: () => {
@@ -123,8 +123,7 @@ interface GlobalContextType {
   globalData: GlobalData | null;
   refreshMembers: () => Promise<void>;
   refreshObjectTypes: () => Promise<void>;
-  refreshTags: () => Promise<void>;
-  fetchTag: (tagId: string) => Promise<void>;
+  refreshTags: (tags?: Tag[]) => Promise<void>;
   refreshFunnels: () => Promise<void>;
   refreshSummary: () => Promise<void>;
   refreshAll: () => Promise<void>;
@@ -199,41 +198,20 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  const fetchTag = useCallback(
-    async (tagId: string) => {
-      try {
-        const response = await getTag(tagId);
-        const newTag = {
-          id: response.id,
-          name: response.name,
-          description: response.description,
-          color_schema: response.color_schema,
-        };
-        const newData = {
-          tags: [...(globalData?.tagData?.tags || []), newTag],
-          lastUpdated: Date.now(),
-        };
-
-        storage.setData(STORAGE_KEYS.TAGS, newData);
-        setGlobalData((prev) => ({
-          ...prev!,
-          tagData: newData,
-        }));
-      } catch (error) {
-        console.error('Failed to add tag:', error);
-      }
-    },
-    [globalData?.tagData?.tags]
-  );
-
   const refreshTags = useCallback(
-    async (force: boolean = false) => {
+    async (tags?: Tag[]) => {
       try {
-        const response = await listTags({ page: 1, pageSize: 100 });
         const newData = {
-          tags: response.tags,
+          tags: [],
           lastUpdated: Date.now(),
         };
+        if (!tags) {
+          const response = await listTags({ page: 1, pageSize: 100 });
+          newData.tags = response.tags;
+        } else {
+          newData.tags = tags;
+        }
+
         // combine newData.tags with existing tags, removing duplicates
         const existingTags = globalData?.tagData?.tags || [];
         const newTagIds = new Set(newData.tags.map((tag) => tag.id));
@@ -290,7 +268,6 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshAll = useCallback(async () => {
     if (!authService.isAuthenticated()) return;
-
     await Promise.all([
       refreshMembers(),
       refreshObjectTypes(),
@@ -322,11 +299,14 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
         tagIds.filter(
           (tagId) => !globalData?.tagData?.tags?.find((tag) => tag.id === tagId)
         ) || [];
+      if (missingTagIds.length === 0) {
+        return globalData?.tagData?.tags || [];
+      }
+      const resp = await getTags(missingTagIds);
       // loop through missing tags and fetch them
       const newTags = [];
-      for (var i = 0; i < missingTagIds.length; i++) {
-        const tagId = missingTagIds[i];
-        const response = await getTag(tagId);
+      for (var i = 0; i < resp.length; i++) {
+        const response = resp[i];
         const newTag = {
           id: response.id,
           name: response.name,
@@ -356,6 +336,7 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const initializeData = async () => {
       if (authService.isAuthenticated() && !initialized) {
+        setInitialized(true);
         const storedData = loadFromStorage();
 
         // Initialize with stored data first
@@ -385,7 +366,7 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
           !storedData?.tagData ||
           isCacheStale(storedData.tagData.lastUpdated)
         ) {
-          await refreshTags(true);
+          await refreshTags();
         }
         if (
           !storedData?.funnelData ||
@@ -393,19 +374,13 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
         ) {
           await refreshFunnels(true);
         }
-        // Fetch summary data
-        if (
-          !globalData?.summaryData ||
-          isCacheStale(globalData?.summaryData?.lastUpdated)
-        ) {
-          await refreshSummary();
-        }
-        setInitialized(true);
+
+        // Always fetch fresh summary
+        await refreshSummary();
       }
     };
 
     initializeData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     initialized,
     isCacheStale,
@@ -423,14 +398,20 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!initialized || !authService.isAuthenticated()) {
       return;
     }
+
+    const summaryInterval = setInterval(() => {
+      refreshSummary();
+    }, SUMMARY_REFRESH_INTERVAL);
+
     const dataInterval = setInterval(() => {
       refreshAll();
     }, CACHE_DURATION);
 
     return () => {
+      clearInterval(summaryInterval);
       clearInterval(dataInterval);
     };
-  }, [initialized, refreshAll]);
+  }, [initialized, refreshAll, refreshSummary]);
 
   return (
     <GlobalContext.Provider
@@ -439,7 +420,6 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
         refreshMembers,
         refreshObjectTypes,
         refreshTags,
-        fetchTag,
         refreshFunnels,
         refreshSummary,
         refreshAll,

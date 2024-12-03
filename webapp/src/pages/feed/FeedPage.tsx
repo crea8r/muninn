@@ -55,28 +55,27 @@ const FeedPage: React.FC = () => {
   const [feedItems, setFeedItems] = useState<Fact[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
-  const loadFeed = async () => {
-    try {
-      setIsLoading(true);
-      const response = await getFeed();
-      // change to list of facts for now
-      setFeedItems(response.facts as Fact[]);
-    } catch (error) {
-      toast({
-        title: 'Error fetching feed',
-        description: 'Failed to load feed',
-        status: 'error',
-        duration: 2000,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const loadFeed = async () => {
+      try {
+        setIsLoading(true);
+        const response = await getFeed();
+        // change to list of facts for now
+        setFeedItems(response.facts as Fact[]);
+      } catch (error) {
+        toast({
+          title: 'Error fetching feed',
+          description: 'Failed to load feed',
+          status: 'error',
+          duration: 2000,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     loadFeed();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [toast]);
   dayjs.extend(relativeTime);
 
   return (

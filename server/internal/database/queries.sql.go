@@ -246,26 +246,6 @@ func (q *Queries) CountOngoingTask(ctx context.Context, assignedID uuid.NullUUID
 	return c, err
 }
 
-const countTags = `-- name: CountTags :one
-SELECT COUNT(*) 
-FROM tag
-WHERE org_id = $1
-  AND deleted_at IS NULL
-  AND ($2::text = '' OR (name ILIKE '%' || $2 || '%' OR description ILIKE '%' || $2 || '%'))
-`
-
-type CountTagsParams struct {
-	OrgID   uuid.UUID `json:"org_id"`
-	Column2 string    `json:"column_2"`
-}
-
-func (q *Queries) CountTags(ctx context.Context, arg CountTagsParams) (int64, error) {
-	row := q.queryRow(ctx, q.countTagsStmt, countTags, arg.OrgID, arg.Column2)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const countTasksByObjectID = `-- name: CountTasksByObjectID :one
 SELECT COUNT(DISTINCT t.id)
 FROM 
@@ -736,41 +716,6 @@ func (q *Queries) CreateStep(ctx context.Context, arg CreateStepParams) (Step, e
 	return i, err
 }
 
-const createTag = `-- name: CreateTag :one
-
-INSERT INTO tag (name, description, color_schema, org_id)
-VALUES ($1, $2, $3, $4)
-RETURNING id, name, description, color_schema, org_id, created_at, deleted_at
-`
-
-type CreateTagParams struct {
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	ColorSchema json.RawMessage `json:"color_schema"`
-	OrgID       uuid.UUID       `json:"org_id"`
-}
-
-// Setting/Tag section
-func (q *Queries) CreateTag(ctx context.Context, arg CreateTagParams) (Tag, error) {
-	row := q.queryRow(ctx, q.createTagStmt, createTag,
-		arg.Name,
-		arg.Description,
-		arg.ColorSchema,
-		arg.OrgID,
-	)
-	var i Tag
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.ColorSchema,
-		&i.OrgID,
-		&i.CreatedAt,
-		&i.DeletedAt,
-	)
-	return i, err
-}
-
 const createTask = `-- name: CreateTask :one
 
 INSERT INTO task (content, deadline, remind_at, status, creator_id, assigned_id, parent_id)
@@ -891,22 +836,6 @@ WHERE step.id = $1 AND deleted_at IS NULL
 func (q *Queries) DeleteStep(ctx context.Context, id uuid.UUID) error {
 	_, err := q.exec(ctx, q.deleteStepStmt, deleteStep, id)
 	return err
-}
-
-const deleteTag = `-- name: DeleteTag :execrows
-DELETE FROM tag 
-WHERE id = $1 AND deleted_at IS NULL
-  AND NOT EXISTS (
-    SELECT 1 FROM obj_tag WHERE tag_id = $1
-  )
-`
-
-func (q *Queries) DeleteTag(ctx context.Context, id uuid.UUID) (int64, error) {
-	result, err := q.exec(ctx, q.deleteTagStmt, deleteTag, id)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected()
 }
 
 const deleteTask = `-- name: DeleteTask :exec
@@ -1388,27 +1317,6 @@ func (q *Queries) GetStep(ctx context.Context, id uuid.UUID) (GetStepRow, error)
 	return i, err
 }
 
-const getTagByID = `-- name: GetTagByID :one
-SELECT id, name, description, color_schema, org_id, created_at, deleted_at FROM tag
-WHERE id = $1 AND deleted_at IS NULL
-LIMIT 1
-`
-
-func (q *Queries) GetTagByID(ctx context.Context, id uuid.UUID) (Tag, error) {
-	row := q.queryRow(ctx, q.getTagByIDStmt, getTagByID, id)
-	var i Tag
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.ColorSchema,
-		&i.OrgID,
-		&i.CreatedAt,
-		&i.DeletedAt,
-	)
-	return i, err
-}
-
 const getTaskByID = `-- name: GetTaskByID :one
 SELECT t.id, t.content, t.deadline, t.remind_at, t.status, t.creator_id, t.assigned_id, t.parent_id, t.created_at, t.last_updated, t.deleted_at, c.username as creator_name, a.username as assigned_name
 FROM task t
@@ -1841,65 +1749,6 @@ func (q *Queries) ListStepsByFunnel(ctx context.Context, funnelID uuid.UUID) ([]
 			&i.LastUpdated,
 			&i.DeletedAt,
 			&i.ObjectCount,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listTags = `-- name: ListTags :many
-SELECT t.id, t.name, t.description, t.color_schema, t.created_at
-FROM tag t
-WHERE t.org_id = $1
-  AND t.deleted_at IS NULL
-  AND ($2::text = '' OR (t.name ILIKE '%' || $2 || '%' OR t.description ILIKE '%' || $2 || '%'))
-ORDER BY t.created_at DESC
-LIMIT $3 OFFSET $4
-`
-
-type ListTagsParams struct {
-	OrgID   uuid.UUID `json:"org_id"`
-	Column2 string    `json:"column_2"`
-	Limit   int32     `json:"limit"`
-	Offset  int32     `json:"offset"`
-}
-
-type ListTagsRow struct {
-	ID          uuid.UUID       `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	ColorSchema json.RawMessage `json:"color_schema"`
-	CreatedAt   time.Time       `json:"created_at"`
-}
-
-func (q *Queries) ListTags(ctx context.Context, arg ListTagsParams) ([]ListTagsRow, error) {
-	rows, err := q.query(ctx, q.listTagsStmt, listTags,
-		arg.OrgID,
-		arg.Column2,
-		arg.Limit,
-		arg.Offset,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListTagsRow
-	for rows.Next() {
-		var i ListTagsRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.ColorSchema,
-			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -2615,34 +2464,6 @@ func (q *Queries) UpdateStep(ctx context.Context, arg UpdateStepParams) (Step, e
 		&i.StepOrder,
 		&i.CreatedAt,
 		&i.LastUpdated,
-		&i.DeletedAt,
-	)
-	return i, err
-}
-
-const updateTag = `-- name: UpdateTag :one
-UPDATE tag
-SET description = $2, color_schema = $3
-WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, name, description, color_schema, org_id, created_at, deleted_at
-`
-
-type UpdateTagParams struct {
-	ID          uuid.UUID       `json:"id"`
-	Description string          `json:"description"`
-	ColorSchema json.RawMessage `json:"color_schema"`
-}
-
-func (q *Queries) UpdateTag(ctx context.Context, arg UpdateTagParams) (Tag, error) {
-	row := q.queryRow(ctx, q.updateTagStmt, updateTag, arg.ID, arg.Description, arg.ColorSchema)
-	var i Tag
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.ColorSchema,
-		&i.OrgID,
-		&i.CreatedAt,
 		&i.DeletedAt,
 	)
 	return i, err

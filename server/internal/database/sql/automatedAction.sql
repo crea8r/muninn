@@ -89,51 +89,6 @@ LIMIT $2 OFFSET $3;
 SELECT COUNT(*) FROM automated_action_execution
 WHERE action_id = $1;
 
--- name: AddObjectToFirstStep :one
-WITH first_step AS (
-    -- Get the first step (lowest step_order) of the specified funnel
-    SELECT id
-    FROM step
-    WHERE step.funnel_id = $1
-      AND deleted_at IS NULL
-    ORDER BY step_order ASC
-    LIMIT 1
-),
-existing_step AS (
-    -- Check if object is already in any step of this funnel
-    SELECT os.id
-    FROM obj_step os
-    JOIN step s ON os.step_id = s.id
-    WHERE os.obj_id = $2
-      AND s.funnel_id = $1
-      AND os.deleted_at IS NULL
-),
-new_step AS (
-    -- Insert into obj_step only if object isn't already in the funnel
-    INSERT INTO obj_step (
-        obj_id,
-        step_id,
-        creator_id,
-        sub_status,
-        created_at,
-        last_updated
-    )
-    SELECT
-        $2,                    -- obj_id
-        fs.id,                 -- step_id from first_step
-        $3,                    -- creator_id
-        0,                     -- default sub_status
-        CURRENT_TIMESTAMP,     -- created_at
-        CURRENT_TIMESTAMP      -- last_updated
-    FROM first_step fs
-    WHERE NOT EXISTS (SELECT 1 FROM existing_step)
-    RETURNING *
-)
-SELECT 
-    ns.*,
-    s.funnel_id,
-    s.name as step_name,
-    f.name as funnel_name
-FROM new_step ns
-JOIN step s ON ns.step_id = s.id
-JOIN funnel f ON s.funnel_id = f.id;
+-- name: DeleteActionOldExecutions :exec
+DELETE FROM automated_action_execution
+WHERE start_at < $1;

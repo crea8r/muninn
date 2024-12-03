@@ -15,95 +15,6 @@ import (
 	"github.com/sqlc-dev/pqtype"
 )
 
-const addObjectToFirstStep = `-- name: AddObjectToFirstStep :one
-WITH first_step AS (
-    -- Get the first step (lowest step_order) of the specified funnel
-    SELECT id
-    FROM step
-    WHERE step.funnel_id = $1
-      AND deleted_at IS NULL
-    ORDER BY step_order ASC
-    LIMIT 1
-),
-existing_step AS (
-    -- Check if object is already in any step of this funnel
-    SELECT os.id
-    FROM obj_step os
-    JOIN step s ON os.step_id = s.id
-    WHERE os.obj_id = $2
-      AND s.funnel_id = $1
-      AND os.deleted_at IS NULL
-),
-new_step AS (
-    -- Insert into obj_step only if object isn't already in the funnel
-    INSERT INTO obj_step (
-        obj_id,
-        step_id,
-        creator_id,
-        sub_status,
-        created_at,
-        last_updated
-    )
-    SELECT
-        $2,                    -- obj_id
-        fs.id,                 -- step_id from first_step
-        $3,                    -- creator_id
-        0,                     -- default sub_status
-        CURRENT_TIMESTAMP,     -- created_at
-        CURRENT_TIMESTAMP      -- last_updated
-    FROM first_step fs
-    WHERE NOT EXISTS (SELECT 1 FROM existing_step)
-    RETURNING id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at
-)
-SELECT 
-    ns.id, ns.obj_id, ns.step_id, ns.creator_id, ns.sub_status, ns.created_at, ns.last_updated, ns.deleted_at,
-    s.funnel_id,
-    s.name as step_name,
-    f.name as funnel_name
-FROM new_step ns
-JOIN step s ON ns.step_id = s.id
-JOIN funnel f ON s.funnel_id = f.id
-`
-
-type AddObjectToFirstStepParams struct {
-	FunnelID  uuid.UUID `json:"funnel_id"`
-	ObjID     uuid.UUID `json:"obj_id"`
-	CreatorID uuid.UUID `json:"creator_id"`
-}
-
-type AddObjectToFirstStepRow struct {
-	ID          uuid.UUID    `json:"id"`
-	ObjID       uuid.UUID    `json:"obj_id"`
-	StepID      uuid.UUID    `json:"step_id"`
-	CreatorID   uuid.UUID    `json:"creator_id"`
-	SubStatus   int32        `json:"sub_status"`
-	CreatedAt   time.Time    `json:"created_at"`
-	LastUpdated time.Time    `json:"last_updated"`
-	DeletedAt   sql.NullTime `json:"deleted_at"`
-	FunnelID    uuid.UUID    `json:"funnel_id"`
-	StepName    string       `json:"step_name"`
-	FunnelName  string       `json:"funnel_name"`
-}
-
-func (q *Queries) AddObjectToFirstStep(ctx context.Context, arg AddObjectToFirstStepParams) (AddObjectToFirstStepRow, error) {
-	row := q.queryRow(ctx, q.addObjectToFirstStepStmt, addObjectToFirstStep, arg.FunnelID, arg.ObjID, arg.CreatorID)
-	var i AddObjectToFirstStepRow
-	err := row.Scan(
-		&i.ID,
-		&i.ObjID,
-		&i.StepID,
-		&i.CreatorID,
-		&i.SubStatus,
-		&i.CreatedAt,
-		&i.LastUpdated,
-		&i.DeletedAt,
-		&i.FunnelID,
-		&i.StepName,
-		&i.FunnelName,
-	)
-	return i, err
-}
-
 const countActionExecutions = `-- name: CountActionExecutions :one
 SELECT COUNT(*) FROM automated_action_execution
 WHERE action_id = $1
@@ -204,6 +115,16 @@ func (q *Queries) CreateAutomatedAction(ctx context.Context, arg CreateAutomated
 		&i.DeletedAt,
 	)
 	return i, err
+}
+
+const deleteActionOldExecutions = `-- name: DeleteActionOldExecutions :exec
+DELETE FROM automated_action_execution
+WHERE started_at < $1
+`
+
+func (q *Queries) DeleteActionOldExecutions(ctx context.Context, startedAt time.Time) error {
+	_, err := q.exec(ctx, q.deleteActionOldExecutionsStmt, deleteActionOldExecutions, startedAt)
+	return err
 }
 
 const deleteAutomatedAction = `-- name: DeleteAutomatedAction :exec

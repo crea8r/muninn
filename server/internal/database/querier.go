@@ -13,7 +13,6 @@ import (
 )
 
 type Querier interface {
-	AddObjectToFirstStep(ctx context.Context, arg AddObjectToFirstStepParams) (AddObjectToFirstStepRow, error)
 	AddObjectTypeValue(ctx context.Context, arg AddObjectTypeValueParams) (ObjTypeValue, error)
 	AddObjectsToFact(ctx context.Context, arg AddObjectsToFactParams) error
 	AddObjectsToTask(ctx context.Context, arg AddObjectsToTaskParams) error
@@ -62,6 +61,7 @@ type Querier interface {
 	CreateTag(ctx context.Context, arg CreateTagParams) (Tag, error)
 	// Existing queries...
 	CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error)
+	DeleteActionOldExecutions(ctx context.Context, startedAt time.Time) error
 	DeleteAutomatedAction(ctx context.Context, id uuid.UUID) error
 	DeleteCreator(ctx context.Context, id uuid.UUID) error
 	DeleteCreatorList(ctx context.Context, id uuid.UUID) error
@@ -99,6 +99,7 @@ type Querier interface {
 	GetPendingActions(ctx context.Context) ([]AutomatedAction, error)
 	GetStep(ctx context.Context, id uuid.UUID) (GetStepRow, error)
 	GetTagByID(ctx context.Context, id uuid.UUID) (Tag, error)
+	GetTagsByIDs(ctx context.Context, dollar_1 []uuid.UUID) ([]Tag, error)
 	GetTaskByID(ctx context.Context, id uuid.UUID) (GetTaskByIDRow, error)
 	HardDeleteObjStep(ctx context.Context, id uuid.UUID) error
 	HealthCheck(ctx context.Context) (int32, error)
