@@ -405,6 +405,7 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     initializeData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     initialized,
     isCacheStale,
