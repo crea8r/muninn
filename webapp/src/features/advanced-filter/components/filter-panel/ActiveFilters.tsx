@@ -20,12 +20,12 @@ import { FaPlus, FaSave } from 'react-icons/fa';
 
 interface ActiveFiltersProps {
   showCreateTemplate?: () => void;
-  showCreateTemplateAction?: () => void;
+  showCreateAutomation?: () => void;
 }
 
 export const ActiveFilters: React.FC<ActiveFiltersProps> = ({
   showCreateTemplate,
-  showCreateTemplateAction,
+  showCreateAutomation,
 }: ActiveFiltersProps) => {
   const { filterConfig, updateFilter } = useAdvancedFilter();
   const { globalData } = useGlobalContext();
@@ -232,9 +232,9 @@ export const ActiveFilters: React.FC<ActiveFiltersProps> = ({
       >
         {renderSearch()}
         {renderTypeFilters()}
-        {renderTagFilters()}
-        {renderFunnelStepFilter()}
         {renderTypeValueCriteria()}
+        {renderFunnelStepFilter()}
+        {renderTagFilters()}
         {renderSortingFilter()}
       </HStack>
       <HStack spacing={2} flexWrap='wrap' mt={2}>
@@ -249,10 +249,10 @@ export const ActiveFilters: React.FC<ActiveFiltersProps> = ({
         <Button
           size={'sm'}
           color='blue.500'
-          onClick={showCreateTemplateAction}
+          onClick={showCreateAutomation}
           leftIcon={<FaPlus />}
         >
-          Action
+          Automation
         </Button>
       </HStack>
     </Box>

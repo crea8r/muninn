@@ -11,7 +11,7 @@ import { StepCountsDisplay } from './components/StepCountsDisplay';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { UpsertTemplateDialog } from './components/templates/UpsertTemplateDialog';
 import { useViewConfig } from './hooks/useViewConfig';
-import { UpsertActionTemplateDialog } from './components/templates/UpsertActionTemplateDialog';
+import { AutomationForm } from '../automation/components/AutomationForm';
 
 export interface AdvancedFilterContainerProps {
   viewSource: ViewConfigSource;
@@ -36,7 +36,7 @@ export const AdvancedFilterContainer: React.FC<
     setSelectedItems,
   } = useAdvancedFilterData(filterConfig);
   const [isOpenSaveTemplate, setIsOpenSaveTemplate] = React.useState(false);
-  const [isOpenSaveTemplateAction, setIsOpenSaveTemplateAction] =
+  const [isOpenCreateAutomation, seIsOpenCreateAutomation] =
     React.useState(false);
 
   const { config: viewConfig } = useViewConfig({
@@ -89,7 +89,7 @@ export const AdvancedFilterContainer: React.FC<
           <FilterPanel
             options={filterOptions}
             showCreateTemplate={() => setIsOpenSaveTemplate(true)}
-            showCreateTemplateAction={() => setIsOpenSaveTemplateAction(true)}
+            showCreateAutomation={() => seIsOpenCreateAutomation(true)}
           />
         )}
       </Box>
@@ -143,19 +143,31 @@ export const AdvancedFilterContainer: React.FC<
           setIsOpenSaveTemplate(false);
         }}
       />
-      <UpsertActionTemplateDialog
-        isOpen={isOpenSaveTemplateAction}
-        templateAction={{
-          config: {
-            version: 'v1',
-            filter: filterConfig,
-          },
-          action: {},
+      <AutomationForm
+        isOpen={isOpenCreateAutomation}
+        initialData={{
+          filterConfig: extractPropertiesFromObject(filterConfig, [
+            'search',
+            'tagIds',
+            'typeIds',
+            'typeValueCriteria',
+            'funnelStepFilter',
+          ]),
         }}
+        onSuccess={() => {}}
         onClose={() => {
-          setIsOpenSaveTemplateAction(false);
+          seIsOpenCreateAutomation(false);
         }}
       />
     </Flex>
   );
+};
+const extractPropertiesFromObject = (obj: any, keys: string[]) => {
+  const newObj: any = {};
+  keys.forEach((key) => {
+    if (obj[key] !== undefined) {
+      newObj[key] = obj[key];
+    }
+  });
+  return newObj;
 };

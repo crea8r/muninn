@@ -11,3 +11,10 @@ sql:
         emit_prepared_queries: true
         emit_interface: true
         emit_exact_table_names: false
+        overrides:
+          - column: '*.type_criteria_1'
+            go_type: 'github.com/crea8r/muninn/server/internal/types.NullableJSON'
+          - column: '*.type_criteria_2'
+            go_type: 'github.com/crea8r/muninn/server/internal/types.NullableJSON'
+          - column: '*.type_criteria_3'
+            go_type: 'github.com/crea8r/muninn/server/internal/types.NullableJSON'

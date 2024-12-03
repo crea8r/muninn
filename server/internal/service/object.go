@@ -122,7 +122,6 @@ func (s *ObjectService) ListObjects(ctx context.Context, params ListObjectsParam
         log.Printf("ListObjects params: stepIDs=%v, tagIDs=%v, typeIDs=%v", 
             stepIDs, tagIDs, typeIDs)
     }
-    fmt.Println("search Query: ",params.SearchQuery)
     count, err := s.db.CountObjectsAdvanced(ctx, database.CountObjectsAdvancedParams{
         OrgID:             params.OrgID,
         Column2:       params.SearchQuery,
@@ -137,7 +136,7 @@ func (s *ObjectService) ListObjects(ctx context.Context, params ListObjectsParam
     if err != nil {
         return nil, fmt.Errorf("error counting objects: %w", err)
     }
-    items, err := s.db.ListObjectsAdvanced(ctx, database.ListObjectsAdvancedParams{
+    listParams := database.ListObjectsAdvancedParams{
         OrgID:             params.OrgID,
         Column2:       params.SearchQuery,
         Column3:          stepIDs,
@@ -152,7 +151,9 @@ func (s *ObjectService) ListObjects(ctx context.Context, params ListObjectsParam
         Limit:            params.PageSize,
         Offset:           params.GetOffset(),
         Column14: subStatusFilter,
-    })
+    }
+    fmt.Println("listParams: ",listParams)
+    items, err := s.db.ListObjectsAdvanced(ctx, listParams)
     if err != nil {
         return nil, fmt.Errorf("error listing objects: %w", err)
     }

@@ -129,6 +129,7 @@ interface GlobalContextType {
   refreshSummary: () => Promise<void>;
   refreshAll: () => Promise<void>;
   setGlobalPerPage: (perPage: number) => void;
+  getTagsMeta: (tagIds: string[]) => Promise<Tag[]>;
 }
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -225,23 +226,33 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
     [globalData?.tagData?.tags]
   );
 
-  const refreshTags = useCallback(async (force: boolean = false) => {
-    try {
-      const response = await listTags({ page: 1, pageSize: 100 });
-      const newData = {
-        tags: response.tags,
-        lastUpdated: Date.now(),
-      };
-
-      storage.setData(STORAGE_KEYS.TAGS, newData);
-      setGlobalData((prev) => ({
-        ...prev!,
-        tagData: newData,
-      }));
-    } catch (error) {
-      console.error('Failed to fetch tags:', error);
-    }
-  }, []);
+  const refreshTags = useCallback(
+    async (force: boolean = false) => {
+      try {
+        const response = await listTags({ page: 1, pageSize: 100 });
+        const newData = {
+          tags: response.tags,
+          lastUpdated: Date.now(),
+        };
+        // combine newData.tags with existing tags, removing duplicates
+        const existingTags = globalData?.tagData?.tags || [];
+        const newTagIds = new Set(newData.tags.map((tag) => tag.id));
+        const newDataTags = [
+          ...existingTags.filter((tag) => !newTagIds.has(tag.id)),
+          ...newData.tags,
+        ];
+        newData.tags = newDataTags;
+        storage.setData(STORAGE_KEYS.TAGS, newData);
+        setGlobalData((prev) => ({
+          ...prev!,
+          tagData: newData,
+        }));
+      } catch (error) {
+        console.error('Failed to fetch tags:', error);
+      }
+    },
+    [globalData?.tagData?.tags]
+  );
 
   const refreshFunnels = useCallback(async (force: boolean = false) => {
     try {
@@ -299,6 +310,45 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.setItem(STORAGE_KEYS.PER_PAGE, perPage.toString());
     setGlobalData((prev) => (prev ? { ...prev, perPage } : null));
   }, []);
+
+  const getTagsMeta = useCallback(
+    async (tagIds: string[]) => {
+      const existingTags = (globalData?.tagData?.tags || []).filter((tag) =>
+        tagIds.includes(tag.id)
+      );
+
+      const missingTagIds = tagIds.filter(
+        (tagId) => !globalData?.tagData?.tags?.find((tag) => tag.id === tagId)
+      );
+      // loop through missing tags and fetch them
+      const newTags = [];
+      for (var i = 0; i < missingTagIds.length; i++) {
+        const tagId = missingTagIds[i];
+        const response = await getTag(tagId);
+        const newTag = {
+          id: response.id,
+          name: response.name,
+          description: response.description,
+          color_schema: response.color_schema,
+        };
+        newTags.push(newTag);
+      }
+
+      const newData = {
+        tags: [...(globalData?.tagData?.tags || []), ...newTags],
+        lastUpdated: Date.now(),
+      };
+
+      storage.setData(STORAGE_KEYS.TAGS, newData);
+      setGlobalData((prev) => ({
+        ...prev!,
+        tagData: newData,
+      }));
+      const result = [...existingTags, ...newTags];
+      return result;
+    },
+    [globalData?.tagData?.tags]
+  );
 
   // Initialize data from storage or fetch fresh data
   useEffect(() => {
@@ -394,6 +444,7 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
         refreshSummary,
         refreshAll,
         setGlobalPerPage,
+        getTagsMeta,
       }}
     >
       {children}

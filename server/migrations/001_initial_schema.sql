@@ -573,7 +573,6 @@ CREATE TABLE automated_action_execution (
     started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP WITH TIME ZONE,
     status VARCHAR(50) CHECK (status IN ('running', 'completed', 'failed')) NOT NULL,
-    objects_processed INT NOT NULL DEFAULT 0,
     objects_affected INT NOT NULL DEFAULT 0,
     error_message TEXT,
     execution_log JSONB

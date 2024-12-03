@@ -49,10 +49,9 @@ RETURNING *;
 UPDATE automated_action_execution
 SET status = $2,
   completed_at = CURRENT_TIMESTAMP,
-  objects_processed = $3,
-  objects_affected = $4,
-  error_message = $5,
-  execution_log = $6
+  objects_affected = $3,
+  error_message = $4,
+  execution_log = $5
 WHERE id = $1
 RETURNING *;
 

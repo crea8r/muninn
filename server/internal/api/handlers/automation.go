@@ -52,6 +52,37 @@ type ExecutionSummary struct {
     ErrorMessage     *string    `json:"errorMessage,omitempty"`
 }
 
+// CreateAction creates a new automated action
+func (h *AutomationHandler) CreateAction(w http.ResponseWriter, r *http.Request) {
+    claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
+
+    var input struct {
+        Name         string          `json:"name"`
+        Description  string          `json:"description"`
+        FilterConfig json.RawMessage `json:"filterConfig"`
+        ActionConfig json.RawMessage `json:"actionConfig"`
+    };
+    if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    action, err := h.db.CreateAutomatedAction(r.Context(), database.CreateAutomatedActionParams{
+        OrgID:        uuid.MustParse(claims.OrgID),
+        Name:         input.Name,
+        Description:  input.Description,
+        FilterConfig: input.FilterConfig,
+        ActionConfig: input.ActionConfig,
+        CreatedBy:    uuid.MustParse(claims.CreatorID),
+    })
+
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    json.NewEncoder(w).Encode(action)
+}
+
 // ListActions returns all automated actions for an organization
 func (h *AutomationHandler) ListActions(w http.ResponseWriter, r *http.Request) {
     claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
@@ -92,7 +123,7 @@ func (h *AutomationHandler) ListActions(w http.ResponseWriter, r *http.Request) 
 
     // Format response
     response := struct {
-        Actions    []AutomatedActionResponse `json:"actions"`
+        Actions    []AutomatedActionResponse `json:"data"`
         TotalCount int64                    `json:"totalCount"`
         Page       int                      `json:"page"`
         PageSize   int                      `json:"pageSize"`
@@ -125,7 +156,6 @@ func (h *AutomationHandler) ListActions(w http.ResponseWriter, r *http.Request) 
                 Status:          lastExec.Status,
                 StartedAt:       lastExec.StartedAt,
                 CompletedAt:     convertToTimeFromSQLNull(lastExec.CompletedAt),
-                ObjectsProcessed: lastExec.ObjectsProcessed,
                 ObjectsAffected:  lastExec.ObjectsAffected,
                 ErrorMessage:     convertToStringFromNullString(lastExec.ErrorMessage),
             }
@@ -178,14 +208,44 @@ func (h *AutomationHandler) GetExecutionLogs(w http.ResponseWriter, r *http.Requ
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
+    
+    type ExecutionLogResponseData struct {
+        ID              uuid.UUID             `json:"id"`
+        ActionID        uuid.UUID             `json:"actionId"`
+        StartedAt       time.Time             `json:"startedAt"`
+        CompletedAt     time.Time          `json:"completedAt"`
+        Status          string                `json:"status"`
+        ObjectsAffected int32                 `json:"objectsAffected"`
+        ErrorMessage    string        `json:"errorMessage"`
+        ExecutionLog    json.RawMessage `json:"executionLog"`
+    }
+    data := make([]ExecutionLogResponseData, len(executions))
+    for i, execution := range executions {
+        data[i] = ExecutionLogResponseData{
+            ID:              execution.ID,
+            ActionID:        execution.ActionID,
+            StartedAt:       execution.StartedAt,
+            Status:         execution.Status,
+            ObjectsAffected: execution.ObjectsAffected,
+        }
+        if execution.CompletedAt.Valid {
+            data[i].CompletedAt = execution.CompletedAt.Time
+        }
+        if execution.ErrorMessage.Valid {
+            data[i].ErrorMessage = execution.ErrorMessage.String
+        }
+        if execution.ExecutionLog.Valid {
+            data[i].ExecutionLog = execution.ExecutionLog.RawMessage
+        }
+    }
 
     response := struct {
-        Executions []database.AutomatedActionExecution `json:"executions"`
+        Executions []ExecutionLogResponseData `json:"data"`
         TotalCount int64                              `json:"totalCount"`
         Page       int                                `json:"page"`
         PageSize   int                                `json:"pageSize"`
     }{
-        Executions: executions,
+        Executions: data,
         TotalCount: totalCount,
         Page:      page,
         PageSize:  pageSize,

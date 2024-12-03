@@ -27,6 +27,7 @@ interface TagInputProps {
   isReadOnly?: boolean;
   placeholder?: string;
   maxHeight?: string;
+  limit?: number;
 }
 
 export const TagInput: React.FC<TagInputProps> = ({
@@ -37,6 +38,7 @@ export const TagInput: React.FC<TagInputProps> = ({
   isReadOnly = false,
   placeholder = 'Search and select tags...',
   maxHeight = '200px',
+  limit = 20,
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -73,7 +75,12 @@ export const TagInput: React.FC<TagInputProps> = ({
   };
 
   const handleTagSelect = (tag: Tag) => {
-    onChange([...tags, tag.id]);
+    if (tags.length >= limit) {
+      tags[tags.length - 1] = tag.id;
+      onChange(tags);
+    } else {
+      onChange([...tags, tag.id]);
+    }
     setInputValue('');
     setIsOpen(false);
   };

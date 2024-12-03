@@ -32,6 +32,7 @@ import FunnelBoard from './pages/settings/FunnelBoard';
 import ListObjectByTypesPage from './pages/settings/ListObjectByTypesPage';
 import FunnelConfigPage from './pages/settings/funnel-config-page/FunnelConfigPage';
 import ListObjectByTagPage from './pages/settings/ListObjectByTagPage';
+import { AutomationsPage } from './pages/settings/Automation';
 
 const theme = extendTheme({
   styles: {
@@ -178,6 +179,11 @@ const App: React.FC = () => {
                             exact
                             path='/settings/tags'
                             component={TagsPage}
+                          />
+                          <ProtectedRoute
+                            exact
+                            path='/settings/automations'
+                            component={AutomationsPage}
                           />
                           <ProtectedRoute
                             exact

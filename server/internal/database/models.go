@@ -29,15 +29,14 @@ type AutomatedAction struct {
 }
 
 type AutomatedActionExecution struct {
-	ID               uuid.UUID             `json:"id"`
-	ActionID         uuid.UUID             `json:"action_id"`
-	StartedAt        time.Time             `json:"started_at"`
-	CompletedAt      sql.NullTime          `json:"completed_at"`
-	Status           string                `json:"status"`
-	ObjectsProcessed int32                 `json:"objects_processed"`
-	ObjectsAffected  int32                 `json:"objects_affected"`
-	ErrorMessage     sql.NullString        `json:"error_message"`
-	ExecutionLog     pqtype.NullRawMessage `json:"execution_log"`
+	ID              uuid.UUID             `json:"id"`
+	ActionID        uuid.UUID             `json:"action_id"`
+	StartedAt       time.Time             `json:"started_at"`
+	CompletedAt     sql.NullTime          `json:"completed_at"`
+	Status          string                `json:"status"`
+	ObjectsAffected int32                 `json:"objects_affected"`
+	ErrorMessage    sql.NullString        `json:"error_message"`
+	ExecutionLog    pqtype.NullRawMessage `json:"execution_log"`
 }
 
 type Creator struct {

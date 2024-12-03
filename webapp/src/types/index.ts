@@ -20,6 +20,13 @@ import { Tag } from './Tag';
 import { OrgMember } from './Org';
 import { List, CreatorList } from './List';
 
+export interface ListResponse<T> {
+  data: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
 export { TaskStatus };
 export type {
   Fact,

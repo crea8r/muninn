@@ -36,6 +36,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.addObjectsToTaskStmt, err = db.PrepareContext(ctx, addObjectsToTask); err != nil {
 		return nil, fmt.Errorf("error preparing query AddObjectsToTask: %w", err)
 	}
+	if q.addTagAndStepToFilteredObjectsStmt, err = db.PrepareContext(ctx, addTagAndStepToFilteredObjects); err != nil {
+		return nil, fmt.Errorf("error preparing query AddTagAndStepToFilteredObjects: %w", err)
+	}
 	if q.addTagToObjectStmt, err = db.PrepareContext(ctx, addTagToObject); err != nil {
 		return nil, fmt.Errorf("error preparing query AddTagToObject: %w", err)
 	}
@@ -282,9 +285,6 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.listListsByOrgIDStmt, err = db.PrepareContext(ctx, listListsByOrgID); err != nil {
 		return nil, fmt.Errorf("error preparing query ListListsByOrgID: %w", err)
 	}
-	if q.listMatchingObjectIDsStmt, err = db.PrepareContext(ctx, listMatchingObjectIDs); err != nil {
-		return nil, fmt.Errorf("error preparing query ListMatchingObjectIDs: %w", err)
-	}
 	if q.listObjectTypesStmt, err = db.PrepareContext(ctx, listObjectTypes); err != nil {
 		return nil, fmt.Errorf("error preparing query ListObjectTypes: %w", err)
 	}
@@ -437,6 +437,11 @@ func (q *Queries) Close() error {
 	if q.addObjectsToTaskStmt != nil {
 		if cerr := q.addObjectsToTaskStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing addObjectsToTaskStmt: %w", cerr)
+		}
+	}
+	if q.addTagAndStepToFilteredObjectsStmt != nil {
+		if cerr := q.addTagAndStepToFilteredObjectsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing addTagAndStepToFilteredObjectsStmt: %w", cerr)
 		}
 	}
 	if q.addTagToObjectStmt != nil {
@@ -849,11 +854,6 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing listListsByOrgIDStmt: %w", cerr)
 		}
 	}
-	if q.listMatchingObjectIDsStmt != nil {
-		if cerr := q.listMatchingObjectIDsStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing listMatchingObjectIDsStmt: %w", cerr)
-		}
-	}
 	if q.listObjectTypesStmt != nil {
 		if cerr := q.listObjectTypesStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listObjectTypesStmt: %w", cerr)
@@ -1112,6 +1112,7 @@ type Queries struct {
 	addObjectTypeValueStmt                   *sql.Stmt
 	addObjectsToFactStmt                     *sql.Stmt
 	addObjectsToTaskStmt                     *sql.Stmt
+	addTagAndStepToFilteredObjectsStmt       *sql.Stmt
 	addTagToObjectStmt                       *sql.Stmt
 	completeImportTaskStmt                   *sql.Stmt
 	countActionExecutionsStmt                *sql.Stmt
@@ -1194,7 +1195,6 @@ type Queries struct {
 	listFactsByOrgIDStmt                     *sql.Stmt
 	listFunnelsStmt                          *sql.Stmt
 	listListsByOrgIDStmt                     *sql.Stmt
-	listMatchingObjectIDsStmt                *sql.Stmt
 	listObjectTypesStmt                      *sql.Stmt
 	listObjectsAdvancedStmt                  *sql.Stmt
 	listObjectsByOrgIDStmt                   *sql.Stmt
@@ -1248,6 +1248,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		addObjectTypeValueStmt:                   q.addObjectTypeValueStmt,
 		addObjectsToFactStmt:                     q.addObjectsToFactStmt,
 		addObjectsToTaskStmt:                     q.addObjectsToTaskStmt,
+		addTagAndStepToFilteredObjectsStmt:       q.addTagAndStepToFilteredObjectsStmt,
 		addTagToObjectStmt:                       q.addTagToObjectStmt,
 		completeImportTaskStmt:                   q.completeImportTaskStmt,
 		countActionExecutionsStmt:                q.countActionExecutionsStmt,
@@ -1330,7 +1331,6 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		listFactsByOrgIDStmt:                     q.listFactsByOrgIDStmt,
 		listFunnelsStmt:                          q.listFunnelsStmt,
 		listListsByOrgIDStmt:                     q.listListsByOrgIDStmt,
-		listMatchingObjectIDsStmt:                q.listMatchingObjectIDsStmt,
 		listObjectTypesStmt:                      q.listObjectTypesStmt,
 		listObjectsAdvancedStmt:                  q.listObjectsAdvancedStmt,
 		listObjectsByOrgIDStmt:                   q.listObjectsByOrgIDStmt,

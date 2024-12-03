@@ -1,9 +1,12 @@
-export interface FilterConfig {
+export interface CoreFilterConfig {
   search?: string;
   tagIds?: string[];
   typeIds?: string[];
   typeValueCriteria?: TypeValueFilter;
   funnelStepFilter?: FunnelStepFilter;
+}
+
+export interface FilterConfig extends CoreFilterConfig {
   sortBy?: string;
   ascending?: boolean;
   type_value_field?: string; // Added for type value sorting

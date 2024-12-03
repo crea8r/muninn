@@ -23,7 +23,7 @@ import {
 } from 'react-icons/fi';
 import { useGlobalContext } from 'src/contexts/GlobalContext';
 import authService from 'src/services/authService';
-import { FaFilter, FaIdCard, FaShare, FaTag } from 'react-icons/fa';
+import { FaFilter, FaIdCard, FaRobot, FaShare, FaTag } from 'react-icons/fa';
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -162,6 +162,7 @@ const Sidebar: React.FC = () => {
     { text: 'Funnels', to: '/settings/funnels', icon: FaFilter },
     { text: 'Tags', to: '/settings/tags', icon: FaTag },
     { text: 'Templates', to: '/settings/templates', icon: FaShare },
+    { text: 'Automations', to: '/settings/automations', icon: FaRobot },
   ];
 
   const sidebarViews =

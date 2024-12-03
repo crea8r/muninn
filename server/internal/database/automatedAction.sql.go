@@ -141,7 +141,7 @@ INSERT INTO automated_action_execution (
 ) VALUES (
   $1, 'running'
 )
-RETURNING id, action_id, started_at, completed_at, status, objects_processed, objects_affected, error_message, execution_log
+RETURNING id, action_id, started_at, completed_at, status, objects_affected, error_message, execution_log
 `
 
 func (q *Queries) CreateActionExecution(ctx context.Context, actionID uuid.UUID) (AutomatedActionExecution, error) {
@@ -153,7 +153,6 @@ func (q *Queries) CreateActionExecution(ctx context.Context, actionID uuid.UUID)
 		&i.StartedAt,
 		&i.CompletedAt,
 		&i.Status,
-		&i.ObjectsProcessed,
 		&i.ObjectsAffected,
 		&i.ErrorMessage,
 		&i.ExecutionLog,
@@ -244,7 +243,7 @@ func (q *Queries) GetAutomatedAction(ctx context.Context, id uuid.UUID) (Automat
 }
 
 const getLatestExecution = `-- name: GetLatestExecution :one
-SELECT id, action_id, started_at, completed_at, status, objects_processed, objects_affected, error_message, execution_log FROM automated_action_execution
+SELECT id, action_id, started_at, completed_at, status, objects_affected, error_message, execution_log FROM automated_action_execution
 WHERE action_id = $1
 ORDER BY started_at DESC
 LIMIT 1
@@ -259,7 +258,6 @@ func (q *Queries) GetLatestExecution(ctx context.Context, actionID uuid.UUID) (A
 		&i.StartedAt,
 		&i.CompletedAt,
 		&i.Status,
-		&i.ObjectsProcessed,
 		&i.ObjectsAffected,
 		&i.ErrorMessage,
 		&i.ExecutionLog,
@@ -315,7 +313,7 @@ func (q *Queries) GetPendingActions(ctx context.Context) ([]AutomatedAction, err
 }
 
 const listActionExecutions = `-- name: ListActionExecutions :many
-SELECT id, action_id, started_at, completed_at, status, objects_processed, objects_affected, error_message, execution_log FROM automated_action_execution
+SELECT id, action_id, started_at, completed_at, status, objects_affected, error_message, execution_log FROM automated_action_execution
 WHERE action_id = $1
 ORDER BY started_at DESC
 LIMIT $2 OFFSET $3
@@ -342,7 +340,6 @@ func (q *Queries) ListActionExecutions(ctx context.Context, arg ListActionExecut
 			&i.StartedAt,
 			&i.CompletedAt,
 			&i.Status,
-			&i.ObjectsProcessed,
 			&i.ObjectsAffected,
 			&i.ErrorMessage,
 			&i.ExecutionLog,
@@ -421,28 +418,25 @@ const updateActionExecution = `-- name: UpdateActionExecution :one
 UPDATE automated_action_execution
 SET status = $2,
   completed_at = CURRENT_TIMESTAMP,
-  objects_processed = $3,
-  objects_affected = $4,
-  error_message = $5,
-  execution_log = $6
+  objects_affected = $3,
+  error_message = $4,
+  execution_log = $5
 WHERE id = $1
-RETURNING id, action_id, started_at, completed_at, status, objects_processed, objects_affected, error_message, execution_log
+RETURNING id, action_id, started_at, completed_at, status, objects_affected, error_message, execution_log
 `
 
 type UpdateActionExecutionParams struct {
-	ID               uuid.UUID             `json:"id"`
-	Status           string                `json:"status"`
-	ObjectsProcessed int32                 `json:"objects_processed"`
-	ObjectsAffected  int32                 `json:"objects_affected"`
-	ErrorMessage     sql.NullString        `json:"error_message"`
-	ExecutionLog     pqtype.NullRawMessage `json:"execution_log"`
+	ID              uuid.UUID             `json:"id"`
+	Status          string                `json:"status"`
+	ObjectsAffected int32                 `json:"objects_affected"`
+	ErrorMessage    sql.NullString        `json:"error_message"`
+	ExecutionLog    pqtype.NullRawMessage `json:"execution_log"`
 }
 
 func (q *Queries) UpdateActionExecution(ctx context.Context, arg UpdateActionExecutionParams) (AutomatedActionExecution, error) {
 	row := q.queryRow(ctx, q.updateActionExecutionStmt, updateActionExecution,
 		arg.ID,
 		arg.Status,
-		arg.ObjectsProcessed,
 		arg.ObjectsAffected,
 		arg.ErrorMessage,
 		arg.ExecutionLog,
@@ -454,7 +448,6 @@ func (q *Queries) UpdateActionExecution(ctx context.Context, arg UpdateActionExe
 		&i.StartedAt,
 		&i.CompletedAt,
 		&i.Status,
-		&i.ObjectsProcessed,
 		&i.ObjectsAffected,
 		&i.ErrorMessage,
 		&i.ExecutionLog,

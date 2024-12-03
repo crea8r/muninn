@@ -137,7 +137,6 @@ raw_values AS (
     AND (
       $3::uuid[] IS NULL OR o.id = ANY($3::uuid[])
     )
-  LIMIT 100
 ),
 aggregated_values AS (
   SELECT 
@@ -174,6 +173,7 @@ SELECT
   cd.contact_data as contact_data
 FROM contact_data cd
 ORDER BY cd.created_at DESC
+LIMIT 100
 `
 
 type ListObjectsWithNormalizedDataParams struct {

@@ -13,7 +13,7 @@ import { FunnelStepFilter } from './funnel-step-filter/FunnelStepFilter';
 interface FilterPanelProps {
   options?: FilterOptions;
   showCreateTemplate?: () => void;
-  showCreateTemplateAction?: () => void;
+  showCreateAutomation?: () => void;
 }
 
 const FilterHeader = () => {
@@ -29,7 +29,7 @@ const FilterHeader = () => {
 export const FilterPanel: React.FC<FilterPanelProps> = ({
   options,
   showCreateTemplate,
-  showCreateTemplateAction,
+  showCreateAutomation,
 }) => {
   return (
     <Box
@@ -43,7 +43,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       <VStack spacing={4} align='stretch' overflowX={'hidden'}>
         <DataExplorer
           showCreateTemplate={showCreateTemplate}
-          showCreateTemplateAction={showCreateTemplateAction}
+          showCreateAutomation={showCreateAutomation}
         />
         <Divider />
         <SearchFilter />

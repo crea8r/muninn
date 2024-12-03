@@ -17,6 +17,12 @@ type Querier interface {
 	AddObjectTypeValue(ctx context.Context, arg AddObjectTypeValueParams) (ObjTypeValue, error)
 	AddObjectsToFact(ctx context.Context, arg AddObjectsToFactParams) error
 	AddObjectsToTask(ctx context.Context, arg AddObjectsToTaskParams) error
+	// First find the first step of the funnel if funnel_id is provided
+	// Get filtered objects same as before
+	// Insert tag relations if tag_id is provided
+	// Insert step relations if funnel_id is provided
+	// Return affected object IDs and what was done to them
+	AddTagAndStepToFilteredObjects(ctx context.Context, arg AddTagAndStepToFilteredObjectsParams) ([]AddTagAndStepToFilteredObjectsRow, error)
 	AddTagToObject(ctx context.Context, arg AddTagToObjectParams) error
 	CompleteImportTask(ctx context.Context, arg CompleteImportTaskParams) (ImportTask, error)
 	CountActionExecutions(ctx context.Context, actionID uuid.UUID) (int64, error)
@@ -102,7 +108,6 @@ type Querier interface {
 	ListFactsByOrgID(ctx context.Context, arg ListFactsByOrgIDParams) ([]ListFactsByOrgIDRow, error)
 	ListFunnels(ctx context.Context, arg ListFunnelsParams) ([]ListFunnelsRow, error)
 	ListListsByOrgID(ctx context.Context, arg ListListsByOrgIDParams) ([]ListListsByOrgIDRow, error)
-	ListMatchingObjectIDs(ctx context.Context, arg ListMatchingObjectIDsParams) ([]ListMatchingObjectIDsRow, error)
 	ListObjectTypes(ctx context.Context, arg ListObjectTypesParams) ([]ListObjectTypesRow, error)
 	ListObjectsAdvanced(ctx context.Context, arg ListObjectsAdvancedParams) ([]ListObjectsAdvancedRow, error)
 	ListObjectsByOrgID(ctx context.Context, arg ListObjectsByOrgIDParams) ([]ListObjectsByOrgIDRow, error)

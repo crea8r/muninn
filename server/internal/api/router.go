@@ -219,6 +219,7 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 		r.Route("/automations", func(r chi.Router) {
 			r.Use(middleware.Permission)
 			r.Get("/", automationHandler.ListActions)
+			r.Post("/", automationHandler.CreateAction)
 			r.Route("/{actionId}", func(r chi.Router) {
 				r.Get("/executions", automationHandler.GetExecutionLogs)
 				r.Put("/", automationHandler.UpdateAction)
