@@ -27,7 +27,7 @@ const CACHE_VERSION = '1.0'; // Increment this when data structure changes
 // Cache duration increased to 10 minutes
 const CACHE_DURATION = 10 * 60 * 1000;
 // Summary refresh interval remains at 1 minute
-const SUMMARY_REFRESH_INTERVAL = 60 * 1000;
+// const SUMMARY_REFRESH_INTERVAL = 60 * 1000;
 
 const storage = {
   isValid: () => {
@@ -423,20 +423,14 @@ export const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!initialized || !authService.isAuthenticated()) {
       return;
     }
-
-    const summaryInterval = setInterval(() => {
-      refreshSummary();
-    }, SUMMARY_REFRESH_INTERVAL);
-
     const dataInterval = setInterval(() => {
       refreshAll();
     }, CACHE_DURATION);
 
     return () => {
-      clearInterval(summaryInterval);
       clearInterval(dataInterval);
     };
-  }, [initialized, refreshAll, refreshSummary]);
+  }, [initialized, refreshAll]);
 
   return (
     <GlobalContext.Provider
