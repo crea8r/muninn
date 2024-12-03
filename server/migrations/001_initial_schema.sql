@@ -513,22 +513,6 @@ CREATE TABLE object_merge_history (
 CREATE INDEX idx_object_merge_history_target ON object_merge_history(target_object_id);
 CREATE INDEX idx_object_merge_history_creator ON object_merge_history(creator_id);
 
-CREATE OR REPLACE FUNCTION clean_url_value(value TEXT, url_type TEXT) 
-RETURNS TEXT AS $$
-BEGIN
-    CASE url_type
-        WHEN 'twitter' THEN
-            RETURN regexp_replace(lower(value), 'https?:\/\/(www\.)?(twitter\.com|x\.com)\/', '', 'g');
-        WHEN 'web' THEN
-            RETURN regexp_replace(lower(value), 'https?:\/\/', '', 'g');
-        WHEN 'linkedin' THEN
-            RETURN regexp_replace(lower(value), 'https?:\/\/(www\.)?linkedin\.com\/in\/', '', 'g');
-        ELSE
-            RETURN lower(value);
-    END CASE;
-END;
-$$ LANGUAGE plpgsql IMMUTABLE;
-
 CREATE OR REPLACE FUNCTION clean_url_value(value JSONB, url_type TEXT) 
 RETURNS TEXT AS 
 $function$

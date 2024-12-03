@@ -113,8 +113,7 @@ export const ExecutionLogModal: React.FC<ExecutionLogModalProps> = ({
                         </Badge>
                       </Td>
                       <Td>
-                        {execution.objectsAffected} of{' '}
-                        {execution.objectsProcessed} affected
+                        {execution.objectsAffected} affected
                         {execution.errorMessage && (
                           <Text color='red.500' fontSize='sm'>
                             Error: {execution.errorMessage}

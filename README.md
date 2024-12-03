@@ -47,4 +47,4 @@ REACT_APP_API_URL=[your server | http://localhost:8080]
 
 ### How big is the project?
 
-Run this command `git ls-files --exclude-standard -- ':!:**/*.[pjs][npv]g' ':!:**/*.ai' ':!:.idea' ':!:**/*.eslintrc' ':!:*.json' | xargs wc -l`
+Run this command `git ls-files --exclude-standard -- ':!:**/*.[pjs][npv]g' ':!:**/*.ai' ':!:.idea' ':!:**/*.eslintrc' ':!:*.json' ':!:**/*.sql.go' | xargs wc -l`
