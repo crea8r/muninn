@@ -90,7 +90,7 @@ export const TagFilter: React.FC = () => {
     <VStack align='stretch' spacing={3}>
       <HStack justify='space-between' width={'100%'} alignItems={'center'}>
         <Text fontWeight='medium' fontSize='sm'>
-          Tags
+          Has any of these tags
         </Text>
         <Text
           fontSize='sm'

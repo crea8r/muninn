@@ -39,11 +39,11 @@ export const TypeValueFilter: React.FC = () => {
     <VStack align='stretch' spacing={4} overflowX={'hidden'}>
       <HStack justify='space-between'>
         <Text fontWeight='medium' fontSize='sm'>
-          Type Value Filters
+          Conditions
         </Text>
         {criteriaCount < MAX_CRITERIA && (
           <Button size='sm' leftIcon={<AddIcon />} onClick={addCriteria}>
-            Add Filter
+            Field Condition
           </Button>
         )}
       </HStack>

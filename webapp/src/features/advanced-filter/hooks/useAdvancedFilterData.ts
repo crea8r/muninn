@@ -1,5 +1,5 @@
 // hooks/useAdvancedFilterData.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FilterConfig } from 'src/types/FilterConfig';
 import { fetchAdvancedFilterResults } from '../services/advancedFilterApi';
 import { useDebounceFilter } from './useDebounceFilter';
@@ -23,7 +23,7 @@ export const useAdvancedFilterData = (filterConfig: FilterConfig) => {
   }, [filterConfig.typeValueCriteria]);
 
   const debouncedFilter = useDebounceFilter(filterConfig, 300);
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!debouncedFilter) return;
 
     setIsLoading(true);
@@ -39,19 +39,17 @@ export const useAdvancedFilterData = (filterConfig: FilterConfig) => {
         setTotalCount(response.total_count);
       }
     } catch (err) {
-      console.error('Failed to fetch filtered data:', err);
       setError(err as Error);
       setData([]);
       setTotalCount(0);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [debouncedFilter]);
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedFilter]);
+  }, [debouncedFilter, fetchData]);
 
   return {
     data,

@@ -452,7 +452,6 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
           <DrawerOverlay />
           <DrawerContent>
             <DrawerCloseButton />
-
             <DrawerBody>
               <ObjectDetailPanel objectId={focusedObjectId} />
             </DrawerBody>

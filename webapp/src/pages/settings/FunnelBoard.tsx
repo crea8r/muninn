@@ -21,36 +21,24 @@ const FunnelBoard = () => {
     type: 'temporary',
   };
   const [funnel, setFunnel] = useState<Funnel | undefined>();
-  const [initialConfig, setInitialConfig] = useState<{
-    filter?: Partial<FilterConfig>;
-    view?: Partial<ViewConfigBase>;
-  }>({
-    filter: {
-      funnelStepFilter: {
-        funnelId,
-        stepIds: [],
-        subStatuses: ALL_SUB_STATUSES,
-      },
-    },
-  });
+  const [filterConfig, setFilterConfig] = useState<FilterConfig | undefined>();
+  const [viewConfig, setViewConfig] = useState<ViewConfigBase | undefined>();
   useEffect(() => {
     const currentFunnel = globalData?.funnelData?.funnels?.find(
       (funnel) => funnel.id === funnelId
     );
     setFunnel(currentFunnel);
     const allSteps = currentFunnel?.steps?.map((step) => step.id) || [];
-    setInitialConfig((prev) => {
-      const existingSteps = prev?.filter?.funnelStepFilter?.stepIds || [];
-      if (!prev) return {};
-      const newConfig = {
+    if (allSteps.length === 0) return;
+    setFilterConfig((prev: FilterConfig) => {
+      const existingSteps = prev?.funnelStepFilter?.stepIds || [];
+      const newConfig: FilterConfig = {
         ...prev,
-        filter: {
-          ...prev.filter,
-          funnelStepFilter: {
-            ...prev.filter?.funnelStepFilter,
-            stepIds: existingSteps.length === 0 ? allSteps : existingSteps,
-            subStatuses: ALL_SUB_STATUSES,
-          },
+        funnelStepFilter: {
+          ...(prev ? prev.funnelStepFilter : {}),
+          funnelId,
+          stepIds: existingSteps.length === 0 ? allSteps : existingSteps,
+          subStatuses: ALL_SUB_STATUSES,
         },
       };
       return newConfig;
@@ -70,35 +58,25 @@ const FunnelBoard = () => {
           subStatuses: ALL_SUB_STATUSES,
         };
       }
-      setInitialConfig({
-        filter: newFilter,
-        view: initialConfig?.view,
-      });
+      setFilterConfig(newFilter);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [initialConfig?.view, funnel?.steps]
+    [funnel?.steps, funnelId]
   );
 
-  const handleViewChange = useCallback(
-    (newView: ViewConfigBase) => {
-      setInitialConfig({
-        filter: initialConfig?.filter,
-        view: newView,
-      });
-    },
-    [initialConfig?.filter]
-  );
+  const handleViewChange = useCallback((newView: ViewConfigBase) => {
+    setViewConfig(newView);
+  }, []);
   return (
     <Box>
       <BreadcrumbComponent label={funnel?.name} />
       <Box height='calc(100vh - 120px)' bg='white' p={0}>
-        {!initialConfig ? (
+        {!filterConfig ? (
           <LoadingPanel />
         ) : (
           <AdvancedFilter
             viewSource={viewSource}
-            initialFilter={initialConfig?.filter}
-            initialViewConfig={initialConfig?.view as ViewConfigBase}
+            initialFilter={filterConfig}
+            initialViewConfig={viewConfig as ViewConfigBase}
             onFilterChange={handleFilterChange}
             onViewConfigChange={handleViewChange}
           />

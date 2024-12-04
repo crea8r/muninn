@@ -97,7 +97,7 @@ export const FunnelStepFilter: React.FC = () => {
     <VStack align='stretch' spacing={4} width={'100%'}>
       <HStack justify='space-between' width={'100%'} alignItems={'center'}>
         <Text fontWeight='medium' fontSize='sm'>
-          Funnel & Steps Filter
+          In this funnel
         </Text>
         <Text
           fontSize='sm'

@@ -14,6 +14,7 @@ export const SearchFilter: React.FC = () => {
       <SearchInput
         initialSearchQuery={filterConfig.search}
         setSearchQuery={(query) => updateFilter({ search: query })}
+        placeholder='and/or to search for keywords'
       />
     </VStack>
   );

@@ -111,7 +111,7 @@ export const TypeFilter: React.FC = () => {
     <VStack align='stretch' spacing={3}>
       <HStack justify='space-between' width={'100%'} alignItems={'center'}>
         <Text fontWeight='medium' fontSize='sm'>
-          Object Types
+          Has any of these types
         </Text>
         <Text
           fontSize='sm'
