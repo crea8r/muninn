@@ -143,6 +143,7 @@ type Querier interface {
 	RemoveTagFromObject(ctx context.Context, arg RemoveTagFromObjectParams) error
 	// Ensure we only get one row
 	SoftDeleteObjStep(ctx context.Context, id uuid.UUID) error
+	SyncObjectAliases(ctx context.Context, arg SyncObjectAliasesParams) (SyncObjectAliasesRow, error)
 	UpdateActionExecution(ctx context.Context, arg UpdateActionExecutionParams) (AutomatedActionExecution, error)
 	UpdateActionLastRun(ctx context.Context, id uuid.UUID) error
 	UpdateAutomatedAction(ctx context.Context, arg UpdateAutomatedActionParams) (AutomatedAction, error)

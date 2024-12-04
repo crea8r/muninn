@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -11,11 +12,13 @@ import (
 	"github.com/crea8r/muninn/server/internal/api/middleware"
 	"github.com/crea8r/muninn/server/internal/database"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type TagObjectRequest struct {
-	ObjectID string   `json:"object_id"`
-	Tags     []string `json:"tags"`
+	ObjectID 	string   `json:"object_id,omitempty"`
+	Aliases		[]string `json:"aliases,omitempty"`
+	Tags     	[]string `json:"tags"`
 }
 
 type TagObjectResponse struct {
@@ -34,19 +37,57 @@ func (h *ExternalHandler) TagObject(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	claims := ctx.Value(middleware.UserClaimsKey).(*middleware.Claims)
 	orgID := uuid.MustParse(claims.OrgID)
+	creatorID := uuid.MustParse(claims.CreatorID)
 
 	// Parse request
 	var req TagObjectRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		fmt.Println("TagObject*Invalid request body: ", err);
+		http.Error(w, "Invalid request body ", http.StatusInternalServerError)
 		return
 	}
 
 	// Validate object ID
 	objectID, err := uuid.Parse(req.ObjectID)
-	if err != nil {
-		http.Error(w, "Invalid object_id format", http.StatusBadRequest)
-		return
+	if err != nil { // no objectId, now check for aliases
+		aliases := req.Aliases
+		if len(aliases) == 0 {
+			http.Error(w, "Invalid object_id format", http.StatusBadRequest)
+			return
+		}
+		r, err := h.queries.SyncObjectAliases(ctx, database.SyncObjectAliasesParams{
+			Column1: aliases,
+			OrgID:   orgID,
+		});
+		
+		if err != nil && err != sql.ErrNoRows {
+			http.Error(w, "Failed to sync object aliases", http.StatusInternalServerError)
+			return
+		}else if err == sql.ErrNoRows {
+			idString := aliases[0]
+			newObj, errCreateObj := h.queries.CreateObject(ctx, database.CreateObjectParams{
+				Name:        idString, // Use alias as initial name
+				Description: idString,
+				IDString:   idString,
+				CreatorID:  creatorID,
+			})
+			if(errCreateObj != nil){
+				http.Error(w, "Failed to create object", http.StatusInternalServerError)
+				return
+			}
+			objectID = newObj.ID
+			if len(aliases) > 1 {
+				h.queries.UpdateObject(ctx, database.UpdateObjectParams{
+					ID: objectID,
+					Name: idString,
+					Description: strings.Join(aliases, ", "),
+					IDString: idString,
+					Aliases: pq.StringArray(aliases),
+				})
+			}
+		} else if err == nil {
+			objectID = r.ID
+		}
 	}
 
 	// Start transaction

@@ -91,4 +91,4 @@ WHERE action_id = $1;
 
 -- name: DeleteActionOldExecutions :exec
 DELETE FROM automated_action_execution
-WHERE start_at < $1;
+WHERE started_at < $1;

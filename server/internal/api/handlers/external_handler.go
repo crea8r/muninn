@@ -13,6 +13,7 @@ import (
 	"github.com/crea8r/muninn/server/internal/api/middleware"
 	"github.com/crea8r/muninn/server/internal/database"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type ExternalHandler struct {
@@ -147,9 +148,10 @@ func (h *ExternalHandler) CreateFact(w http.ResponseWriter, r *http.Request) {
 }
 
 type UpsertObjectTypeValueRequest struct {
-	ObjectID     string          `json:"object_id"`
+	ObjectID     string          `json:"object_id,omitempty"`
 	ObjectTypeID string          `json:"object_type_id"`
 	TypeValues   json.RawMessage `json:"type_values"`
+	Aliases 		[]string        `json:"aliases,omitempty"`
 }
 
 type UpsertObjectTypeValueResponse struct {
@@ -163,8 +165,10 @@ type UpsertObjectTypeValueResponse struct {
 
 func (h *ExternalHandler) UpsertObjectTypeValue(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	// TODO: security check in the future
-	// claims := ctx.Value(middleware.UserClaimsKey).(*middleware.Claims)
+	// TODO: security check in the future make sure the user has access to the object
+	claims := ctx.Value(middleware.UserClaimsKey).(*middleware.Claims)
+	orgID := uuid.MustParse(claims.OrgID)
+	creatorID := uuid.MustParse(claims.CreatorID)
 
 	// Parse request body
 	var req UpsertObjectTypeValueRequest
@@ -175,9 +179,46 @@ func (h *ExternalHandler) UpsertObjectTypeValue(w http.ResponseWriter, r *http.R
 
 	// Validate and parse UUIDs
 	objectID, err := uuid.Parse(req.ObjectID)
-	if err != nil {
-		http.Error(w, "Invalid object_id format", http.StatusBadRequest)
-		return
+	if err != nil { // no objectId, now check for aliases
+		aliases := req.Aliases
+		if len(aliases) == 0 {
+			http.Error(w, "Invalid object_id format", http.StatusBadRequest)
+			return
+		}
+		r, err := h.queries.SyncObjectAliases(ctx, database.SyncObjectAliasesParams{
+			Column1: aliases,
+			OrgID:   orgID,
+		});
+		
+		if err != nil && err != sql.ErrNoRows {
+			http.Error(w, "Failed to sync object aliases", http.StatusInternalServerError)
+			return
+		}else if err == sql.ErrNoRows {
+			idString := aliases[0]
+			newObj, errCreateObj := h.queries.CreateObject(ctx, database.CreateObjectParams{
+				Name:        idString, // Use alias as initial name
+				Description: idString,
+				IDString:   idString,
+				CreatorID:  creatorID,
+			})
+			if(errCreateObj != nil){
+				http.Error(w, "Failed to create object", http.StatusInternalServerError)
+				return
+			}
+			objectID = newObj.ID
+			aliasesWithoutId := aliases[1:]
+			if len(aliases) > 1 {
+				h.queries.UpdateObject(ctx, database.UpdateObjectParams{
+					ID: objectID,
+					Name: idString,
+					Description: strings.Join(aliasesWithoutId, ", "),
+					IDString: idString,
+					Aliases: pq.StringArray(aliasesWithoutId),
+				})
+			}
+		} else if err == nil {
+			objectID = r.ID
+		}
 	}
 
 	objectTypeID, err := uuid.Parse(req.ObjectTypeID)

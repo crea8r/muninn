@@ -345,6 +345,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.softDeleteObjStepStmt, err = db.PrepareContext(ctx, softDeleteObjStep); err != nil {
 		return nil, fmt.Errorf("error preparing query SoftDeleteObjStep: %w", err)
 	}
+	if q.syncObjectAliasesStmt, err = db.PrepareContext(ctx, syncObjectAliases); err != nil {
+		return nil, fmt.Errorf("error preparing query SyncObjectAliases: %w", err)
+	}
 	if q.updateActionExecutionStmt, err = db.PrepareContext(ctx, updateActionExecution); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateActionExecution: %w", err)
 	}
@@ -957,6 +960,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing softDeleteObjStepStmt: %w", cerr)
 		}
 	}
+	if q.syncObjectAliasesStmt != nil {
+		if cerr := q.syncObjectAliasesStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing syncObjectAliasesStmt: %w", cerr)
+		}
+	}
 	if q.updateActionExecutionStmt != nil {
 		if cerr := q.updateActionExecutionStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateActionExecutionStmt: %w", cerr)
@@ -1223,6 +1231,7 @@ type Queries struct {
 	removeObjectsFromTaskStmt                *sql.Stmt
 	removeTagFromObjectStmt                  *sql.Stmt
 	softDeleteObjStepStmt                    *sql.Stmt
+	syncObjectAliasesStmt                    *sql.Stmt
 	updateActionExecutionStmt                *sql.Stmt
 	updateActionLastRunStmt                  *sql.Stmt
 	updateAutomatedActionStmt                *sql.Stmt
@@ -1360,6 +1369,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		removeObjectsFromTaskStmt:                q.removeObjectsFromTaskStmt,
 		removeTagFromObjectStmt:                  q.removeTagFromObjectStmt,
 		softDeleteObjStepStmt:                    q.softDeleteObjStepStmt,
+		syncObjectAliasesStmt:                    q.syncObjectAliasesStmt,
 		updateActionExecutionStmt:                q.updateActionExecutionStmt,
 		updateActionLastRunStmt:                  q.updateActionLastRunStmt,
 		updateAutomatedActionStmt:                q.updateAutomatedActionStmt,
