@@ -80,15 +80,15 @@ func (s *AutomationService) ExecuteAction(
     if filterConfig.TypeValueCriteria != nil {
         if len(filterConfig.TypeValueCriteria.Criteria1) > 0 {
             data, _ := json.Marshal(filterConfig.TypeValueCriteria.Criteria1)
-            criteria1 = (*json.RawMessage)(&data)
+            criteria1 = convertToKeyValue(string(data))
         }
         if len(filterConfig.TypeValueCriteria.Criteria2) > 0 {
             data, _ := json.Marshal(filterConfig.TypeValueCriteria.Criteria2)
-            criteria2 = (*json.RawMessage)(&data)
+            criteria2 = convertToKeyValue(string(data))
         }
         if len(filterConfig.TypeValueCriteria.Criteria3) > 0 {
             data, _ := json.Marshal(filterConfig.TypeValueCriteria.Criteria3)
-            criteria3 = (*json.RawMessage)(&data)
+            criteria3 = convertToKeyValue(string(data))
         }
     }
     // to keep table small, delete old action executions
@@ -163,4 +163,33 @@ func (s *AutomationService) ExecuteAction(
     s.db.UpdateActionLastRun(ctx, action.ID)
 
     return err
+}
+
+type CriteriaInputFormat struct {
+    Field string `json:"field"`
+    Value string `json:"value"`
+}
+
+func convertToKeyValue(input string) *json.RawMessage {
+	// Define a map for the output format
+	output := make(map[string]string)
+
+	// Unmarshal the input JSON
+	var inputData CriteriaInputFormat
+	err := json.Unmarshal([]byte(input), &inputData)
+	if err != nil {
+		fmt.Println("Error unmarshalling JSON:", err)
+		return nil
+	}
+
+	// Convert to the desired output format
+	output[inputData.Field] = inputData.Value
+
+	// Marshal the output to JSON
+	result, err := json.Marshal(output)
+	if err != nil {
+		fmt.Println("Error marshalling JSON:", err)
+		return nil
+	}
+    return (*json.RawMessage)(&result)
 }
