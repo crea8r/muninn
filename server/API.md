@@ -27,6 +27,14 @@ Bearear {secret_token}
 }
 ```
 
+`aliases` can be wallet address, email, twitter id, etc. Multiple aliases can join a fact, e.g: if you have 10 people go to an event then it is up to you to create a fact that share among 10 people or create 10 seperate facts. My recommendation is if the text is exactly the same then keep folks in the same fact else split it.
+
+`text` is the description of the fact you want to record, e.g: `{{name}}` join the `{{event_name}}`
+
+`happened_at` is time moment the fact happened (timestamp with timezone) , sample data: 2024-11-21T12:00:00Z
+
+`location` is where the fact happened, e.g: London, UK.
+
 #### Response
 
 ```typescript
