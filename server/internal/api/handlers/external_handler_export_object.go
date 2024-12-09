@@ -78,6 +78,8 @@ func (h *ExternalHandler) ListObjectsWithNormalizedData(w http.ResponseWriter, r
 	latest := time.Now()
 	if len(objects) > 0 {
 		latest = objects[len(objects)-1].CreatedAt
+		// add a minutes to the latest
+		latest = latest.Add(time.Minute)
 	}
 	response := struct {
 		Objects []NormalizedObjectData `json:"objects"`
