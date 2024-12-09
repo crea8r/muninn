@@ -13,7 +13,7 @@ This is the document to interact with munin.
 #### Header
 
 ```header
-Bearear {secret_token}
+Bearer {secret_token}
 ```
 
 #### Body
