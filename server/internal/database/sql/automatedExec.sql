@@ -64,7 +64,7 @@ filtered_objects AS (
         )) AND
         ($4::uuid[] IS NULL OR od.tag_ids && $4) AND
         ($5::uuid[] IS NULL OR od.type_ids && $5) AND
-        ($6::jsonb IS NULL OR 
+        ((COALESCE($6::jsonb, 'null'::jsonb) = 'null'::jsonb) OR 
          EXISTS (
              SELECT 1 
              FROM jsonb_array_elements(od.all_type_values) tv,
@@ -81,7 +81,7 @@ filtered_objects AS (
                     ELSE false
                 END
          )) AND
-        ($7::jsonb IS NULL OR 
+        ((COALESCE($7::jsonb, 'null'::jsonb) = 'null'::jsonb) OR 
          EXISTS (
              SELECT 1 
              FROM jsonb_array_elements(od.all_type_values) tv,
@@ -98,7 +98,7 @@ filtered_objects AS (
                     ELSE false
                 END
          )) AND
-        ($8::jsonb IS NULL OR 
+        ((COALESCE($8::jsonb, 'null'::jsonb) = 'null'::jsonb) OR 
          EXISTS (
              SELECT 1 
              FROM jsonb_array_elements(od.all_type_values) tv,
@@ -120,16 +120,24 @@ filtered_objects AS (
          fact_search @@ websearch_to_tsquery('english', $2) OR
          type_value_search @@ websearch_to_tsquery('english', $2)) AND
         -- Additional filters to ensure we don't add duplicates
-        ($10::uuid IS NULL OR NOT ($10 = ANY(od.tag_ids)) OR od.tag_ids IS NULL) AND
-        ($11::uuid IS NULL OR NOT ($11 = ANY(od.funnel_ids)) OR od.funnel_ids IS NULL)
+        (COALESCE($10::uuid, '00000000-0000-0000-0000-000000000000'::uuid) = '00000000-0000-0000-0000-000000000000'::uuid 
+        OR NOT ($10 = ANY(od.tag_ids)) OR od.tag_ids IS NULL) AND
+        (COALESCE($11::uuid, '00000000-0000-0000-0000-000000000000'::uuid) = '00000000-0000-0000-0000-000000000000'::uuid 
+        OR NOT ($11 = ANY(od.funnel_ids)) OR od.funnel_ids IS NULL)
     LIMIT 100
 ),
 -- Insert tag relations if tag_id is provided
 inserted_tags AS (
     INSERT INTO obj_tag (obj_id, tag_id)
-    SELECT fo.id, $10
+    SELECT 
+        fo.id,
+        CASE 
+            WHEN $10::uuid <> '00000000-0000-0000-0000-000000000000'::uuid THEN $10 
+        ELSE NULL 
+    END
     FROM filtered_objects fo
-    WHERE $10::uuid IS NOT NULL
+    WHERE 
+        COALESCE($10::uuid, '00000000-0000-0000-0000-000000000000'::uuid) <> '00000000-0000-0000-0000-000000000000'::uuid 
     ON CONFLICT DO NOTHING
     RETURNING obj_id
 ),
@@ -139,7 +147,8 @@ inserted_steps AS (
     SELECT fo.id, fs.step_id, $12
     FROM filtered_objects fo
     CROSS JOIN first_step fs
-    WHERE $11::uuid IS NOT NULL
+    WHERE 
+    COALESCE($11::uuid, '00000000-0000-0000-0000-000000000000'::uuid) <> '00000000-0000-0000-0000-000000000000'::uuid 
     AND fs.step_id IS NOT NULL
     ON CONFLICT DO NOTHING
     RETURNING obj_id

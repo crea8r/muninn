@@ -73,7 +73,7 @@ filtered_objects AS (
         -- Filter by object types
         ($5::uuid[] IS NULL OR od.type_ids && $5) AND
         -- Filter by type value criteria 1 with LIKE
-        ($6::jsonb IS NULL OR 
+        ((COALESCE($6::jsonb, 'null'::jsonb) = 'null'::jsonb) OR
          EXISTS (
              SELECT 1 
              FROM jsonb_array_elements(od.all_type_values) tv,
@@ -91,7 +91,7 @@ filtered_objects AS (
                 END
          )) AND
         -- Filter by type value criteria 2 with LIKE
-        ($7::jsonb IS NULL OR 
+        ((COALESCE($7::jsonb, 'null'::jsonb) = 'null'::jsonb) OR
          EXISTS (
              SELECT 1 
              FROM jsonb_array_elements(od.all_type_values) tv,
@@ -109,7 +109,7 @@ filtered_objects AS (
                 END
          )) AND
         -- Filter by type value criteria 3 with LIKE
-        ($8::jsonb IS NULL OR 
+        ((COALESCE($8::jsonb, 'null'::jsonb) = 'null'::jsonb) OR
          EXISTS (
              SELECT 1 
              FROM jsonb_array_elements(od.all_type_values) tv,
@@ -171,9 +171,9 @@ type CountObjectsAdvancedParams struct {
 	Column3 []uuid.UUID     `json:"column_3"`
 	Column4 []uuid.UUID     `json:"column_4"`
 	Column5 []uuid.UUID     `json:"column_5"`
-	Column6 *json.RawMessage `json:"column_6"`
-	Column7 *json.RawMessage `json:"column_7"`
-	Column8 *json.RawMessage `json:"column_8"`
+	Column6 json.RawMessage `json:"column_6"`
+	Column7 json.RawMessage `json:"column_7"`
+	Column8 json.RawMessage `json:"column_8"`
 	Column9 []int32         `json:"column_9"`
 }
 

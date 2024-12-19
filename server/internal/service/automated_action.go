@@ -76,19 +76,22 @@ func (s *AutomationService) ExecuteAction(
             subStatuses = filterConfig.FunnelStepFilter.SubStatuses
         }
     }
-    var criteria1, criteria2, criteria3 *json.RawMessage
+    
+    criteria1 := json.RawMessage("null")
+    criteria2 := json.RawMessage("null")
+    criteria3 := json.RawMessage("null")
     if filterConfig.TypeValueCriteria != nil {
         if len(filterConfig.TypeValueCriteria.Criteria1) > 0 {
             data, _ := json.Marshal(filterConfig.TypeValueCriteria.Criteria1)
-            criteria1 = convertToKeyValue(string(data))
+            criteria1 = *convertToKeyValue(string(data))
         }
         if len(filterConfig.TypeValueCriteria.Criteria2) > 0 {
             data, _ := json.Marshal(filterConfig.TypeValueCriteria.Criteria2)
-            criteria2 = convertToKeyValue(string(data))
+            criteria2 = *convertToKeyValue(string(data))
         }
         if len(filterConfig.TypeValueCriteria.Criteria3) > 0 {
             data, _ := json.Marshal(filterConfig.TypeValueCriteria.Criteria3)
-            criteria3 = convertToKeyValue(string(data))
+            criteria3 = *convertToKeyValue(string(data))
         }
     }
     // to keep table small, delete old action executions
@@ -105,13 +108,13 @@ func (s *AutomationService) ExecuteAction(
         return err
     }
     executionID := ac.ID
-    var funnelId *uuid.UUID
-    var tagId *uuid.UUID
+    funnelId := uuid.MustParse("00000000-0000-0000-0000-000000000000")
+    tagId := uuid.MustParse("00000000-0000-0000-0000-000000000000")
     if actionConfig.FunnelId != uuid.Nil {
-        funnelId = &actionConfig.FunnelId
+        funnelId = actionConfig.FunnelId
     }
     if actionConfig.TagId != uuid.Nil {
-        tagId = &actionConfig.TagId
+        tagId = actionConfig.TagId
     }
     var search string = ""
     if filterConfig.Search != "" {
@@ -143,6 +146,7 @@ func (s *AutomationService) ExecuteAction(
     status := "completed"
     var noOfAffectedObjects int32 = 0
     var executionLog pqtype.NullRawMessage
+    fmt.Println("action config, ",actionConfig," tagId: ", tagId, " funnelId: ", funnelId)
     if err != nil {
         fmt.Println("Error executing action: ", err)
         status = "failed"

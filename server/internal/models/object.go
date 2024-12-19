@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/crea8r/muninn/server/internal/database"
-	"github.com/crea8r/muninn/server/internal/utils"
+	"github.com/crea8r/muninn/server/pkg/ctype"
 	"github.com/google/uuid"
 )
 
@@ -18,7 +18,7 @@ type Object struct {
 	IDString    string            `json:"idString"`
 	CreatorID   uuid.UUID         `json:"creatorId"`
 	CreatedAt   time.Time         `json:"createdAt"`
-	DeletedAt   utils.NullTime      `json:"-"`
+	DeletedAt   ctype.NullTime      `json:"-"`
 	Tags        []database.Tag             `json:"tags"`
 	TypeValues  []ObjectTypeValue `json:"typeValues"`
 }
@@ -67,11 +67,11 @@ type ObjectDetail struct {
 type Task struct {
 	ID        uuid.UUID      `json:"id"`
 	Content   string         `json:"content"`
-	Deadline  utils.NullTime   `json:"deadline"`
+	Deadline  ctype.NullTime   `json:"deadline"`
 	Status    string         `json:"status"`
 	CreatedAt time.Time      `json:"createdAt"`
-	AssignedID utils.NullUUID `json:"assignedId"`
-	DeletedAt utils.NullTime  `json:"deletedAt"`
+	AssignedID ctype.NullUUID `json:"assignedId"`
+	DeletedAt ctype.NullTime  `json:"deletedAt"`
 }
 
 type StepAndFunnel struct {
@@ -81,14 +81,14 @@ type StepAndFunnel struct {
 	FunnelID  uuid.UUID `json:"funnelId"`
 	FunnelName string   `json:"funnelName"`
 	SubStatus int32 		`json:"subStatus"`
-	DeletedAt utils.NullTime `json:"deletedAt"`
+	DeletedAt ctype.NullTime `json:"deletedAt"`
 	CreatedAt time.Time `json:"createdAt"`
 }
 
 type Fact struct {
 	ID         uuid.UUID    `json:"id"`
 	Text       string       `json:"text"`
-	HappenedAt utils.NullTime `json:"happenedAt"`
+	HappenedAt ctype.NullTime `json:"happenedAt"`
 	Location   string       `json:"location"`
 	CreatedAt  time.Time    `json:"createdAt"`
 }
@@ -356,7 +356,7 @@ type ObjStep struct {
 	StepID    uuid.UUID
 	CreatorID uuid.UUID
 	CreatedAt time.Time
-	DeletedAt utils.NullTime
+	DeletedAt ctype.NullTime
 }
 
 func (m *ObjectModel) CreateObjStep(ctx context.Context, objID, stepID, creatorID uuid.UUID) (*ObjStep, error) {
@@ -375,7 +375,7 @@ func (m *ObjectModel) CreateObjStep(ctx context.Context, objID, stepID, creatorI
 		StepID:    row.StepID,
 		CreatorID: row.CreatorID,
 		CreatedAt: row.CreatedAt,
-		DeletedAt: utils.NullTime{
+		DeletedAt: ctype.NullTime{
 			NullTime: row.DeletedAt,
 		},
 	}, nil

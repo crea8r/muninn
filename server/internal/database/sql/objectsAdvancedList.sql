@@ -87,7 +87,7 @@ filtered_objects AS (
         -- Filter by object types if array is provided
         ($5::uuid[] IS NULL OR od.type_ids && $5) AND
         -- Filter by type value criteria 1 with LIKE
-        ($6::jsonb IS NULL OR 
+        ((COALESCE($6::jsonb, 'null'::jsonb) = 'null'::jsonb) OR 
          EXISTS (
              SELECT 1 
              FROM jsonb_array_elements(od.all_type_values) tv,
@@ -105,7 +105,7 @@ filtered_objects AS (
                 END
          )) AND
         -- Filter by type value criteria 2 with LIKE
-        ($7::jsonb IS NULL OR 
+        ((COALESCE($7::jsonb, 'null'::jsonb) = 'null'::jsonb) OR 
          EXISTS (
              SELECT 1 
              FROM jsonb_array_elements(od.all_type_values) tv,
@@ -123,7 +123,7 @@ filtered_objects AS (
                 END
          )) AND
         -- Filter by type value criteria 3 with LIKE
-        ($8::jsonb IS NULL OR 
+        ((COALESCE($8::jsonb, 'null'::jsonb) = 'null'::jsonb) OR 
          EXISTS (
              SELECT 1 
              FROM jsonb_array_elements(od.all_type_values) tv,

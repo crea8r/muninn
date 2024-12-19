@@ -9,7 +9,7 @@ import (
 
 	"github.com/crea8r/muninn/server/internal/api/middleware"
 	"github.com/crea8r/muninn/server/internal/database"
-	"github.com/crea8r/muninn/server/internal/utils"
+	"github.com/crea8r/muninn/server/pkg/ctype"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -24,7 +24,7 @@ func NewFactHandler(db *database.Queries) *FactHandler {
 
 type FactToCreate struct {
 	Text       string    `json:"text"`
-	HappenedAt utils.NullTime`json:"happenedAt"`
+	HappenedAt ctype.NullTime`json:"happenedAt"`
 	Location   string    `json:"location"`
 	ObjectIDs  []string  `json:"objectIds"`
 }
@@ -81,7 +81,7 @@ func (h *FactHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var input struct {
 		Text       string    `json:"text"`
-		HappenedAt utils.NullTime `json:"happenedAt"`
+		HappenedAt ctype.NullTime `json:"happenedAt"`
 		Location   string    `json:"location"`
 		ToAddObjectIDs  []string  `json:"toAddObjectIDs"`
 		ToRemoveObjectIDs  []string  `json:"toRemoveObjectIDs"`
@@ -200,7 +200,7 @@ func (h *FactHandler) List(w http.ResponseWriter, r *http.Request) {
 	type FactType struct {
 		ID             uuid.UUID    `json:"id"`
 		Text           string       `json:"text"`
-		HappenedAt     utils.NullTime `json:"happenedAt"`
+		HappenedAt     ctype.NullTime `json:"happenedAt"`
 		Location       string       `json:"location"`
 		CreatorID      uuid.UUID    `json:"creatorId"`
 		CreatorName    string       `json:"creatorName"`
@@ -216,7 +216,7 @@ func (h *FactHandler) List(w http.ResponseWriter, r *http.Request) {
 		returningFacts[i] = FactType{
 			ID:             fact.ID,
 			Text:           fact.Text,
-			HappenedAt:     utils.NullTime{
+			HappenedAt:     ctype.NullTime{
 				NullTime:  fact.HappenedAt,
 			},
 			Location:       fact.Location,

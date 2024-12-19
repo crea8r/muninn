@@ -8,7 +8,7 @@ import (
 	"log"
 
 	"github.com/crea8r/muninn/server/internal/database"
-	"github.com/crea8r/muninn/server/internal/pagination"
+	"github.com/crea8r/muninn/server/pkg/pagination"
 	"github.com/google/uuid"
 )
 
@@ -90,17 +90,20 @@ func (s *ObjectService) ListObjects(ctx context.Context, params ListObjectsParam
     }
 
     // Prepare type value criteria
-    var criteria1, criteria2, criteria3 *json.RawMessage
+    nullableCriteria1 := json.RawMessage("null")
+    nullableCriteria2 := json.RawMessage("null")
+    nullableCriteria3 := json.RawMessage(`null`)
     switch len(params.TypeValueCriteria) {
     case 3:
-        criteria3 = &params.TypeValueCriteria[2]
+        nullableCriteria3 = params.TypeValueCriteria[2]
         fallthrough
     case 2:
-        criteria2 = &params.TypeValueCriteria[1]
+        nullableCriteria2 = params.TypeValueCriteria[1]
         fallthrough
     case 1:
-        criteria1 = &params.TypeValueCriteria[0]
+        nullableCriteria1 = params.TypeValueCriteria[0]
     }
+    
 
     // Prepare arrays (nil if empty)
     var stepIDs, tagIDs, typeIDs []uuid.UUID
@@ -122,15 +125,16 @@ func (s *ObjectService) ListObjects(ctx context.Context, params ListObjectsParam
         log.Printf("ListObjects params: stepIDs=%v, tagIDs=%v, typeIDs=%v", 
             stepIDs, tagIDs, typeIDs)
     }
+    
     count, err := s.db.CountObjectsAdvanced(ctx, database.CountObjectsAdvancedParams{
         OrgID:             params.OrgID,
         Column2:       params.SearchQuery,
         Column3:          stepIDs,
         Column4:           tagIDs,
         Column5:          typeIDs,
-        Column6: criteria1,
-        Column7: criteria2,
-        Column8: criteria3,
+        Column6: nullableCriteria1,
+        Column7: nullableCriteria2,
+        Column8: nullableCriteria3,
         Column9: subStatusFilter,
     })
     if err != nil {
@@ -142,9 +146,9 @@ func (s *ObjectService) ListObjects(ctx context.Context, params ListObjectsParam
         Column3:          stepIDs,
         Column4:           tagIDs,
         Column5:          typeIDs,
-        Column6: criteria1,
-        Column7: criteria2,
-        Column8: criteria3,
+        Column6:           nullableCriteria1,
+        Column7:           nullableCriteria2,
+        Column8:           nullableCriteria3,
         Column9:          string(params.OrderBy),
         Column10:    params.Ascending,
         Column11:        params.TypeValueField, 

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/crea8r/muninn/server/internal/utils"
+	"github.com/crea8r/muninn/server/pkg/ctype"
 )
 
 type Creator struct {
@@ -18,7 +18,7 @@ type Creator struct {
 	OrgID     string         `json:"org_id"`
 	Active    bool           `json:"active"`
 	CreatedAt time.Time      `json:"created_at"`
-	DeletedAt utils.NullTime   `json:"deleted_at"`
+	DeletedAt ctype.NullTime   `json:"deleted_at"`
 }
 
 type Profile json.RawMessage

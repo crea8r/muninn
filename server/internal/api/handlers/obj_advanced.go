@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/crea8r/muninn/server/internal/api/middleware"
-	"github.com/crea8r/muninn/server/internal/pagination"
 	"github.com/crea8r/muninn/server/internal/service"
+	"github.com/crea8r/muninn/server/pkg/pagination"
 	"github.com/google/uuid"
 )
 

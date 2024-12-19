@@ -1,4 +1,4 @@
-package utils
+package ctype
 
 import (
 	"database/sql"

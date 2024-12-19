@@ -62,10 +62,7 @@ export const AutomationForm: React.FC<AutomationFormProps> = ({
               },
           actionConfig: initialData?.actionConfig
             ? structuredClone(initialData.actionConfig || {})
-            : {
-                tagIds: [],
-                funnelId: '',
-              },
+            : {},
           isActive: true,
         };
   const {

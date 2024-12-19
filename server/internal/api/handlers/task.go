@@ -10,7 +10,7 @@ import (
 
 	"github.com/crea8r/muninn/server/internal/api/middleware"
 	"github.com/crea8r/muninn/server/internal/database"
-	"github.com/crea8r/muninn/server/internal/utils"
+	"github.com/crea8r/muninn/server/pkg/ctype"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -28,15 +28,15 @@ type BasicObject struct {
 type ResponseTask struct {
 	ID          uuid.UUID     `json:"id"`
 	Content     string        `json:"content"`
-	Deadline    utils.NullTime  `json:"deadline"`
-	RemindAt    utils.NullTime  `json:"remindAt"`
+	Deadline    ctype.NullTime  `json:"deadline"`
+	RemindAt    ctype.NullTime  `json:"remindAt"`
 	Status      string        `json:"status"`
 	CreatorID   uuid.UUID     `json:"creatorId"`
-	AssignedID  utils.NullUUID `json:"assignedId"`
-	ParentID    utils.NullUUID `json:"parentId"`
+	AssignedID  ctype.NullUUID `json:"assignedId"`
+	ParentID    ctype.NullUUID `json:"parentId"`
 	CreatedAt   time.Time     `json:"createdAt"`
 	LastUpdated time.Time     `json:"lastUpdated"`
-	DeletedAt   utils.NullTime  `json:"deletedAt"`
+	DeletedAt   ctype.NullTime  `json:"deletedAt"`
 	CreatorName string        `json:"creatorName"`
 	AssignedName string       `json:"assignedName"`
 	Objects []BasicObject	 `json:"objects"`
@@ -46,14 +46,14 @@ func ConvertTask(task database.Task) ResponseTask {
 	responseTask := ResponseTask{
 		ID:          task.ID,
 		Content:     task.Content,
-		Deadline:    utils.NullTime{NullTime: task.Deadline},
-		RemindAt:    utils.NullTime{NullTime: task.RemindAt},
+		Deadline:    ctype.NullTime{NullTime: task.Deadline},
+		RemindAt:    ctype.NullTime{NullTime: task.RemindAt},
 		Status:      task.Status,
 		CreatorID:   task.CreatorID,
-		AssignedID:  utils.NullUUID{NullUUID: task.AssignedID},
-		ParentID:    utils.NullUUID{NullUUID: task.ParentID},
+		AssignedID:  ctype.NullUUID{NullUUID: task.AssignedID},
+		ParentID:    ctype.NullUUID{NullUUID: task.ParentID},
 		CreatedAt:   task.CreatedAt,
-		DeletedAt:	 utils.NullTime{NullTime: task.DeletedAt},
+		DeletedAt:	 ctype.NullTime{NullTime: task.DeletedAt},
 	}
 	return responseTask
 }
@@ -62,12 +62,12 @@ func ConvertListRowTask(task database.ListTasksByOrgIDRow) ResponseTask {
 	responseTask := ResponseTask{
 		ID:          task.ID,
 		Content:     task.Content,
-		Deadline:    utils.NullTime{NullTime: task.Deadline},
-		RemindAt:    utils.NullTime{NullTime: task.RemindAt},
+		Deadline:    ctype.NullTime{NullTime: task.Deadline},
+		RemindAt:    ctype.NullTime{NullTime: task.RemindAt},
 		Status:      task.Status,
 		CreatorID:   task.CreatorID,
-		AssignedID:  utils.NullUUID{NullUUID: task.AssignedID},
-		ParentID:    utils.NullUUID{NullUUID: task.ParentID},
+		AssignedID:  ctype.NullUUID{NullUUID: task.AssignedID},
+		ParentID:    ctype.NullUUID{NullUUID: task.ParentID},
 		CreatedAt:   task.CreatedAt,
 	}
 	return responseTask
@@ -81,15 +81,15 @@ func ConvertIDRowTask(task database.GetTaskByIDRow) ResponseTask {
 	responseTask := ResponseTask{
 		ID:          task.ID,
 		Content:     task.Content,
-		Deadline:    utils.NullTime{NullTime: task.Deadline},
-		RemindAt:    utils.NullTime{NullTime: task.RemindAt},
+		Deadline:    ctype.NullTime{NullTime: task.Deadline},
+		RemindAt:    ctype.NullTime{NullTime: task.RemindAt},
 		Status:      task.Status,
 		CreatorID:   task.CreatorID,
-		AssignedID:  utils.NullUUID{NullUUID: task.AssignedID},
-		ParentID:    utils.NullUUID{NullUUID: task.ParentID},
+		AssignedID:  ctype.NullUUID{NullUUID: task.AssignedID},
+		ParentID:    ctype.NullUUID{NullUUID: task.ParentID},
 		CreatedAt:   task.CreatedAt,
 		LastUpdated: task.LastUpdated,
-		DeletedAt:	 utils.NullTime{NullTime: task.DeletedAt},
+		DeletedAt:	 ctype.NullTime{NullTime: task.DeletedAt},
 		CreatorName: task.CreatorName,
 		AssignedName: assignedName,
 	}
@@ -114,12 +114,12 @@ func ConvertFilterRowTask(task database.ListTasksWithFilterRow) ResponseTask {
 	responseTask := ResponseTask{
 		ID:          task.ID,
 		Content:     task.Content,
-		Deadline:    utils.NullTime{NullTime: task.Deadline},
-		RemindAt:    utils.NullTime{NullTime: task.RemindAt},
+		Deadline:    ctype.NullTime{NullTime: task.Deadline},
+		RemindAt:    ctype.NullTime{NullTime: task.RemindAt},
 		Status:      task.Status,
 		CreatorID:   task.CreatorID,
-		AssignedID:  utils.NullUUID{NullUUID: task.AssignedID},
-		ParentID:    utils.NullUUID{NullUUID: task.ParentID},
+		AssignedID:  ctype.NullUUID{NullUUID: task.AssignedID},
+		ParentID:    ctype.NullUUID{NullUUID: task.ParentID},
 		CreatedAt:   task.CreatedAt,
 		LastUpdated: task.LastUpdated,
 		CreatorName: task.CreatorName,
@@ -149,14 +149,14 @@ func ConvertObjectIDRowTask(task database.ListTasksByObjectIDRow) ResponseTask {
 	responseTask := ResponseTask{
 		ID:          task.ID,
 		Content:     task.Content,
-		Deadline:    utils.NullTime{NullTime: task.Deadline},
-		RemindAt:    utils.NullTime{NullTime: task.RemindAt},
+		Deadline:    ctype.NullTime{NullTime: task.Deadline},
+		RemindAt:    ctype.NullTime{NullTime: task.RemindAt},
 		Status:      task.Status,
 		CreatorID:   task.CreatorID,
 		CreatorName: task.CreatorName,
-		AssignedID:  utils.NullUUID{NullUUID: task.AssignedID},
+		AssignedID:  ctype.NullUUID{NullUUID: task.AssignedID},
 		AssignedName: assignedName,
-		ParentID: 	utils.NullUUID{NullUUID: task.ParentID},
+		ParentID: 	ctype.NullUUID{NullUUID: task.ParentID},
 		CreatedAt:  task.CreatedAt,
 		LastUpdated: task.LastUpdated,
 		Objects: objects,
@@ -170,11 +170,11 @@ func NewTaskHandler(db *database.Queries) *TaskHandler {
 
 type createTaskRequest struct {
 	Content   string    `json:"content"`
-	Deadline  utils.NullTime `json:"deadline"`
-	RemindAt  utils.NullTime `json:"remindAt"`
+	Deadline  ctype.NullTime `json:"deadline"`
+	RemindAt  ctype.NullTime `json:"remindAt"`
 	Status    string    `json:"status"`
-	AssignedID utils.NullUUID `json:"assignedId"`
-	ParentID  utils.NullUUID `json:"parentId"`
+	AssignedID ctype.NullUUID `json:"assignedId"`
+	ParentID  ctype.NullUUID `json:"parentId"`
 	ObjectIDs []uuid.UUID `json:"objectIds"`
 }
 

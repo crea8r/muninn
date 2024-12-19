@@ -13,7 +13,7 @@ import (
 	"github.com/crea8r/muninn/server/internal/api/middleware"
 	"github.com/crea8r/muninn/server/internal/database"
 	"github.com/crea8r/muninn/server/internal/models"
-	"github.com/crea8r/muninn/server/internal/utils"
+	"github.com/crea8r/muninn/server/pkg/ctype"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -172,7 +172,7 @@ type ListFunnelsRowWithStep struct {
 	Description string       `json:"description"`
 	CreatorID   uuid.UUID    `json:"creator_id"`
 	CreatedAt   time.Time    `json:"created_at"`
-	DeletedAt   utils.NullTime `json:"deleted_at"`
+	DeletedAt   ctype.NullTime `json:"deleted_at"`
 	OrgID       uuid.UUID    `json:"org_id"`
 	ObjectCount int64        `json:"object_count"`
 	Steps 			[]database.ListStepsByFunnelRow `json:"steps"`
@@ -244,7 +244,7 @@ func (h *FunnelHandler) ListFunnels(w http.ResponseWriter, r *http.Request) {
 		funnelWithSteps[i].Description = funnel.Description
 		funnelWithSteps[i].CreatorID = funnel.CreatorID
 		funnelWithSteps[i].CreatedAt = funnel.CreatedAt
-		funnelWithSteps[i].DeletedAt = utils.NullTime{NullTime: funnel.DeletedAt}
+		funnelWithSteps[i].DeletedAt = ctype.NullTime{NullTime: funnel.DeletedAt}
 		funnelWithSteps[i].OrgID = funnel.OrgID
 		funnelWithSteps[i].ObjectCount = funnel.ObjectCount
 		funnelWithSteps[i].Steps = steps
@@ -305,7 +305,7 @@ func (h *FunnelHandler) GetFunnel(w http.ResponseWriter, r *http.Request) {
 		Description: funnel.Description,
 		CreatorID:   funnel.CreatorID,
 		CreatedAt:   funnel.CreatedAt,
-		DeletedAt:   utils.NullTime{NullTime: funnel.DeletedAt},
+		DeletedAt:   ctype.NullTime{NullTime: funnel.DeletedAt},
 		OrgID:       funnel.OrgID,
 		ObjectCount: funnel.ObjectCount,
 		Steps:  steps,

@@ -4,6 +4,7 @@ package task
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -109,6 +110,7 @@ func (r *Runner) executeAutomatedActions() {
 				return
 			}
 			if err := json.Unmarshal(action.ActionConfig, &actionConfig); err != nil {
+				fmt.Println(action.ActionConfig)
 				r.log.Printf("Error unmarshalling action config for action %s: %v", action.ID, err)
 				return
 			}
