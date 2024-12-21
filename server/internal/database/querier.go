@@ -76,7 +76,6 @@ type Querier interface {
 	FindObjectByAliasOrIDString(ctx context.Context, arg FindObjectByAliasOrIDStringParams) (Obj, error)
 	FindTagByNormalizedName(ctx context.Context, arg FindTagByNormalizedNameParams) (Tag, error)
 	GetAutomatedAction(ctx context.Context, id uuid.UUID) (AutomatedAction, error)
-	GetCreator(ctx context.Context, id uuid.UUID) (Creator, error)
 	GetCreatorByID(ctx context.Context, id uuid.UUID) (Creator, error)
 	GetCreatorByUsername(ctx context.Context, arg GetCreatorByUsernameParams) (GetCreatorByUsernameRow, error)
 	GetCreatorDailyActivity(ctx context.Context, creatorID uuid.UUID) ([]GetCreatorDailyActivityRow, error)
@@ -148,6 +147,9 @@ type Querier interface {
 	UpdateActionLastRun(ctx context.Context, id uuid.UUID) error
 	UpdateAutomatedAction(ctx context.Context, arg UpdateAutomatedActionParams) (AutomatedAction, error)
 	UpdateCreatorList(ctx context.Context, arg UpdateCreatorListParams) (CreatorList, error)
+	UpdateCreatorPassword(ctx context.Context, arg UpdateCreatorPasswordParams) error
+	UpdateCreatorProfile(ctx context.Context, arg UpdateCreatorProfileParams) (Creator, error)
+	UpdateCreatorRoleAndStatus(ctx context.Context, arg UpdateCreatorRoleAndStatusParams) (Creator, error)
 	UpdateFact(ctx context.Context, arg UpdateFactParams) (Fact, error)
 	UpdateFunnel(ctx context.Context, arg UpdateFunnelParams) (Funnel, error)
 	UpdateImportTaskError(ctx context.Context, arg UpdateImportTaskErrorParams) (ImportTask, error)
@@ -163,9 +165,6 @@ type Querier interface {
 	UpdateStep(ctx context.Context, arg UpdateStepParams) (Step, error)
 	UpdateTag(ctx context.Context, arg UpdateTagParams) (Tag, error)
 	UpdateTask(ctx context.Context, arg UpdateTaskParams) (Task, error)
-	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
-	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (Creator, error)
-	UpdateUserRoleAndStatus(ctx context.Context, arg UpdateUserRoleAndStatusParams) (Creator, error)
 	UpsertObjectTypeValue(ctx context.Context, arg UpsertObjectTypeValueParams) (ObjTypeValue, error)
 	ValidateMergeObjects(ctx context.Context, arg ValidateMergeObjectsParams) (ValidateMergeObjectsRow, error)
 }

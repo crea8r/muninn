@@ -146,7 +146,6 @@ func (s *AutomationService) ExecuteAction(
     status := "completed"
     var noOfAffectedObjects int32 = 0
     var executionLog pqtype.NullRawMessage
-    fmt.Println("action config, ",actionConfig," tagId: ", tagId, " funnelId: ", funnelId)
     if err != nil {
         fmt.Println("Error executing action: ", err)
         status = "failed"

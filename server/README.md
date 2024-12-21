@@ -1,8 +1,22 @@
 # Instruction
 
-## Development note
+## Architecture
 
-Change `ListObjectsAdvancedParams` and `CountObjectsAdvancedParams`: all `json.RawMessage` turn to `*json.RawMessage`.
+This project will be divided into features for seperation of concern.
+
+### Auth
+
+Sign Up (with email and/or wallet), Login, change creator/user detail
+
+Manage creator within an organisation, manage organisation info
+
+### Health
+
+### Shared
+
+### Workspace
+
+User workspace management
 
 ## Production
 

@@ -189,9 +189,6 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getAutomatedActionStmt, err = db.PrepareContext(ctx, getAutomatedAction); err != nil {
 		return nil, fmt.Errorf("error preparing query GetAutomatedAction: %w", err)
 	}
-	if q.getCreatorStmt, err = db.PrepareContext(ctx, getCreator); err != nil {
-		return nil, fmt.Errorf("error preparing query GetCreator: %w", err)
-	}
 	if q.getCreatorByIDStmt, err = db.PrepareContext(ctx, getCreatorByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCreatorByID: %w", err)
 	}
@@ -360,6 +357,15 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.updateCreatorListStmt, err = db.PrepareContext(ctx, updateCreatorList); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateCreatorList: %w", err)
 	}
+	if q.updateCreatorPasswordStmt, err = db.PrepareContext(ctx, updateCreatorPassword); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateCreatorPassword: %w", err)
+	}
+	if q.updateCreatorProfileStmt, err = db.PrepareContext(ctx, updateCreatorProfile); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateCreatorProfile: %w", err)
+	}
+	if q.updateCreatorRoleAndStatusStmt, err = db.PrepareContext(ctx, updateCreatorRoleAndStatus); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateCreatorRoleAndStatus: %w", err)
+	}
 	if q.updateFactStmt, err = db.PrepareContext(ctx, updateFact); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateFact: %w", err)
 	}
@@ -404,15 +410,6 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.updateTaskStmt, err = db.PrepareContext(ctx, updateTask); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateTask: %w", err)
-	}
-	if q.updateUserPasswordStmt, err = db.PrepareContext(ctx, updateUserPassword); err != nil {
-		return nil, fmt.Errorf("error preparing query UpdateUserPassword: %w", err)
-	}
-	if q.updateUserProfileStmt, err = db.PrepareContext(ctx, updateUserProfile); err != nil {
-		return nil, fmt.Errorf("error preparing query UpdateUserProfile: %w", err)
-	}
-	if q.updateUserRoleAndStatusStmt, err = db.PrepareContext(ctx, updateUserRoleAndStatus); err != nil {
-		return nil, fmt.Errorf("error preparing query UpdateUserRoleAndStatus: %w", err)
 	}
 	if q.upsertObjectTypeValueStmt, err = db.PrepareContext(ctx, upsertObjectTypeValue); err != nil {
 		return nil, fmt.Errorf("error preparing query UpsertObjectTypeValue: %w", err)
@@ -700,11 +697,6 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getAutomatedActionStmt: %w", cerr)
 		}
 	}
-	if q.getCreatorStmt != nil {
-		if cerr := q.getCreatorStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing getCreatorStmt: %w", cerr)
-		}
-	}
 	if q.getCreatorByIDStmt != nil {
 		if cerr := q.getCreatorByIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getCreatorByIDStmt: %w", cerr)
@@ -985,6 +977,21 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing updateCreatorListStmt: %w", cerr)
 		}
 	}
+	if q.updateCreatorPasswordStmt != nil {
+		if cerr := q.updateCreatorPasswordStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateCreatorPasswordStmt: %w", cerr)
+		}
+	}
+	if q.updateCreatorProfileStmt != nil {
+		if cerr := q.updateCreatorProfileStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateCreatorProfileStmt: %w", cerr)
+		}
+	}
+	if q.updateCreatorRoleAndStatusStmt != nil {
+		if cerr := q.updateCreatorRoleAndStatusStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateCreatorRoleAndStatusStmt: %w", cerr)
+		}
+	}
 	if q.updateFactStmt != nil {
 		if cerr := q.updateFactStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateFactStmt: %w", cerr)
@@ -1058,21 +1065,6 @@ func (q *Queries) Close() error {
 	if q.updateTaskStmt != nil {
 		if cerr := q.updateTaskStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateTaskStmt: %w", cerr)
-		}
-	}
-	if q.updateUserPasswordStmt != nil {
-		if cerr := q.updateUserPasswordStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing updateUserPasswordStmt: %w", cerr)
-		}
-	}
-	if q.updateUserProfileStmt != nil {
-		if cerr := q.updateUserProfileStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing updateUserProfileStmt: %w", cerr)
-		}
-	}
-	if q.updateUserRoleAndStatusStmt != nil {
-		if cerr := q.updateUserRoleAndStatusStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing updateUserRoleAndStatusStmt: %w", cerr)
 		}
 	}
 	if q.upsertObjectTypeValueStmt != nil {
@@ -1179,7 +1171,6 @@ type Queries struct {
 	findObjectByAliasOrIDStringStmt          *sql.Stmt
 	findTagByNormalizedNameStmt              *sql.Stmt
 	getAutomatedActionStmt                   *sql.Stmt
-	getCreatorStmt                           *sql.Stmt
 	getCreatorByIDStmt                       *sql.Stmt
 	getCreatorByUsernameStmt                 *sql.Stmt
 	getCreatorDailyActivityStmt              *sql.Stmt
@@ -1236,6 +1227,9 @@ type Queries struct {
 	updateActionLastRunStmt                  *sql.Stmt
 	updateAutomatedActionStmt                *sql.Stmt
 	updateCreatorListStmt                    *sql.Stmt
+	updateCreatorPasswordStmt                *sql.Stmt
+	updateCreatorProfileStmt                 *sql.Stmt
+	updateCreatorRoleAndStatusStmt           *sql.Stmt
 	updateFactStmt                           *sql.Stmt
 	updateFunnelStmt                         *sql.Stmt
 	updateImportTaskErrorStmt                *sql.Stmt
@@ -1251,9 +1245,6 @@ type Queries struct {
 	updateStepStmt                           *sql.Stmt
 	updateTagStmt                            *sql.Stmt
 	updateTaskStmt                           *sql.Stmt
-	updateUserPasswordStmt                   *sql.Stmt
-	updateUserProfileStmt                    *sql.Stmt
-	updateUserRoleAndStatusStmt              *sql.Stmt
 	upsertObjectTypeValueStmt                *sql.Stmt
 	validateMergeObjectsStmt                 *sql.Stmt
 }
@@ -1317,7 +1308,6 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		findObjectByAliasOrIDStringStmt:          q.findObjectByAliasOrIDStringStmt,
 		findTagByNormalizedNameStmt:              q.findTagByNormalizedNameStmt,
 		getAutomatedActionStmt:                   q.getAutomatedActionStmt,
-		getCreatorStmt:                           q.getCreatorStmt,
 		getCreatorByIDStmt:                       q.getCreatorByIDStmt,
 		getCreatorByUsernameStmt:                 q.getCreatorByUsernameStmt,
 		getCreatorDailyActivityStmt:              q.getCreatorDailyActivityStmt,
@@ -1374,6 +1364,9 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		updateActionLastRunStmt:                  q.updateActionLastRunStmt,
 		updateAutomatedActionStmt:                q.updateAutomatedActionStmt,
 		updateCreatorListStmt:                    q.updateCreatorListStmt,
+		updateCreatorPasswordStmt:                q.updateCreatorPasswordStmt,
+		updateCreatorProfileStmt:                 q.updateCreatorProfileStmt,
+		updateCreatorRoleAndStatusStmt:           q.updateCreatorRoleAndStatusStmt,
 		updateFactStmt:                           q.updateFactStmt,
 		updateFunnelStmt:                         q.updateFunnelStmt,
 		updateImportTaskErrorStmt:                q.updateImportTaskErrorStmt,
@@ -1389,9 +1382,6 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		updateStepStmt:                           q.updateStepStmt,
 		updateTagStmt:                            q.updateTagStmt,
 		updateTaskStmt:                           q.updateTaskStmt,
-		updateUserPasswordStmt:                   q.updateUserPasswordStmt,
-		updateUserProfileStmt:                    q.updateUserProfileStmt,
-		updateUserRoleAndStatusStmt:              q.updateUserRoleAndStatusStmt,
 		upsertObjectTypeValueStmt:                q.upsertObjectTypeValueStmt,
 		validateMergeObjectsStmt:                 q.validateMergeObjectsStmt,
 	}

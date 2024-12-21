@@ -156,7 +156,6 @@ func (s *ObjectService) ListObjects(ctx context.Context, params ListObjectsParam
         Offset:           params.GetOffset(),
         Column14: subStatusFilter,
     }
-    fmt.Println("listParams: ",listParams)
     items, err := s.db.ListObjectsAdvanced(ctx, listParams)
     if err != nil {
         return nil, fmt.Errorf("error listing objects: %w", err)

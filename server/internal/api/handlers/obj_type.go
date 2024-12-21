@@ -34,7 +34,7 @@ func (h *ObjectTypeHandler) CreateObjectType(w http.ResponseWriter, r *http.Requ
 	}
 
 	claims := r.Context().Value(middleware.UserClaimsKey).(*middleware.Claims)
-	creator, err := h.DB.GetCreator(r.Context(), uuid.MustParse(claims.CreatorID))
+	creator, err := h.DB.GetCreatorByID(r.Context(), uuid.MustParse(claims.CreatorID))
 	if err != nil {
 		http.Error(w, "Failed to get creator", http.StatusInternalServerError)
 		return

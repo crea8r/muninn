@@ -161,19 +161,19 @@ SELECT COUNT(*)
 FROM funnel f
 JOIN creator c ON c.id = f.creator_id
 WHERE c.org_id = $1 AND f.deleted_at IS NULL
-  AND ($2::text = '' OR (
-    f.name ILIKE '%' || $2 || '%' OR
-    f.description ILIKE '%' || $2 || '%' OR
-    EXISTS (
-      SELECT 1 FROM step s
-      WHERE s.funnel_id = f.id AND (
-        s.name ILIKE '%' || $2 || '%' OR
-        s.definition ILIKE '%' || $2 || '%' OR
-        s.example ILIKE '%' || $2 || '%' OR
-        s.action ILIKE '%' || $2 || '%'
-      )
+AND ($2::text = '' OR (
+  f.name ILIKE '%' || $2 || '%' OR
+  f.description ILIKE '%' || $2 || '%' OR
+  EXISTS (
+    SELECT 1 FROM step s
+    WHERE s.funnel_id = f.id AND (
+      s.name ILIKE '%' || $2 || '%' OR
+      s.definition ILIKE '%' || $2 || '%' OR
+      s.example ILIKE '%' || $2 || '%' OR
+      s.action ILIKE '%' || $2 || '%'
     )
-  ))
+  )
+))
 `
 
 type CountFunnelsParams struct {
@@ -195,9 +195,9 @@ JOIN creator c ON o.creator_id = c.id
 WHERE c.org_id = $1
   AND o.deleted_at IS NULL
   AND ($2::text = '' OR 
-       o.name ILIKE '%' || $2 || '%' OR 
-       o.description ILIKE '%' || $2 || '%' OR
-       o.fields_search @@ to_tsquery('english', $2))
+    o.name ILIKE '%' || $2 || '%' OR 
+    o.description ILIKE '%' || $2 || '%' OR
+    o.fields_search @@ to_tsquery('english', $2))
 `
 
 type CountObjectTypesParams struct {
@@ -253,19 +253,19 @@ FROM
 JOIN 
     obj_task ot ON t.id = ot.task_id
 WHERE 
-    ot.obj_id = $1 
-    AND t.deleted_at IS NULL
-    AND ($2::text = '' OR (
-        t.content ILIKE '%' || $2 || '%' OR
-        EXISTS (
-            SELECT 1 FROM creator c 
-            WHERE c.id = t.creator_id AND c.username ILIKE '%' || $2 || '%'
-        ) OR
-        EXISTS (
-            SELECT 1 FROM creator a 
-            WHERE a.id = t.assigned_id AND a.username ILIKE '%' || $2 || '%'
-        )
-    ))
+ot.obj_id = $1 
+AND t.deleted_at IS NULL
+AND ($2::text = '' OR (
+  t.content ILIKE '%' || $2 || '%' OR
+  EXISTS (
+    SELECT 1 FROM creator c 
+    WHERE c.id = t.creator_id AND c.username ILIKE '%' || $2 || '%'
+  ) OR
+  EXISTS (
+    SELECT 1 FROM creator a 
+    WHERE a.id = t.assigned_id AND a.username ILIKE '%' || $2 || '%'
+  )
+))
 `
 
 type CountTasksByObjectIDParams struct {
@@ -286,11 +286,11 @@ FROM task t
 JOIN creator c ON t.creator_id = c.id
 LEFT JOIN creator a ON t.assigned_id = a.id
 WHERE c.org_id = $1 AND t.deleted_at IS NULL
-  AND ($2::text = '' OR (
-    t.content ILIKE '%' || $2 || '%' OR
-    c.username ILIKE '%' || $2 || '%' OR
-    a.username ILIKE '%' || $2 || '%'
-  ))
+AND ($2::text = '' OR (
+  t.content ILIKE '%' || $2 || '%' OR
+  c.username ILIKE '%' || $2 || '%' OR
+  a.username ILIKE '%' || $2 || '%'
+))
 `
 
 type CountTasksByOrgIDParams struct {
@@ -308,41 +308,41 @@ func (q *Queries) CountTasksByOrgID(ctx context.Context, arg CountTasksByOrgIDPa
 const countTasksWithFilter = `-- name: CountTasksWithFilter :one
 SELECT COUNT(DISTINCT t.id)
 FROM 
-    task t
+  task t
 WHERE 
-    t.deleted_at IS NULL
-    AND ((
-      CASE 
-        WHEN $1::uuid IS NOT NULL THEN 
-          t.creator_id = $1
-        ELSE 
-          TRUE
-        END
-    )
-    OR (
-      CASE 
-        WHEN $2::uuid IS NOT NULL THEN 
-          t.assigned_id = $2
-        ELSE 
-          TRUE
-      END
-    ))
-    AND (
-      CASE 
-        WHEN $3::text != '' THEN 
-          (t.content ILIKE '%' || $3 || '%')
-        ELSE 
-          TRUE
-      END
-    )
-    AND (
-      CASE 
-        WHEN $4::text != '' THEN
-          t.status = ANY(string_to_array($4::text, ','))
-        ELSE
-          TRUE
-      END
-    )
+t.deleted_at IS NULL
+AND ((
+  CASE 
+    WHEN $1::uuid IS NOT NULL THEN 
+      t.creator_id = $1
+    ELSE 
+      TRUE
+    END
+)
+OR (
+  CASE 
+    WHEN $2::uuid IS NOT NULL THEN 
+      t.assigned_id = $2
+    ELSE 
+      TRUE
+  END
+))
+AND (
+  CASE 
+    WHEN $3::text != '' THEN 
+      (t.content ILIKE '%' || $3 || '%')
+    ELSE 
+      TRUE
+  END
+)
+AND (
+  CASE 
+    WHEN $4::text != '' THEN
+      t.status = ANY(string_to_array($4::text, ','))
+    ELSE
+      TRUE
+  END
+)
 `
 
 type CountTasksWithFilterParams struct {
@@ -511,35 +511,35 @@ func (q *Queries) CreateFunnel(ctx context.Context, arg CreateFunnelParams) (Fun
 
 const createObjStep = `-- name: CreateObjStep :one
 WITH existing_step AS (
-    -- First check if the step already exists
-    SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM obj_step
-    WHERE obj_step.obj_id = $1 AND obj_step.step_id = $2 AND obj_step.deleted_at IS NULL
+  -- First check if the step already exists
+  SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM obj_step
+  WHERE obj_step.obj_id = $1 AND obj_step.step_id = $2 AND obj_step.deleted_at IS NULL
 ),
 new_step AS (
-    -- Try to insert if it doesn't exist
-    INSERT INTO obj_step (obj_id, step_id, creator_id)
-    SELECT $1, $2, $3
-    WHERE NOT EXISTS (SELECT 1 FROM existing_step)
-    RETURNING id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at
+  -- Try to insert if it doesn't exist
+  INSERT INTO obj_step (obj_id, step_id, creator_id)
+  SELECT $1, $2, $3
+  WHERE NOT EXISTS (SELECT 1 FROM existing_step)
+  RETURNING id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at
 ),
 update_old_steps AS (
-    -- Update other steps in the same funnel
-    UPDATE obj_step
-    SET deleted_at = CURRENT_TIMESTAMP
-    WHERE obj_id = $1
-      AND step_id IN (
-        SELECT id
-        FROM step
-        WHERE funnel_id = (SELECT funnel_id FROM step WHERE id = $2)
-      )
-      AND step_id != $2
-      AND deleted_at IS NULL
+  -- Update other steps in the same funnel
+  UPDATE obj_step
+  SET deleted_at = CURRENT_TIMESTAMP
+  WHERE obj_id = $1
+    AND step_id IN (
+      SELECT id
+      FROM step
+      WHERE funnel_id = (SELECT funnel_id FROM step WHERE id = $2)
+    )
+    AND step_id != $2
+    AND deleted_at IS NULL
 ),
 combined_result AS (
-    -- Combine both existing and new steps
-    SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM existing_step
-    UNION ALL
-    SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM new_step
+  -- Combine both existing and new steps
+  SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM existing_step
+  UNION ALL
+  SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM new_step
 )
 SELECT id, obj_id, step_id, creator_id, sub_status, created_at, last_updated, deleted_at FROM combined_result 
 LIMIT 1
@@ -849,27 +849,6 @@ func (q *Queries) DeleteTask(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-const getCreator = `-- name: GetCreator :one
-SELECT id, username, pwd, profile, role, org_id, active, created_at, deleted_at FROM creator WHERE id = $1 LIMIT 1
-`
-
-func (q *Queries) GetCreator(ctx context.Context, id uuid.UUID) (Creator, error) {
-	row := q.queryRow(ctx, q.getCreatorStmt, getCreator, id)
-	var i Creator
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Pwd,
-		&i.Profile,
-		&i.Role,
-		&i.OrgID,
-		&i.Active,
-		&i.CreatedAt,
-		&i.DeletedAt,
-	)
-	return i, err
-}
-
 const getCreatorByID = `-- name: GetCreatorByID :one
 SELECT id, username, pwd, profile, role, org_id, active, created_at, deleted_at FROM creator WHERE id = $1 LIMIT 1
 `
@@ -1008,9 +987,9 @@ func (q *Queries) GetFeed(ctx context.Context, creatorID uuid.UUID) ([]Feed, err
 
 const getFunnel = `-- name: GetFunnel :one
 SELECT f.id, f.name, f.description, f.creator_id, f.created_at, f.deleted_at, c.org_id,
-       (SELECT COUNT(*) FROM obj_step os
-        JOIN step s ON s.id = os.step_id
-        WHERE s.funnel_id = f.id) AS object_count
+  (SELECT COUNT(*) FROM obj_step os
+  JOIN step s ON s.id = os.step_id
+  WHERE s.funnel_id = f.id) AS object_count
 FROM funnel f
 JOIN creator c ON c.id = f.creator_id
 WHERE f.id = $1 AND f.deleted_at IS NULL
@@ -1467,9 +1446,9 @@ func (q *Queries) ListFactsByOrgID(ctx context.Context, arg ListFactsByOrgIDPara
 
 const listFunnels = `-- name: ListFunnels :many
 SELECT f.id, f.name, f.description, f.creator_id, f.created_at, f.deleted_at, c.org_id,
-       (SELECT COUNT(*) FROM obj_step os
-        JOIN step s ON s.id = os.step_id
-        WHERE s.funnel_id = f.id) AS object_count
+    (SELECT COUNT(*) FROM obj_step os
+    JOIN step s ON s.id = os.step_id
+    WHERE s.funnel_id = f.id) AS object_count
 FROM funnel f
 JOIN creator c ON c.id = f.creator_id
 WHERE c.org_id = $1 AND f.deleted_at IS NULL
@@ -1552,9 +1531,9 @@ JOIN creator c ON o.creator_id = c.id
 WHERE c.org_id = $1
   AND o.deleted_at IS NULL
   AND ($2::text = '' OR 
-       o.name ILIKE '%' || $2 || '%' OR 
-       o.description ILIKE '%' || $2 || '%' OR
-       o.fields_search @@ to_tsquery('english', $2))
+    o.name ILIKE '%' || $2 || '%' OR 
+    o.description ILIKE '%' || $2 || '%' OR
+    o.fields_search @@ to_tsquery('english', $2))
 ORDER BY o.created_at DESC
 LIMIT $3 OFFSET $4
 `
@@ -1648,17 +1627,17 @@ func (q *Queries) ListObjectsByTaskID(ctx context.Context, taskID uuid.UUID) ([]
 
 const listOrgMembers = `-- name: ListOrgMembers :many
 WITH filtered_creators AS (
-    SELECT c.id, c.username, c.profile, c.role, c.active, c.created_at,
-           to_tsvector('english', c.username) || 
-           to_tsvector('english', coalesce(c.profile::text, '')) as document
-    FROM creator c
-    WHERE c.org_id = $1 AND c.deleted_at IS NULL
+  SELECT c.id, c.username, c.profile, c.role, c.active, c.created_at,
+    to_tsvector('english', c.username) || 
+    to_tsvector('english', coalesce(c.profile::text, '')) as document
+  FROM creator c
+  WHERE c.org_id = $1 AND c.deleted_at IS NULL
 )
 SELECT id, username, profile, role, active, created_at
 FROM filtered_creators
 WHERE $2::text = '' OR 
-      document @@ plainto_tsquery('english', $2::text) OR
-      profile::text ILIKE '%' || $2::text || '%'
+  document @@ plainto_tsquery('english', $2::text) OR
+  profile::text ILIKE '%' || $2::text || '%'
 ORDER BY created_at DESC
 `
 
@@ -1708,7 +1687,7 @@ func (q *Queries) ListOrgMembers(ctx context.Context, arg ListOrgMembersParams) 
 
 const listStepsByFunnel = `-- name: ListStepsByFunnel :many
 SELECT s.id, s.funnel_id, s.name, s.definition, s.example, s.action, s.step_order, s.created_at, s.last_updated, s.deleted_at, 
-       (SELECT COUNT(*) FROM obj_step os WHERE os.step_id = s.id) AS object_count
+  (SELECT COUNT(*) FROM obj_step os WHERE os.step_id = s.id) AS object_count
 FROM step s
 WHERE s.funnel_id = $1 AND s.deleted_at IS NULL
 ORDER BY s.step_order
@@ -1765,28 +1744,28 @@ func (q *Queries) ListStepsByFunnel(ctx context.Context, funnelID uuid.UUID) ([]
 
 const listTasksByObjectID = `-- name: ListTasksByObjectID :many
 SELECT 
-    t.id,
-    t.content,
-    t.deadline,
-    t.remind_at,
-    t.status,
-    t.creator_id,
-    c.username AS creator_name,
-    t.assigned_id,
-    a.username AS assigned_name,
-    t.parent_id,
-    t.created_at,
-    t.last_updated,
-    COALESCE(
-        json_agg(
-            json_build_object(
-                'id', o.id,
-                'name', o.name,
-                'description', o.description
-            )
-        ) FILTER (WHERE o.id IS NOT NULL),
-        '[]'
-    ) AS objects
+  t.id,
+  t.content,
+  t.deadline,
+  t.remind_at,
+  t.status,
+  t.creator_id,
+  c.username AS creator_name,
+  t.assigned_id,
+  a.username AS assigned_name,
+  t.parent_id,
+  t.created_at,
+  t.last_updated,
+  COALESCE(
+    json_agg(
+      json_build_object(
+        'id', o.id,
+        'name', o.name,
+        'description', o.description
+      )
+    ) FILTER (WHERE o.id IS NOT NULL),
+    '[]'
+  ) AS objects
 FROM 
     task t
 JOIN 
@@ -1960,28 +1939,28 @@ func (q *Queries) ListTasksByOrgID(ctx context.Context, arg ListTasksByOrgIDPara
 const listTasksWithFilter = `-- name: ListTasksWithFilter :many
 
 SELECT 
-    t.id,
-    t.content,
-    t.deadline,
-    t.remind_at,
-    t.status,
-    t.creator_id,
-    c.username AS creator_name,
-    t.assigned_id,
-    a.username AS assigned_name,
-    t.parent_id,
-    t.created_at,
-    t.last_updated,
-    COALESCE(
-        json_agg(
-            json_build_object(
-                'id', o.id,
-                'name', o.name,
-                'description', o.description
-            )
-        ) FILTER (WHERE o.id IS NOT NULL),
-        '[]'
-    ) AS objects
+  t.id,
+  t.content,
+  t.deadline,
+  t.remind_at,
+  t.status,
+  t.creator_id,
+  c.username AS creator_name,
+  t.assigned_id,
+  a.username AS assigned_name,
+  t.parent_id,
+  t.created_at,
+  t.last_updated,
+  COALESCE(
+    json_agg(
+      json_build_object(
+        'id', o.id,
+        'name', o.name,
+        'description', o.description
+      )
+    ) FILTER (WHERE o.id IS NOT NULL),
+    '[]'
+  ) AS objects
 FROM 
     task t
 JOIN 
@@ -2118,9 +2097,9 @@ const removeObjectTypeValue = `-- name: RemoveObjectTypeValue :exec
 DELETE FROM obj_type_value
 WHERE obj_type_value.id = $1
 AND EXISTS (
-    SELECT 1 FROM obj o
-    JOIN creator c ON o.creator_id = c.id
-    WHERE o.id = obj_type_value.obj_id AND c.org_id = $2
+  SELECT 1 FROM obj o
+  JOIN creator c ON o.creator_id = c.id
+  WHERE o.id = obj_type_value.obj_id AND c.org_id = $2
 )
 `
 
@@ -2168,9 +2147,9 @@ const removeTagFromObject = `-- name: RemoveTagFromObject :exec
 DELETE FROM obj_tag
 WHERE obj_id = $1 AND tag_id = $2
 AND EXISTS (
-    SELECT 1 FROM obj o
-    JOIN creator c ON o.creator_id = c.id
-    WHERE o.id = $1 AND c.org_id = $3
+  SELECT 1 FROM obj o
+  JOIN creator c ON o.creator_id = c.id
+  WHERE o.id = $1 AND c.org_id = $3
 )
 `
 
@@ -2196,6 +2175,87 @@ WHERE id = $1 AND deleted_at IS NULL
 func (q *Queries) SoftDeleteObjStep(ctx context.Context, id uuid.UUID) error {
 	_, err := q.exec(ctx, q.softDeleteObjStepStmt, softDeleteObjStep, id)
 	return err
+}
+
+const updateCreatorPassword = `-- name: UpdateCreatorPassword :exec
+UPDATE creator
+SET pwd = $2
+WHERE id = $1
+`
+
+type UpdateCreatorPasswordParams struct {
+	ID  uuid.UUID `json:"id"`
+	Pwd string    `json:"pwd"`
+}
+
+func (q *Queries) UpdateCreatorPassword(ctx context.Context, arg UpdateCreatorPasswordParams) error {
+	_, err := q.exec(ctx, q.updateCreatorPasswordStmt, updateCreatorPassword, arg.ID, arg.Pwd)
+	return err
+}
+
+const updateCreatorProfile = `-- name: UpdateCreatorProfile :one
+UPDATE creator
+SET profile = $2
+WHERE id = $1
+RETURNING id, username, pwd, profile, role, org_id, active, created_at, deleted_at
+`
+
+type UpdateCreatorProfileParams struct {
+	ID      uuid.UUID       `json:"id"`
+	Profile json.RawMessage `json:"profile"`
+}
+
+func (q *Queries) UpdateCreatorProfile(ctx context.Context, arg UpdateCreatorProfileParams) (Creator, error) {
+	row := q.queryRow(ctx, q.updateCreatorProfileStmt, updateCreatorProfile, arg.ID, arg.Profile)
+	var i Creator
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Pwd,
+		&i.Profile,
+		&i.Role,
+		&i.OrgID,
+		&i.Active,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateCreatorRoleAndStatus = `-- name: UpdateCreatorRoleAndStatus :one
+UPDATE creator
+SET role = $2, active = $3
+WHERE id = $1 AND org_id = $4
+RETURNING id, username, pwd, profile, role, org_id, active, created_at, deleted_at
+`
+
+type UpdateCreatorRoleAndStatusParams struct {
+	ID     uuid.UUID `json:"id"`
+	Role   string    `json:"role"`
+	Active bool      `json:"active"`
+	OrgID  uuid.UUID `json:"org_id"`
+}
+
+func (q *Queries) UpdateCreatorRoleAndStatus(ctx context.Context, arg UpdateCreatorRoleAndStatusParams) (Creator, error) {
+	row := q.queryRow(ctx, q.updateCreatorRoleAndStatusStmt, updateCreatorRoleAndStatus,
+		arg.ID,
+		arg.Role,
+		arg.Active,
+		arg.OrgID,
+	)
+	var i Creator
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Pwd,
+		&i.Profile,
+		&i.Role,
+		&i.OrgID,
+		&i.Active,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const updateFact = `-- name: UpdateFact :one
@@ -2514,87 +2574,6 @@ func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (Task, e
 		&i.ParentID,
 		&i.CreatedAt,
 		&i.LastUpdated,
-		&i.DeletedAt,
-	)
-	return i, err
-}
-
-const updateUserPassword = `-- name: UpdateUserPassword :exec
-UPDATE creator
-SET pwd = $2
-WHERE id = $1
-`
-
-type UpdateUserPasswordParams struct {
-	ID  uuid.UUID `json:"id"`
-	Pwd string    `json:"pwd"`
-}
-
-func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
-	_, err := q.exec(ctx, q.updateUserPasswordStmt, updateUserPassword, arg.ID, arg.Pwd)
-	return err
-}
-
-const updateUserProfile = `-- name: UpdateUserProfile :one
-UPDATE creator
-SET profile = $2
-WHERE id = $1
-RETURNING id, username, pwd, profile, role, org_id, active, created_at, deleted_at
-`
-
-type UpdateUserProfileParams struct {
-	ID      uuid.UUID       `json:"id"`
-	Profile json.RawMessage `json:"profile"`
-}
-
-func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (Creator, error) {
-	row := q.queryRow(ctx, q.updateUserProfileStmt, updateUserProfile, arg.ID, arg.Profile)
-	var i Creator
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Pwd,
-		&i.Profile,
-		&i.Role,
-		&i.OrgID,
-		&i.Active,
-		&i.CreatedAt,
-		&i.DeletedAt,
-	)
-	return i, err
-}
-
-const updateUserRoleAndStatus = `-- name: UpdateUserRoleAndStatus :one
-UPDATE creator
-SET role = $2, active = $3
-WHERE id = $1 AND org_id = $4
-RETURNING id, username, pwd, profile, role, org_id, active, created_at, deleted_at
-`
-
-type UpdateUserRoleAndStatusParams struct {
-	ID     uuid.UUID `json:"id"`
-	Role   string    `json:"role"`
-	Active bool      `json:"active"`
-	OrgID  uuid.UUID `json:"org_id"`
-}
-
-func (q *Queries) UpdateUserRoleAndStatus(ctx context.Context, arg UpdateUserRoleAndStatusParams) (Creator, error) {
-	row := q.queryRow(ctx, q.updateUserRoleAndStatusStmt, updateUserRoleAndStatus,
-		arg.ID,
-		arg.Role,
-		arg.Active,
-		arg.OrgID,
-	)
-	var i Creator
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Pwd,
-		&i.Profile,
-		&i.Role,
-		&i.OrgID,
-		&i.Active,
-		&i.CreatedAt,
 		&i.DeletedAt,
 	)
 	return i, err

@@ -1,22 +1,3 @@
--- name: GetCreator :one
-SELECT * FROM creator WHERE id = $1 LIMIT 1;
-
--- name: GetCreatorByUsername :one
-SELECT c.*, o.name as orgName FROM creator c
-JOIN org o ON c.org_id = o.id
-WHERE username = $1 AND active = $2;
-
--- name: CreateCreator :one
-INSERT INTO creator (username, pwd, profile, role, org_id, active, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
-RETURNING *;
-
--- name: DeleteCreator :exec
-UPDATE creator SET deleted_at = NOW() WHERE id = $1;
-
--- name: GetCreatorByID :one
-SELECT * FROM creator WHERE id = $1 LIMIT 1;
-
 -- name: CreateFeed :one
 INSERT INTO feed (creator_id, content, seen)
 VALUES ($1, $2, $3)
@@ -64,9 +45,9 @@ JOIN creator c ON o.creator_id = c.id
 WHERE c.org_id = $1
   AND o.deleted_at IS NULL
   AND ($2::text = '' OR 
-       o.name ILIKE '%' || $2 || '%' OR 
-       o.description ILIKE '%' || $2 || '%' OR
-       o.fields_search @@ to_tsquery('english', $2))
+    o.name ILIKE '%' || $2 || '%' OR 
+    o.description ILIKE '%' || $2 || '%' OR
+    o.fields_search @@ to_tsquery('english', $2))
 ORDER BY o.created_at DESC
 LIMIT $3 OFFSET $4;
 
@@ -82,9 +63,9 @@ JOIN creator c ON o.creator_id = c.id
 WHERE c.org_id = $1
   AND o.deleted_at IS NULL
   AND ($2::text = '' OR 
-       o.name ILIKE '%' || $2 || '%' OR 
-       o.description ILIKE '%' || $2 || '%' OR
-       o.fields_search @@ to_tsquery('english', $2));
+    o.name ILIKE '%' || $2 || '%' OR 
+    o.description ILIKE '%' || $2 || '%' OR
+    o.fields_search @@ to_tsquery('english', $2));
 
 -- name: CreateFunnel :one
 INSERT INTO funnel (id, name, description, creator_id)
@@ -93,18 +74,18 @@ RETURNING *;
 
 -- name: GetFunnel :one
 SELECT f.*, c.org_id,
-       (SELECT COUNT(*) FROM obj_step os
-        JOIN step s ON s.id = os.step_id
-        WHERE s.funnel_id = f.id) AS object_count
+  (SELECT COUNT(*) FROM obj_step os
+  JOIN step s ON s.id = os.step_id
+  WHERE s.funnel_id = f.id) AS object_count
 FROM funnel f
 JOIN creator c ON c.id = f.creator_id
 WHERE f.id = $1 AND f.deleted_at IS NULL;
 
 -- name: ListFunnels :many
 SELECT f.*, c.org_id,
-       (SELECT COUNT(*) FROM obj_step os
-        JOIN step s ON s.id = os.step_id
-        WHERE s.funnel_id = f.id) AS object_count
+    (SELECT COUNT(*) FROM obj_step os
+    JOIN step s ON s.id = os.step_id
+    WHERE s.funnel_id = f.id) AS object_count
 FROM funnel f
 JOIN creator c ON c.id = f.creator_id
 WHERE c.org_id = $1 AND f.deleted_at IS NULL
@@ -169,7 +150,7 @@ WHERE step.id = $1 AND deleted_at IS NULL
 
 -- name: ListStepsByFunnel :many
 SELECT s.*, 
-       (SELECT COUNT(*) FROM obj_step os WHERE os.step_id = s.id) AS object_count
+  (SELECT COUNT(*) FROM obj_step os WHERE os.step_id = s.id) AS object_count
 FROM step s
 WHERE s.funnel_id = $1 AND s.deleted_at IS NULL
 ORDER BY s.step_order;
@@ -184,19 +165,19 @@ SELECT COUNT(*)
 FROM funnel f
 JOIN creator c ON c.id = f.creator_id
 WHERE c.org_id = $1 AND f.deleted_at IS NULL
-  AND ($2::text = '' OR (
-    f.name ILIKE '%' || $2 || '%' OR
-    f.description ILIKE '%' || $2 || '%' OR
-    EXISTS (
-      SELECT 1 FROM step s
-      WHERE s.funnel_id = f.id AND (
-        s.name ILIKE '%' || $2 || '%' OR
-        s.definition ILIKE '%' || $2 || '%' OR
-        s.example ILIKE '%' || $2 || '%' OR
-        s.action ILIKE '%' || $2 || '%'
-      )
+AND ($2::text = '' OR (
+  f.name ILIKE '%' || $2 || '%' OR
+  f.description ILIKE '%' || $2 || '%' OR
+  EXISTS (
+    SELECT 1 FROM step s
+    WHERE s.funnel_id = f.id AND (
+      s.name ILIKE '%' || $2 || '%' OR
+      s.definition ILIKE '%' || $2 || '%' OR
+      s.example ILIKE '%' || $2 || '%' OR
+      s.action ILIKE '%' || $2 || '%'
     )
-  ));
+  )
+));
 
 -- name: CreateObject :one
 INSERT INTO obj (name, description, id_string, creator_id)
@@ -289,9 +270,9 @@ ON CONFLICT DO NOTHING;
 DELETE FROM obj_tag
 WHERE obj_id = $1 AND tag_id = $2
 AND EXISTS (
-    SELECT 1 FROM obj o
-    JOIN creator c ON o.creator_id = c.id
-    WHERE o.id = $1 AND c.org_id = $3
+  SELECT 1 FROM obj o
+  JOIN creator c ON o.creator_id = c.id
+  WHERE o.id = $1 AND c.org_id = $3
 );
 
 -- name: AddObjectTypeValue :one
@@ -321,9 +302,9 @@ RETURNING *;
 DELETE FROM obj_type_value
 WHERE obj_type_value.id = $1
 AND EXISTS (
-    SELECT 1 FROM obj o
-    JOIN creator c ON o.creator_id = c.id
-    WHERE o.id = obj_type_value.obj_id AND c.org_id = $2
+  SELECT 1 FROM obj o
+  JOIN creator c ON o.creator_id = c.id
+  WHERE o.id = obj_type_value.obj_id AND c.org_id = $2
 );
 
 -- name: UpdateObjectTypeValue :one
@@ -339,35 +320,35 @@ RETURNING *;
 
 -- name: CreateObjStep :one
 WITH existing_step AS (
-    -- First check if the step already exists
-    SELECT * FROM obj_step
-    WHERE obj_step.obj_id = $1 AND obj_step.step_id = $2 AND obj_step.deleted_at IS NULL
+  -- First check if the step already exists
+  SELECT * FROM obj_step
+  WHERE obj_step.obj_id = $1 AND obj_step.step_id = $2 AND obj_step.deleted_at IS NULL
 ),
 new_step AS (
-    -- Try to insert if it doesn't exist
-    INSERT INTO obj_step (obj_id, step_id, creator_id)
-    SELECT $1, $2, $3
-    WHERE NOT EXISTS (SELECT 1 FROM existing_step)
-    RETURNING *
+  -- Try to insert if it doesn't exist
+  INSERT INTO obj_step (obj_id, step_id, creator_id)
+  SELECT $1, $2, $3
+  WHERE NOT EXISTS (SELECT 1 FROM existing_step)
+  RETURNING *
 ),
 update_old_steps AS (
-    -- Update other steps in the same funnel
-    UPDATE obj_step
-    SET deleted_at = CURRENT_TIMESTAMP
-    WHERE obj_id = $1
-      AND step_id IN (
-        SELECT id
-        FROM step
-        WHERE funnel_id = (SELECT funnel_id FROM step WHERE id = $2)
-      )
-      AND step_id != $2
-      AND deleted_at IS NULL
+  -- Update other steps in the same funnel
+  UPDATE obj_step
+  SET deleted_at = CURRENT_TIMESTAMP
+  WHERE obj_id = $1
+    AND step_id IN (
+      SELECT id
+      FROM step
+      WHERE funnel_id = (SELECT funnel_id FROM step WHERE id = $2)
+    )
+    AND step_id != $2
+    AND deleted_at IS NULL
 ),
 combined_result AS (
-    -- Combine both existing and new steps
-    SELECT * FROM existing_step
-    UNION ALL
-    SELECT * FROM new_step
+  -- Combine both existing and new steps
+  SELECT * FROM existing_step
+  UNION ALL
+  SELECT * FROM new_step
 )
 SELECT * FROM combined_result 
 LIMIT 1; -- Ensure we only get one row
@@ -434,11 +415,11 @@ FROM task t
 JOIN creator c ON t.creator_id = c.id
 LEFT JOIN creator a ON t.assigned_id = a.id
 WHERE c.org_id = $1 AND t.deleted_at IS NULL
-  AND ($2::text = '' OR (
-    t.content ILIKE '%' || $2 || '%' OR
-    c.username ILIKE '%' || $2 || '%' OR
-    a.username ILIKE '%' || $2 || '%'
-  ));
+AND ($2::text = '' OR (
+  t.content ILIKE '%' || $2 || '%' OR
+  c.username ILIKE '%' || $2 || '%' OR
+  a.username ILIKE '%' || $2 || '%'
+));
 
 -- name: GetTaskByID :one
 SELECT t.*, c.username as creator_name, a.username as assigned_name
@@ -472,28 +453,28 @@ WHERE ot.task_id = $1;
 
 -- name: ListTasksByObjectID :many
 SELECT 
-    t.id,
-    t.content,
-    t.deadline,
-    t.remind_at,
-    t.status,
-    t.creator_id,
-    c.username AS creator_name,
-    t.assigned_id,
-    a.username AS assigned_name,
-    t.parent_id,
-    t.created_at,
-    t.last_updated,
-    COALESCE(
-        json_agg(
-            json_build_object(
-                'id', o.id,
-                'name', o.name,
-                'description', o.description
-            )
-        ) FILTER (WHERE o.id IS NOT NULL),
-        '[]'
-    ) AS objects
+  t.id,
+  t.content,
+  t.deadline,
+  t.remind_at,
+  t.status,
+  t.creator_id,
+  c.username AS creator_name,
+  t.assigned_id,
+  a.username AS assigned_name,
+  t.parent_id,
+  t.created_at,
+  t.last_updated,
+  COALESCE(
+    json_agg(
+      json_build_object(
+        'id', o.id,
+        'name', o.name,
+        'description', o.description
+      )
+    ) FILTER (WHERE o.id IS NOT NULL),
+    '[]'
+  ) AS objects
 FROM 
     task t
 JOIN 
@@ -525,46 +506,46 @@ FROM
 JOIN 
     obj_task ot ON t.id = ot.task_id
 WHERE 
-    ot.obj_id = $1 
-    AND t.deleted_at IS NULL
-    AND ($2::text = '' OR (
-        t.content ILIKE '%' || $2 || '%' OR
-        EXISTS (
-            SELECT 1 FROM creator c 
-            WHERE c.id = t.creator_id AND c.username ILIKE '%' || $2 || '%'
-        ) OR
-        EXISTS (
-            SELECT 1 FROM creator a 
-            WHERE a.id = t.assigned_id AND a.username ILIKE '%' || $2 || '%'
-        )
-    ));
+ot.obj_id = $1 
+AND t.deleted_at IS NULL
+AND ($2::text = '' OR (
+  t.content ILIKE '%' || $2 || '%' OR
+  EXISTS (
+    SELECT 1 FROM creator c 
+    WHERE c.id = t.creator_id AND c.username ILIKE '%' || $2 || '%'
+  ) OR
+  EXISTS (
+    SELECT 1 FROM creator a 
+    WHERE a.id = t.assigned_id AND a.username ILIKE '%' || $2 || '%'
+  )
+));
 
 -- Add this new query to your existing queries.sql file
 
 -- name: ListTasksWithFilter :many
 SELECT 
-    t.id,
-    t.content,
-    t.deadline,
-    t.remind_at,
-    t.status,
-    t.creator_id,
-    c.username AS creator_name,
-    t.assigned_id,
-    a.username AS assigned_name,
-    t.parent_id,
-    t.created_at,
-    t.last_updated,
-    COALESCE(
-        json_agg(
-            json_build_object(
-                'id', o.id,
-                'name', o.name,
-                'description', o.description
-            )
-        ) FILTER (WHERE o.id IS NOT NULL),
-        '[]'
-    ) AS objects
+  t.id,
+  t.content,
+  t.deadline,
+  t.remind_at,
+  t.status,
+  t.creator_id,
+  c.username AS creator_name,
+  t.assigned_id,
+  a.username AS assigned_name,
+  t.parent_id,
+  t.created_at,
+  t.last_updated,
+  COALESCE(
+    json_agg(
+      json_build_object(
+        'id', o.id,
+        'name', o.name,
+        'description', o.description
+      )
+    ) FILTER (WHERE o.id IS NOT NULL),
+    '[]'
+  ) AS objects
 FROM 
     task t
 JOIN 
@@ -618,82 +599,41 @@ LIMIT $5 OFFSET $6;
 -- name: CountTasksWithFilter :one
 SELECT COUNT(DISTINCT t.id)
 FROM 
-    task t
+  task t
 WHERE 
-    t.deleted_at IS NULL
-    AND ((
-      CASE 
-        WHEN $1::uuid IS NOT NULL THEN 
-          t.creator_id = $1
-        ELSE 
-          TRUE
-        END
-    )
-    OR (
-      CASE 
-        WHEN $2::uuid IS NOT NULL THEN 
-          t.assigned_id = $2
-        ELSE 
-          TRUE
-      END
-    ))
-    AND (
-      CASE 
-        WHEN $3::text != '' THEN 
-          (t.content ILIKE '%' || $3 || '%')
-        ELSE 
-          TRUE
-      END
-    )
-    AND (
-      CASE 
-        WHEN $4::text != '' THEN
-          t.status = ANY(string_to_array($4::text, ','))
-        ELSE
-          TRUE
-      END
-    );
-
--- name: ListOrgMembers :many
-WITH filtered_creators AS (
-    SELECT c.id, c.username, c.profile, c.role, c.active, c.created_at,
-           to_tsvector('english', c.username) || 
-           to_tsvector('english', coalesce(c.profile::text, '')) as document
-    FROM creator c
-    WHERE c.org_id = $1 AND c.deleted_at IS NULL
+t.deleted_at IS NULL
+AND ((
+  CASE 
+    WHEN $1::uuid IS NOT NULL THEN 
+      t.creator_id = $1
+    ELSE 
+      TRUE
+    END
 )
-SELECT id, username, profile, role, active, created_at
-FROM filtered_creators
-WHERE $2::text = '' OR 
-      document @@ plainto_tsquery('english', $2::text) OR
-      profile::text ILIKE '%' || $2::text || '%'
-ORDER BY created_at DESC;
-
--- name: GetOrgDetails :one
-SELECT * FROM org WHERE id = $1;
-
--- name: UpdateOrgDetails :one
-UPDATE org
-SET name = $2, profile = $3
-WHERE id = $1
-RETURNING *;
-
--- name: UpdateUserRoleAndStatus :one
-UPDATE creator
-SET role = $2, active = $3
-WHERE id = $1 AND org_id = $4
-RETURNING *;
-
--- name: UpdateUserPassword :exec
-UPDATE creator
-SET pwd = $2
-WHERE id = $1;
-
--- name: UpdateUserProfile :one
-UPDATE creator
-SET profile = $2
-WHERE id = $1
-RETURNING *;
+OR (
+  CASE 
+    WHEN $2::uuid IS NOT NULL THEN 
+      t.assigned_id = $2
+    ELSE 
+      TRUE
+  END
+))
+AND (
+  CASE 
+    WHEN $3::text != '' THEN 
+      (t.content ILIKE '%' || $3 || '%')
+    ELSE 
+      TRUE
+  END
+)
+AND (
+  CASE 
+    WHEN $4::text != '' THEN
+      t.status = ANY(string_to_array($4::text, ','))
+    ELSE
+      TRUE
+  END
+);
 
 -- name: CountUnseenFeed :one
 SELECT COUNT(*) c FROM feed

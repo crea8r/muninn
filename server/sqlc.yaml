@@ -1,7 +1,10 @@
 version: '2'
 sql:
   - engine: 'postgresql'
-    queries: 'internal/database/sql'
+    queries:
+      - 'internal/database/sql'
+      - 'internal/features/shared/queries.sql'
+      - 'internal/features/auth/queries.sql'
     schema: 'migrations/001_initial_schema.sql'
     gen:
       go:

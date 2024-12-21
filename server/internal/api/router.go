@@ -9,6 +9,7 @@ import (
 	"github.com/crea8r/muninn/server/internal/api/handlers"
 	"github.com/crea8r/muninn/server/internal/api/middleware"
 	"github.com/crea8r/muninn/server/internal/database"
+	"github.com/crea8r/muninn/server/internal/features/auth"
 	"github.com/crea8r/muninn/server/internal/models"
 	"github.com/crea8r/muninn/server/internal/service"
 	"github.com/go-chi/chi/v5"
@@ -42,7 +43,6 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 	objStepHandler := handlers.NewObjStepHandler(objectModel)
 	factHandler := handlers.NewFactHandler(queries)
 	taskHandler := handlers.NewTaskHandler(queries)
-	orgMemberHandler := handlers.NewOrgMemberHandler(queries)
 	feedHandler := handlers.NewFeedHandler(queries)
 	summarizeHandler := handlers.NewSummarizeHandler(queries)
 	listHandler := handlers.NewListHandler(queries)
@@ -52,30 +52,29 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 	metricsHandler := handlers.NewMetricsHandler(metricsService)
 	externalHandler := handlers.NewExternalHandler(db, queries)
 	automationHandler := handlers.NewAutomationHandler(queries)
+	wrapWithFeed := func(handler http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			rw := middleware.NewResponseWriter(w)
+			handler.ServeHTTP(rw, r)
 
+			// Only create feed entry if the response was successful (status code < 400)
+			if rw.Status() < 400 {
+				// TODO: rethink this
+				// middleware.CreateFeedEntry(db, r, rw)
+			}
+		}
+	}
 
 	// Public routes
-	r.Post("/auth/signup", handlers.SignUp(queries))
-	r.Post("/auth/login", handlers.Login(queries))
-	r.Post("/auth/robotlogin", handlers.RobotLogin(queries))
+	authHandler := *auth.NewHandler(queries)
+	authHandler.RegisterRoutes(r, wrapWithFeed)
+
 	r.Get("/stats",handlers.HealthCheck(queries))
 
 	// Protected routes
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.Permission)
-
-		wrapWithFeed := func(handler http.HandlerFunc) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				rw := middleware.NewResponseWriter(w)
-				handler.ServeHTTP(rw, r)
-
-				// Only create feed entry if the response was successful (status code < 400)
-				if rw.Status() < 400 {
-					// TODO: rethink this
-					// middleware.CreateFeedEntry(db, r, rw)
-				}
-			}
-		}
+		
 		r.Route("/metrics", func(r chi.Router) {
 			r.Use(middleware.Permission)
 			r.Get("/creator/{creatorId}", metricsHandler.GetCreatorMetrics)
@@ -177,16 +176,6 @@ func SetupRouter(queries *database.Queries, db *sql.DB) *chi.Mux {
 			r.Delete("/creator/{id}", listHandler.DeleteCreatorList)
 			r.Get("/creator/", listHandler.ListCreatorListsByCreatorID)
 			r.Get("/creator/detail/{id}", listHandler.GetCreateListByID)
-		})
-
-		r.Route("/org", func(r chi.Router) {
-			r.Use(middleware.Permission)
-			r.Get("/members", orgMemberHandler.ListOrgMembers)
-			r.Put("/details", orgMemberHandler.UpdateOrgDetails)
-			r.Post("/members", wrapWithFeed(orgMemberHandler.AddNewMember))
-			r.Put("/members/{userID}/permission", orgMemberHandler.UpdateUserRoleAndStatus)
-			r.Put("/members/{userID}/password", orgMemberHandler.UpdateUserPassword)
-			r.Put("/members/{userID}/profile", orgMemberHandler.UpdateUserProfile)
 		})
 
 		r.Route("/import", func(r chi.Router) {
