@@ -218,7 +218,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                 onChange={handleInputChange}
                 isDisabled={isLoading}
               >
-                {Object.values(TaskStatus).map((status) => (
+                {Object.values(TaskStatus)?.map((status) => (
                   <option key={status} value={status}>
                     {status.charAt(0).toUpperCase() + status.slice(1)}
                   </option>
@@ -245,7 +245,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                 isDisabled={isLoading}
               >
                 {globalData &&
-                  globalData.memberData?.members.map((member) => (
+                  globalData.memberData?.members?.map((member) => (
                     <option key={member.id} value={member.id}>
                       {member.username} ({member.profile.email})
                     </option>

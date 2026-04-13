@@ -14,8 +14,11 @@ interface DecodedToken {
 const TOKEN_KEY = 'auth_token';
 
 const authService = {
-  login: (token: string) => {
+  login: (token: string, creators?: any[]) => {
     localStorage.setItem(TOKEN_KEY, token);
+    if (creators) {
+      localStorage.setItem('creators', JSON.stringify(creators));
+    }
   },
 
   logout: () => {
@@ -35,6 +38,17 @@ const authService = {
       return decodedToken.creator_id;
     } catch {
       return null;
+    }
+  },
+
+  getOtherOwnedCreators: (): any[] => {
+    const creators = localStorage.getItem('creators');
+    if (!creators) return [];
+
+    try {
+      return JSON.parse(creators);
+    } catch {
+      return [];
     }
   },
 
@@ -75,6 +89,7 @@ const authService = {
         orgName: decodedToken.org_name,
         role: decodedToken.role,
         profile: decodedToken.profile,
+        others: authService.getOtherOwnedCreators(),
       };
     } catch {
       return undefined;

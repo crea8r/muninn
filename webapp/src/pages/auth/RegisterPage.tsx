@@ -10,24 +10,38 @@ import {
   Text,
   Link as ChakraLink,
   useToast,
+  InputGroup,
+  InputRightAddon,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useHistory } from 'react-router-dom';
 import { signup } from 'src/api/auth';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const RegisterPage: React.FC = () => {
   const [orgName, setOrgName] = useState('');
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [shownPassword, setShownPassword] = useState(false);
   const history = useHistory();
   const toast = useToast();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password.length < 8) {
+      toast({
+        title: 'Password too short',
+        description: 'Password must be at least 8 characters long',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
     setIsLoading(true);
 
     try {
-      await signup(orgName, username, password);
+      await signup({ org_name: orgName, email, password });
       toast({
         title: 'Register successful',
         status: 'success',
@@ -37,8 +51,8 @@ const RegisterPage: React.FC = () => {
       history.push('/login');
     } catch (error: any) {
       toast({
-        title: 'Regisger failed',
-        description: error.message || 'An error occurred during login',
+        title: 'Register failed',
+        description: error.message || 'An error occurred during register',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -73,22 +87,29 @@ const RegisterPage: React.FC = () => {
                 />
               </FormControl>
               <FormControl id='username' isRequired>
-                <FormLabel>Username</FormLabel>
+                <FormLabel>Email</FormLabel>
                 <Input
                   type='text'
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   focusBorderColor='var(--color-primary)'
                 />
               </FormControl>
               <FormControl id='password' isRequired>
                 <FormLabel>Password</FormLabel>
-                <Input
-                  type='password'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  focusBorderColor='var(--color-primary)'
-                />
+                <InputGroup>
+                  <Input
+                    type={shownPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    focusBorderColor='var(--color-primary)'
+                  />
+                  <InputRightAddon
+                    onClick={() => setShownPassword(!shownPassword)}
+                  >
+                    {shownPassword ? <FaEyeSlash /> : <FaEye />}
+                  </InputRightAddon>
+                </InputGroup>
               </FormControl>
               <Button
                 type='submit'

@@ -123,7 +123,7 @@ const Sidebar: React.FC = () => {
   const unseenFeedCount = globalData?.summaryData?.unseenFeedsCount || 0;
   const todoTaskCount = globalData?.summaryData?.tasksCount || 0;
 
-  const member = globalData?.memberData?.members.find(
+  const member = globalData?.memberData?.members?.find(
     (m) => m.id === authService.getCreatorId()
   );
 

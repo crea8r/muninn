@@ -79,7 +79,8 @@ const Header: React.FC = () => {
   const name = details?.profile?.fullname
     ? details?.profile?.fullname
     : details?.name;
-
+  const others = authService.getOtherOwnedCreators() || [];
+  console.log('others: ', others);
   return (
     <Box as='header' bg='white' boxShadow='sm' py={2}>
       <Flex mx='auto' alignItems='center' justifyContent='space-between'>
@@ -140,7 +141,7 @@ const Header: React.FC = () => {
           </MenuButton>
           <MenuList>
             <Box pl={3} pb={1} borderBottom={'1px solid #ccc'}>
-              {name}
+              {shortenText(name, 20)}
             </Box>
             <MenuItem onClick={() => history.push('/account')}>
               Account

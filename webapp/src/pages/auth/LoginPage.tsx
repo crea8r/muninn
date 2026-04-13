@@ -18,7 +18,7 @@ import { useGlobalContext } from 'src/contexts/GlobalContext';
 import LoadingScreen from 'src/components/LoadingScreen';
 
 const LoginPage: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const history = useHistory();
@@ -33,8 +33,8 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await login(username, password);
-      authService.login(response.token);
+      const response = await login(email, password);
+      authService.login(response.token, response.creators || []);
       toast({
         title: 'Login successful',
         status: 'success',
@@ -65,12 +65,12 @@ const LoginPage: React.FC = () => {
           </Heading>
           <form onSubmit={handleLogin} style={{ width: '100%' }}>
             <VStack spacing={4}>
-              <FormControl id='username' isRequired>
-                <FormLabel>Username</FormLabel>
+              <FormControl id='email' isRequired>
+                <FormLabel>Email</FormLabel>
                 <Input
                   type='text'
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   focusBorderColor='var(--color-primary)'
                 />
               </FormControl>
